@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createRider } from "@/lib/api"
+import { createRider, adminUploadForUser, IMAGE_TYPES } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
 
@@ -23,12 +24,20 @@ export default function AddRiderPage() {
         is_approved: true
     })
 
+    const [profileImage, setProfileImage] = useState<File | null>(null)
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target
         setFormData(prev => ({
             ...prev,
             [name]: type === "checkbox" ? checked : value
         }))
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setProfileImage(e.target.files[0])
+        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -43,10 +52,31 @@ export default function AddRiderPage() {
                     description: "Please fill in required fields",
                     variant: "destructive"
                 })
+                setIsSubmitting(false)
                 return
             }
 
-            await createRider(formData)
+            const newRider = await createRider(formData)
+
+            // Upload Profile Image if selected
+            if (profileImage) {
+                try {
+                    await adminUploadForUser(
+                        profileImage,
+                        newRider.external_id,
+                        IMAGE_TYPES.PROFILE,
+                        'Initial profile picture',
+                        true
+                    )
+                } catch (uploadErr) {
+                    console.error("Failed to upload profile image:", uploadErr)
+                    toast({
+                        title: "Warning",
+                        description: "Rider created but profile picture upload failed.",
+                        variant: "warning"
+                    })
+                }
+            }
 
             toast({
                 title: "Success",
@@ -204,6 +234,24 @@ export default function AddRiderPage() {
                         <label htmlFor="is_approved" className="text-sm font-medium text-gray-700">
                             Activate rider immediately
                         </label>
+                    </div>
+
+                    {/* Profile Image Upload Section (Restricted to only Profile Picture) */}
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Profile Image</h3>
+                        <p className="text-sm text-gray-500 mb-4">Only profile picture upload is allowed for riders during creation.</p>
+
+                        <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300 max-w-md">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                            />
+                            {profileImage && (
+                                <p className="text-xs text-green-600 mt-1">Selected: {profileImage.name}</p>
+                            )}
+                        </div>
                     </div>
 
                     {/* Form Actions */}

@@ -16,8 +16,11 @@ import {
   getServices,
   type Rider,
   type Roadie,
-  type Service
+  type Service,
+  getRequestRoute,
+  type RequestRouteInfo,
 } from "@/lib/api"
+import { Clock, Map, Navigation } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ArrowLeft, MapPin, User, Wrench, Edit, Save, X, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -32,6 +35,7 @@ export default function RequestDetailPage() {
   const [riders, setRiders] = useState<Rider[]>([])
   const [roadies, setRoadies] = useState<Roadie[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [routeInfo, setRouteInfo] = useState<RequestRouteInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -54,6 +58,14 @@ export default function RequestDetailPage() {
         setRiders(ridersData)
         setRoadies(roadiesData)
         setServices(servicesData)
+
+        try {
+          const routeData = await getRequestRoute(Number(id))
+          setRouteInfo(routeData)
+        } catch (e) {
+          console.log("No route info available or failed to fetch")
+        }
+
         setFormData({
           status: requestData.status,
           rider_lat: requestData.rider_lat,
@@ -82,7 +94,12 @@ export default function RequestDetailPage() {
 
     setIsSaving(true)
     try {
-      await updateServiceRequest(request.id, formData)
+      // Create a clean payload without read-only fields
+      const payload: any = { ...formData }
+      delete payload.rodie_username
+      delete payload.rider_username
+
+      await updateServiceRequest(request.id, payload)
       // Refresh the request data
       const updatedRequest = await getServiceRequestById(Number(id))
       setRequest(updatedRequest)
@@ -338,7 +355,7 @@ export default function RequestDetailPage() {
                         id="lat"
                         type="number"
                         step="any"
-                        value={formData.rider_lat || ""}
+                        value={formData.rider_lat?.toString() || ""}
                         onChange={(e) => setFormData({ ...formData, rider_lat: getNumericValue(e.target.value) })}
                       />
                     ) : (
@@ -352,7 +369,7 @@ export default function RequestDetailPage() {
                         id="lng"
                         type="number"
                         step="any"
-                        value={formData.rider_lng || ""}
+                        value={formData.rider_lng?.toString() || ""}
                         onChange={(e) => setFormData({ ...formData, rider_lng: getNumericValue(e.target.value) })}
                       />
                     ) : (

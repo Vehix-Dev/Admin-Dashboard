@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createRoadie } from "@/lib/api"
+import { createRoadie, adminUploadForUser, IMAGE_TYPES } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Save } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { ArrowLeft, Save, Upload, X } from "lucide-react"
 import Link from "next/link"
 
 export default function AddRoadiePage() {
@@ -23,12 +24,36 @@ export default function AddRoadiePage() {
         is_approved: true
     })
 
+    const [imageFiles, setImageFiles] = useState<{ [key: string]: File | null }>({
+        [IMAGE_TYPES.PROFILE]: null,
+        [IMAGE_TYPES.NIN_FRONT]: null,
+        [IMAGE_TYPES.NIN_BACK]: null,
+        [IMAGE_TYPES.LICENSE]: null,
+    })
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target
+
+        let finalValue = type === "checkbox" ? checked : value
+
+        // Capitalize NIN
+        if (name === "nin") {
+            finalValue = (value as string).toUpperCase()
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: type === "checkbox" ? checked : value
+            [name]: finalValue
         }))
+    }
+
+    const handleFileChange = (type: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setImageFiles(prev => ({
+                ...prev,
+                [type]: e.target.files![0]
+            }))
+        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -36,6 +61,17 @@ export default function AddRoadiePage() {
         setIsSubmitting(true)
 
         try {
+            // NIN Validation
+            if (formData.nin.length !== 14) {
+                toast({
+                    title: "Validation Error",
+                    description: "NIN must be exactly 14 characters long.",
+                    variant: "destructive"
+                })
+                setIsSubmitting(false)
+                return
+            }
+
             // Basic validation
             if (!formData.first_name || !formData.last_name || !formData.email) {
                 toast({
@@ -43,14 +79,35 @@ export default function AddRoadiePage() {
                     description: "Please fill in required fields",
                     variant: "destructive"
                 })
+                setIsSubmitting(false)
                 return
             }
 
-            await createRoadie(formData)
+            const newRoadie = await createRoadie(formData)
+
+            // Upload Images if any
+            const uploadPromises = Object.entries(imageFiles).map(async ([type, file]) => {
+                if (file) {
+                    try {
+                        await adminUploadForUser(
+                            file,
+                            newRoadie.external_id,
+                            type,
+                            `Initial ${type} upload`,
+                            true // Auto approve uploaded docs by admin
+                        )
+                    } catch (uploadErr) {
+                        console.error(`Failed to upload ${type}:`, uploadErr)
+                        // Don't fail the whole process if one image fails, but log it
+                    }
+                }
+            })
+
+            await Promise.all(uploadPromises)
 
             toast({
                 title: "Success",
-                description: "Provider created successfully"
+                description: "Provider created and documents uploaded successfully"
             })
 
             // Redirect back to roadies list
@@ -204,6 +261,66 @@ export default function AddRoadiePage() {
                         <label htmlFor="is_approved" className="text-sm font-medium text-gray-700">
                             Activate Roadie immediately
                         </label>
+                    </div>
+
+                    {/* Image Uploads Section */}
+                    <div className="pt-6 border-t">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Documents & Images</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Profile Picture */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                                <div className="flex items-center gap-4">
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleFileChange(IMAGE_TYPES.PROFILE, e)}
+                                    />
+                                </div>
+                                {imageFiles[IMAGE_TYPES.PROFILE] && (
+                                    <p className="text-xs text-green-600 mt-1">Selected: {imageFiles[IMAGE_TYPES.PROFILE]?.name}</p>
+                                )}
+                            </div>
+
+                            {/* NIN Front */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">NIN Front</label>
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileChange(IMAGE_TYPES.NIN_FRONT, e)}
+                                />
+                                {imageFiles[IMAGE_TYPES.NIN_FRONT] && (
+                                    <p className="text-xs text-green-600 mt-1">Selected: {imageFiles[IMAGE_TYPES.NIN_FRONT]?.name}</p>
+                                )}
+                            </div>
+
+                            {/* NIN Back */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">NIN Back</label>
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileChange(IMAGE_TYPES.NIN_BACK, e)}
+                                />
+                                {imageFiles[IMAGE_TYPES.NIN_BACK] && (
+                                    <p className="text-xs text-green-600 mt-1">Selected: {imageFiles[IMAGE_TYPES.NIN_BACK]?.name}</p>
+                                )}
+                            </div>
+
+                            {/* License */}
+                            <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Driver License</label>
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileChange(IMAGE_TYPES.LICENSE, e)}
+                                />
+                                {imageFiles[IMAGE_TYPES.LICENSE] && (
+                                    <p className="text-xs text-green-600 mt-1">Selected: {imageFiles[IMAGE_TYPES.LICENSE]?.name}</p>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Form Actions */}

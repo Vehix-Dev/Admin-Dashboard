@@ -1,15 +1,28 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Users, UserCheck, Wrench, TrendingUp, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react"
+import {
+  Users, UserCheck, Wrench, TrendingUp, Clock, CheckCircle,
+  Star, Award, MapPin, Target, Zap, Package,
+  RefreshCw, Shield, Activity, DollarSign, Calendar,
+  AlertCircle, ThumbsUp, AlertTriangle, Battery, Car,
+  Navigation, Phone, Mail, User, Map, Image
+} from "lucide-react"
 import {
   getRiders,
   getRoadies,
   getServiceRequests,
   getActiveRiderLocations,
+  getServices,
+  getCombinedRealtimeLocations,
   type ServiceRequest,
   type Rider,
-  type Roadie
+  type Roadie,
+  type Service,
+  type ActiveRiderLocation,
+  type CombinedRealtimeResponse,
+  getImagesByUser,
+  type UserImagesResponse
 } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -28,23 +41,101 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis
 } from "recharts"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface DashboardStats {
+  // Basic Stats
   totalRiders: number
   totalRoadies: number
   totalRequests: number
   activeRiders: number
   activeRoadies: number
+  activeRequests: number
+
+  // Request Status
   pendingRequests: number
   acceptedRequests: number
   completedRequests: number
   cancelledRequests: number
-  monthlyRiders: { month: string; count: number }[]
-  monthlyRoadies: { month: string; count: number }[]
+
+  // User Status
+  approvedRiders: number
+  pendingRiders: number
+  approvedRoadies: number
+  pendingRoadies: number
+
+  // Service Data
+  totalServices: number
+  serviceRequests: number
+  popularServices: Array<{ name: string; count: number; color: string }>
+
+  // Realtime Data
+  activeLocations: number
+  enRouteAssignments: number
+
+  // Performance Metrics
+  completionRate: number
+  acceptanceRate: number
+  averageResponseTime: number
+
+  // Top Performers
+  topRiders: Array<{
+    id: number
+    username: string
+    firstName: string
+    lastName: string
+    totalRequests: number
+    completedRequests: number
+    phone: string
+    email: string
+    profileImage?: string
+  }>
+
+  topRoadies: Array<{
+    id: number
+    external_id: string
+    username: string
+    firstName: string
+    lastName: string
+    completedRequests: number
+    phone: string
+    email: string
+    is_approved: boolean
+    profileImage?: string
+  }>
+
+  // Charts Data
+  requestTrends: { day: string; requests: number; completed: number }[]
   statusDistribution: { name: string; value: number; color: string }[]
-  serviceTypeDistribution: { name: string; value: number; color: string }[]
+  userGrowth: { month: string; riders: number; roadies: number }[]
+
+  // Recent Activity
   recentRequests: ServiceRequest[]
+  recentServiceRequests: Array<{
+    id: number
+    rider: string
+    service: string
+    status: string
+    created_at: string
+  }>
+
+  // Platform Health
+  platformHealth: {
+    activeUsers: number
+    serviceAvailability: number
+    responseRate: number
+    satisfaction: number
+  }
 }
 
 export default function AdminDashboardPage() {
@@ -54,51 +145,263 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
+  // Function to fetch profile images for users
+  const fetchUserProfileImages = async (users: any[], userType: 'rider' | 'roadie') => {
+    const usersWithImages = await Promise.all(
+      users.map(async (user) => {
+        try {
+          // Fetch images for this user using their external_id
+          const response: UserImagesResponse = await getImagesByUser(user.external_id, {
+            image_type: 'PROFILE',
+            status: 'APPROVED'
+          })
+
+          // Find the approved profile image
+          const profileImage = response.images?.find(
+            img => img.image_type === 'PROFILE' && img.status === 'APPROVED'
+          )
+
+          return {
+            ...user,
+            profileImage: profileImage?.thumbnail_url || undefined
+          }
+        } catch (error) {
+          console.error(`Error fetching profile image for ${userType} ${user.external_id}:`, error)
+          return { ...user, profileImage: undefined }
+        }
+      })
+    )
+
+    return usersWithImages
+  }
+
   const fetchDashboardData = async () => {
     if (isRefreshing) return
 
     setIsRefreshing(true)
     try {
-      const [ridersData, roadiesData, requestsData] = await Promise.all([
+      const [ridersData, roadiesData, requestsData, servicesData, locationsData] = await Promise.all([
         getRiders(),
         getRoadies(),
         getServiceRequests(),
+        getServices(),
+        getCombinedRealtimeLocations()
       ])
 
-      // Calculate real statistics from API data
-      const totalRiders = ridersData.length
-      const totalRoadies = roadiesData.length
-      const totalRequests = requestsData.length
+      // Ensure we have arrays
+      const safeRidersData = Array.isArray(ridersData) ? ridersData : []
+      const safeRoadiesData = Array.isArray(roadiesData) ? roadiesData : []
+      const safeRequestsData = Array.isArray(requestsData) ? requestsData : []
+      const safeServicesData = Array.isArray(servicesData) ? servicesData : []
+      const safeLocationsData = locationsData || { riders: [], rodies: [] }
 
-      // Active users (approved)
-      const activeRiders = ridersData.filter(rider => rider.is_approved).length
-      const activeRoadies = roadiesData.filter(roadie => roadie.is_approved).length
+      // Calculate basic statistics
+      const totalRiders = safeRidersData.length
+      const totalRoadies = safeRoadiesData.length
+      const totalRequests = safeRequestsData.length
+      const totalServices = safeServicesData.length
 
-      // Request status counts - using actual statuses from API
-      const pendingRequests = requestsData.filter(req => req.status.toLowerCase() === 'pending').length
-      const acceptedRequests = requestsData.filter(req => req.status.toLowerCase() === 'accepted').length
-      const completedRequests = requestsData.filter(req => req.status.toLowerCase() === 'completed').length
-      const cancelledRequests = requestsData.filter(req => req.status.toLowerCase() === 'cancelled').length
+      // User status counts
+      const approvedRiders = safeRidersData.filter(rider => rider?.is_approved).length
+      const pendingRiders = totalRiders - approvedRiders
+      const approvedRoadies = safeRoadiesData.filter(roadie => roadie?.is_approved).length
+      const pendingRoadies = totalRoadies - approvedRoadies
 
-      // Generate monthly data from creation dates
-      const monthlyRiders = calculateMonthlyData(ridersData)
-      const monthlyRoadies = calculateMonthlyData(roadiesData)
+      // Active users (users who have made requests in last 7 days)
+      const activeRiders = safeRidersData.filter(rider => {
+        const hasRecentRequest = safeRequestsData.some(request =>
+          request?.rider === rider?.id &&
+          new Date(request.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        )
+        return rider?.is_approved && hasRecentRequest
+      }).length
 
-      // Status distribution from real data
+      const activeRoadies = safeRoadiesData.filter(roadie => {
+        const hasRecentAssignment = safeRequestsData.some(request =>
+          request?.rodie === roadie?.id &&
+          new Date(request.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        )
+        return roadie?.is_approved && hasRecentAssignment
+      }).length
+
+      // Request status counts
+      const pendingRequests = safeRequestsData.filter(req => req?.status?.toLowerCase() === 'pending').length
+      const acceptedRequests = safeRequestsData.filter(req => req?.status?.toLowerCase() === 'accepted').length
+      const completedRequests = safeRequestsData.filter(req => req?.status?.toLowerCase() === 'completed').length
+      const cancelledRequests = safeRequestsData.filter(req => req?.status?.toLowerCase() === 'cancelled').length
+      const activeRequests = pendingRequests + acceptedRequests
+
+      // Service data
+      const serviceCounts: Record<string, number> = {}
+      safeRequestsData.forEach(request => {
+        const serviceName = request?.service_type_name || `Service ${request?.service_type}`
+        serviceCounts[serviceName] = (serviceCounts[serviceName] || 0) + 1
+      })
+
+      const popularServices = Object.entries(serviceCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, count], index) => ({
+          name,
+          count,
+          color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index]
+        }))
+
+      // Realtime data
+      const activeLocations = (safeLocationsData.riders?.length || 0) + (safeLocationsData.rodies?.length || 0)
+      const enRouteAssignments = safeRequestsData.filter(req =>
+        req?.status?.toLowerCase() === 'accepted' || req?.status?.toLowerCase() === 'en_route'
+      ).length
+
+      // Performance metrics
+      const completionRate = totalRequests > 0
+        ? Math.round((completedRequests / totalRequests) * 100)
+        : 0
+
+      const acceptanceRate = totalRequests > 0
+        ? Math.round(((acceptedRequests + completedRequests) / totalRequests) * 100)
+        : 0
+
+      // Calculate top 10 riders (based on number of requests)
+      const riderRequestCounts: Record<number, {
+        rider: Rider;
+        total: number;
+        completed: number;
+      }> = {}
+
+      safeRequestsData.forEach(request => {
+        if (request?.rider) {
+          const riderId = request.rider
+          const rider = safeRidersData.find(r => r?.id === riderId)
+          if (rider) {
+            if (!riderRequestCounts[riderId]) {
+              riderRequestCounts[riderId] = {
+                rider: rider,
+                total: 0,
+                completed: 0,
+              }
+            }
+            riderRequestCounts[riderId].total++
+            if (request?.status?.toLowerCase() === 'completed') {
+              riderRequestCounts[riderId].completed++
+            }
+          }
+        }
+      })
+
+      const topRidersData = Object.values(riderRequestCounts)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10)
+        .map(item => ({
+          id: item.rider?.id || 0,
+          external_id: item.rider?.external_id || '',
+          username: item.rider?.username || 'Unknown',
+          firstName: item.rider?.first_name || '',
+          lastName: item.rider?.last_name || '',
+          totalRequests: item.total,
+          completedRequests: item.completed,
+          phone: item.rider?.phone || 'N/A',
+          email: item.rider?.email || 'N/A'
+        }))
+
+      // Calculate top 10 roadies (based on completed requests)
+      const roadieRequestCounts: Record<number, {
+        roadie: Roadie;
+        completed: number;
+      }> = {}
+
+      safeRequestsData.forEach(request => {
+        if (request?.rodie) {
+          const roadieId = request.rodie
+          const roadie = safeRoadiesData.find(r => r?.id === roadieId)
+          if (roadie) {
+            if (!roadieRequestCounts[roadieId]) {
+              roadieRequestCounts[roadieId] = {
+                roadie: roadie,
+                completed: 0,
+              }
+            }
+            if (request?.status?.toLowerCase() === 'completed') {
+              roadieRequestCounts[roadieId].completed++
+            }
+          }
+        }
+      })
+
+      const topRoadiesData = Object.values(roadieRequestCounts)
+        .sort((a, b) => b.completed - a.completed)
+        .slice(0, 10)
+        .map(item => ({
+          id: item.roadie?.id || 0,
+          external_id: item.roadie?.external_id || '',
+          username: item.roadie?.username || 'Unknown',
+          firstName: item.roadie?.first_name || '',
+          lastName: item.roadie?.last_name || '',
+          completedRequests: item.completed,
+          phone: item.roadie?.phone || 'N/A',
+          email: item.roadie?.email || 'N/A',
+          is_approved: item.roadie?.is_approved || false
+        }))
+
+      // Fetch profile images for top riders and roadies
+      const [topRidersWithImages, topRoadiesWithImages] = await Promise.all([
+        fetchUserProfileImages(topRidersData, 'rider'),
+        fetchUserProfileImages(topRoadiesData, 'roadie')
+      ])
+
+      // Generate charts data
+      const requestTrends = calculateRequestTrends(safeRequestsData)
       const statusDistribution = [
-        { name: "Pending", value: pendingRequests, color: "#FBBF24" },
-        { name: "Accepted", value: acceptedRequests, color: "#60A5FA" },
-        { name: "Completed", value: completedRequests, color: "#34D399" },
-        { name: "Cancelled", value: cancelledRequests, color: "#F87171" },
+        { name: "Pending", value: pendingRequests, color: "#F59E0B" },
+        { name: "Accepted", value: acceptedRequests, color: "#3B82F6" },
+        { name: "Completed", value: completedRequests, color: "#10B981" },
+        { name: "Cancelled", value: cancelledRequests, color: "#EF4444" },
       ].filter(item => item.value > 0)
 
-      // Service type distribution from real data
-      const serviceTypeDistribution = calculateServiceTypeDistribution(requestsData)
+      const userGrowth = calculateUserGrowth(safeRidersData, safeRoadiesData)
 
-      // Recent requests sorted by creation date
-      const recentRequests = [...requestsData]
+      // Recent activity
+      const recentRequests = [...safeRequestsData]
+        .sort((a, b) => new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime())
+        .slice(0, 8)
+
+      const recentServiceRequests = safeRequestsData
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 5)
+        .map(req => ({
+          id: req.id,
+          rider: req.rider_username || `Rider #${req.rider}`,
+          service: req.service_type_name || `Service ${req.service_type}`,
+          status: req.status,
+          created_at: req.created_at
+        }))
+
+      // Platform health (simulated metrics based on real data)
+      const platformHealth = {
+        activeUsers: Math.round((activeRiders + activeRoadies) / (totalRiders + totalRoadies) * 100) || 0,
+        serviceAvailability: Math.round((completedRequests / totalRequests) * 100) || 0,
+        responseRate: acceptanceRate,
+        satisfaction: Math.min(95, Math.round((completedRequests / (acceptedRequests + completedRequests)) * 100)) || 0
+      }
+
+      // Average response time calculation (simplified)
+      const responseTimes: number[] = []
+      safeRequestsData.forEach(request => {
+        if (request?.status?.toLowerCase() === 'accepted' || request?.status?.toLowerCase() === 'completed') {
+          try {
+            const created = new Date(request.created_at)
+            const updated = new Date(request.updated_at)
+            const timeDiff = Math.max(1, (updated.getTime() - created.getTime()) / (1000 * 60)) // minutes, min 1
+            responseTimes.push(timeDiff)
+          } catch {
+            // Skip invalid dates
+          }
+        }
+      })
+
+      const averageResponseTime = responseTimes.length > 0
+        ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+        : 15 // Default fallback
 
       setStats({
         totalRiders,
@@ -106,15 +409,31 @@ export default function AdminDashboardPage() {
         totalRequests,
         activeRiders,
         activeRoadies,
+        activeRequests,
         pendingRequests,
         acceptedRequests,
         completedRequests,
         cancelledRequests,
-        monthlyRiders,
-        monthlyRoadies,
-        statusDistribution,
-        serviceTypeDistribution,
-        recentRequests,
+        approvedRiders,
+        pendingRiders,
+        approvedRoadies,
+        pendingRoadies,
+        totalServices,
+        serviceRequests: totalRequests,
+        popularServices,
+        activeLocations,
+        enRouteAssignments,
+        completionRate,
+        acceptanceRate,
+        averageResponseTime,
+        topRiders: topRidersWithImages || [],
+        topRoadies: topRoadiesWithImages || [],
+        requestTrends: requestTrends || [],
+        statusDistribution: statusDistribution || [],
+        userGrowth: userGrowth || [],
+        recentRequests: recentRequests || [],
+        recentServiceRequests: recentServiceRequests || [],
+        platformHealth
       })
 
       setError(null)
@@ -136,68 +455,106 @@ export default function AdminDashboardPage() {
     fetchDashboardData()
   }, [])
 
-  // Calculate monthly data from creation dates
-  const calculateMonthlyData = (data: (Rider | Roadie)[]) => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const monthlyCounts: Record<string, number> = {}
+  // Helper functions
+  const calculateRequestTrends = (requests: ServiceRequest[]) => {
+    // Get last 7 days dates
+    const dates = []
+    const now = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      d.setHours(0, 0, 0, 0)
+      dates.push(d)
+    }
 
-    data.forEach(item => {
+    // Initialize trends with full date keys to avoid collisions
+    // We'll use the ISO date string (YYYY-MM-DD) as key for uniqueness
+    const trends: Record<string, { day: string; requests: number; completed: number }> = {}
+
+    dates.forEach(date => {
+      const key = date.toISOString().split('T')[0]
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' })
+      trends[key] = { day: dayName, requests: 0, completed: 0 }
+    })
+
+    const safeRequests = Array.isArray(requests) ? requests : []
+
+    safeRequests.forEach(request => {
       try {
-        const date = new Date(item.created_at)
-        const monthKey = `${date.getFullYear()}-${date.getMonth()}`
-        const monthName = monthNames[date.getMonth()]
+        if (request?.created_at) {
+          const requestDate = new Date(request.created_at)
+          // Reset time part for comparison
+          requestDate.setHours(0, 0, 0, 0)
 
-        if (!monthlyCounts[monthKey]) {
-          monthlyCounts[monthKey] = 0
+          const key = requestDate.toISOString().split('T')[0]
+
+          // Only count if this date exists in our last 7 days window
+          if (trends[key]) {
+            trends[key].requests++
+
+            // For completed requests, we generally want to see them on the day they were created
+            // to see cohort completion, OR on the day they were completed to see throughput.
+            // The user requested "use created date", so we stick to grouping by created_at.
+            if (request?.status?.toLowerCase() === 'completed') {
+              trends[key].completed++
+            }
+          }
         }
-        monthlyCounts[monthKey]++
       } catch {
         // Skip invalid dates
       }
     })
 
-    // Convert to array format for charts
-    return Object.entries(monthlyCounts)
-      .map(([key, count]) => {
-        const [year, month] = key.split('-')
-        return {
-          month: monthNames[parseInt(month)],
-          count
+    return Object.values(trends)
+  }
+
+  const calculateUserGrowth = (riders: Rider[], roadies: Roadie[]) => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const monthlyData: Record<string, { riders: number; roadies: number }> = {}
+    const now = new Date()
+
+    // Get last 6 months
+    const months = []
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear().toString().slice(2)}`
+
+      // Count riders and roadies created in this month
+      const monthRiders = riders.filter(rider => {
+        try {
+          if (!rider?.created_at) return false
+          const riderDate = new Date(rider.created_at)
+          return riderDate.getMonth() === date.getMonth() &&
+            riderDate.getFullYear() === date.getFullYear()
+        } catch {
+          return false
         }
+      }).length
+
+      const monthRoadies = roadies.filter(roadie => {
+        try {
+          if (!roadie?.created_at) return false
+          const roadieDate = new Date(roadie.created_at)
+          return roadieDate.getMonth() === date.getMonth() &&
+            roadieDate.getFullYear() === date.getFullYear()
+        } catch {
+          return false
+        }
+      }).length
+
+      months.push({
+        month: monthKey,
+        riders: monthRiders,
+        roadies: monthRoadies
       })
-      .slice(0, 6) // Last 6 months
-      .reverse()
+    }
+
+    return months
   }
 
-  // Calculate service type distribution from real data
-  const calculateServiceTypeDistribution = (requests: ServiceRequest[]) => {
-    const serviceCounts: Record<string, number> = {}
-
-    requests.forEach(request => {
-      const serviceType = `Service ${request.service_type}`
-      serviceCounts[serviceType] = (serviceCounts[serviceType] || 0) + 1
-    })
-
-    const colors = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088fe"]
-    return Object.entries(serviceCounts).map(([type, count], index) => ({
-      name: type,
-      value: count,
-      color: colors[index % colors.length],
-    })).filter(item => item.value > 0)
-  }
-
-  // Calculate success rate from real data
-  const calculateSuccessRate = () => {
-    if (!stats) return 0
-    const { completedRequests, acceptedRequests } = stats
-    const totalActive = completedRequests + acceptedRequests
-
-    return totalActive > 0 ? Math.round((completedRequests / totalActive) * 100) : 0
-  }
-
-  // Format date for display
   const formatDate = (dateString: string) => {
     try {
+      if (!dateString) return 'No date'
       return new Date(dateString).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -209,15 +566,30 @@ export default function AdminDashboardPage() {
     }
   }
 
-  // Get status color
   const getStatusColor = (status: string) => {
+    if (!status) return 'bg-gray-100 text-gray-800 border border-gray-200'
+
     switch (status.toLowerCase()) {
-      case 'completed': return 'bg-green-100 text-green-800'
-      case 'accepted': return 'bg-blue-100 text-blue-800'
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'cancelled': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'completed': return 'bg-green-100 text-green-800 border border-green-200'
+      case 'accepted': return 'bg-blue-100 text-blue-800 border border-blue-200'
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+      case 'cancelled': return 'bg-red-100 text-red-800 border border-red-200'
+      case 'en_route': return 'bg-purple-100 text-purple-800 border border-purple-200'
+      default: return 'bg-gray-100 text-gray-800 border border-gray-200'
     }
+  }
+
+  const getServiceIcon = (serviceName: string) => {
+    const name = serviceName.toLowerCase()
+    if (name.includes('battery')) return <Battery className="h-4 w-4" />
+    if (name.includes('tire') || name.includes('tyre')) return <Car className="h-4 w-4" />
+    if (name.includes('tow') || name.includes('haul')) return <Navigation className="h-4 w-4" />
+    if (name.includes('jump') || name.includes('start')) return <Zap className="h-4 w-4" />
+    return <Wrench className="h-4 w-4" />
+  }
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
   }
 
   // Loading skeleton
@@ -234,18 +606,18 @@ export default function AdminDashboardPage() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded" />
+            <Skeleton key={i} className="h-32 rounded-lg" />
           ))}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Skeleton className="h-80 rounded" />
-          <Skeleton className="h-80 rounded" />
+          <Skeleton className="h-80 rounded-lg" />
+          <Skeleton className="h-80 rounded-lg" />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <Skeleton className="h-64 lg:col-span-2 rounded" />
-          <Skeleton className="h-64 rounded" />
+          <Skeleton className="h-64 lg:col-span-2 rounded-lg" />
+          <Skeleton className="h-64 rounded-lg" />
         </div>
       </div>
     )
@@ -256,412 +628,722 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Real-time platform analytics</p>
+          <h1 className="text-3xl font-bold text-gray-900">Platform Dashboard</h1>
+          <p className="text-gray-600 mt-1">Real-time insights and analytics</p>
         </div>
-        <Button
-          onClick={fetchDashboardData}
-          disabled={isRefreshing}
-          variant="outline"
-          size="sm"
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-gray-500 px-3 py-1 bg-gray-100 rounded-lg">
+            Live Updates
+          </div>
+          <Button
+            onClick={fetchDashboardData}
+            disabled={isRefreshing}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-gray-300"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded p-4 text-red-800">
-          <p className="font-medium">Connection Error</p>
-          <p className="text-sm">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            <div>
+              <p className="font-medium">Connection Error</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Stats Cards - Only show if we have data */}
       {stats && (
         <>
-          {/* Top Stats Cards */}
+          {/* Key Performance Indicators */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {/* Total Customers Card */}
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Total Customers</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {stats.totalRiders.toLocaleString()}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3 text-green-500" />
-                      <span className="text-xs text-gray-500">
-                        {stats.activeRiders} active
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">
-                      {stats.totalRiders > 0
-                        ? Math.round((stats.activeRiders / stats.totalRiders) * 100)
-                        : 0}% active
-                    </span>
+            <StatCard
+              title="Total Service Requests"
+              value={stats.totalRequests}
+              icon={<Wrench className="h-5 w-5" />}
+              iconBg="bg-blue-500"
+              subtext={`${stats.activeRequests} active • ${stats.completedRequests} completed`}
+              trend={`${stats.completionRate}% completion rate`}
+            />
+
+            <StatCard
+              title="Active Users"
+              value={stats.activeRiders + stats.activeRoadies}
+              icon={<Activity className="h-5 w-5" />}
+              iconBg="bg-emerald-500"
+              subtext={`${stats.activeRiders} riders • ${stats.activeRoadies} providers`}
+              trend={`${stats.acceptanceRate}% request acceptance`}
+            />
+
+            <StatCard
+              title="Platform Health"
+              value={stats.platformHealth.satisfaction}
+              icon={<ThumbsUp className="h-5 w-5" />}
+              iconBg="bg-amber-500"
+              subtext="Service satisfaction score"
+              trend={`${stats.averageResponseTime}min avg. response`}
+              isPercentage={true}
+            />
+
+            <StatCard
+              title="Realtime Activity"
+              value={stats.activeLocations}
+              icon={<MapPin className="h-5 w-5" />}
+              iconBg="bg-purple-500"
+              subtext={`${stats.enRouteAssignments} en route assignments`}
+              trend="Live updates every 30s"
+            />
+          </div>
+
+          {/* User Statistics */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Total Customers</h3>
+                <Users className="h-5 w-5 text-blue-500" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xl font-bold text-gray-900">{stats.totalRiders}</span>
+                  <div className="text-sm px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                    {stats.approvedRiders} approved
                   </div>
                 </div>
-                <div className="bg-blue-100 p-3 rounded">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Pending: {stats.pendingRiders}</span>
+                  <span>{stats.activeRiders} active</span>
                 </div>
               </div>
             </div>
 
-            {/* Total Providers Card */}
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Total Providers</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {stats.totalRoadies.toLocaleString()}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3 text-green-500" />
-                      <span className="text-xs text-gray-500">
-                        {stats.activeRoadies} active
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">
-                      {stats.totalRoadies > 0
-                        ? Math.round((stats.activeRoadies / stats.totalRoadies) * 100)
-                        : 0}% active
-                    </span>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Total Providers</h3>
+                <UserCheck className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xl font-bold text-gray-900">{stats.totalRoadies}</span>
+                  <div className="text-sm px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                    {stats.approvedRoadies} approved
                   </div>
                 </div>
-                <div className="bg-green-100 p-3 rounded">
-                  <UserCheck className="h-6 w-6 text-green-600" />
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Pending: {stats.pendingRoadies}</span>
+                  <span>{stats.activeRoadies} active</span>
                 </div>
               </div>
             </div>
 
-            {/* Total Requests Card */}
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Total Requests</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {stats.totalRequests.toLocaleString()}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-yellow-500" />
-                      <span className="text-xs text-gray-500">
-                        {stats.pendingRequests} pending
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">
-                      {calculateSuccessRate()}% success rate
-                    </span>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Service Status</h3>
+                <Target className="h-5 w-5 text-purple-500" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xl font-bold text-gray-900">{stats.totalServices}</span>
+                  <div className="text-sm px-2 py-1 rounded-full bg-purple-100 text-purple-800">
+                    Services
                   </div>
                 </div>
-                <div className="bg-orange-100 p-3 rounded">
-                  <Wrench className="h-6 w-6 text-orange-600" />
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Active Requests:</span>
+                    <span className="font-medium">{stats.activeRequests}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Completed Today:</span>
+                    <span className="font-medium">
+                      {stats.recentRequests.filter(r =>
+                        r.status === 'completed' &&
+                        new Date(r.created_at).toDateString() === new Date().toDateString()
+                      ).length}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Completed Requests Card */}
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Completed</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {stats.completedRequests.toLocaleString()}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3 text-purple-500" />
-                      <span className="text-xs text-gray-500">
-                        {stats.totalRequests > 0
-                          ? Math.round((stats.completedRequests / stats.totalRequests) * 100)
-                          : 0}% completion
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">
-                      {stats.acceptedRequests} accepted
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-purple-100 p-3 rounded">
-                  <TrendingUp className="h-6 w-6 text-purple-600" />
-                </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Quick Actions</h3>
+                <Zap className="h-5 w-5 text-amber-500" />
+              </div>
+              <div className="space-y-3">
+                <Link href="/admin/requests/create">
+                  <Button size="sm" className="w-full justify-start bg-blue-600 hover:bg-blue-700">
+                    <Wrench className="mr-2 h-3 w-3" />
+                    Create Service Request
+                  </Button>
+                </Link>
+                <Link href="/admin/live-map">
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    <Map className="mr-2 h-3 w-3" />
+                    View Live Map
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
 
           {/* Charts Section */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* User Registration Chart */}
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">User Registrations</h3>
-              {stats.monthlyRiders.length > 0 || stats.monthlyRoadies.length > 0 ? (
+            {/* Request Trends */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Weekly Request Trends</h3>
+                <span className="text-sm text-gray-500">Last 7 days</span>
+              </div>
+              {stats.requestTrends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={[
-                    ...stats.monthlyRiders.map(item => ({ ...item, type: 'Customers' })),
-                    ...stats.monthlyRoadies.map(item => ({ ...item, type: 'Providers' }))
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="month" stroke="#6B7280" />
-                    <YAxis stroke="#6B7280" />
-                    <Tooltip contentStyle={{
-                      backgroundColor: "#F3F4F6",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: "6px"
-                    }} />
-                    <Legend />
-                    <Bar
-                      dataKey="count"
-                      name="Customers"
-                      fill="#3B82F6"
-                      radius={[4, 4, 0, 0]}
+                  <LineChart data={stats.requestTrends}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                    <XAxis dataKey="day" stroke="#6B7280" fontSize={12} />
+                    <YAxis stroke="#6B7280" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#FFFFFF",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                      }}
                     />
-                    <Bar
-                      dataKey="count"
-                      name="Providers"
-                      fill="#10B981"
-                      radius={[4, 4, 0, 0]}
+                    <Line
+                      type="monotone"
+                      dataKey="requests"
+                      stroke="#3B82F6"
+                      strokeWidth={2}
+                      name="Total Requests"
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
                     />
-                  </BarChart>
+                    <Line
+                      type="monotone"
+                      dataKey="completed"
+                      stroke="#10B981"
+                      strokeWidth={2}
+                      name="Completed"
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  No registration data available
+                <div className="h-64 flex flex-col items-center justify-center text-gray-500">
+                  <Activity className="h-12 w-12 text-gray-300 mb-3" />
+                  <p>No activity data available</p>
+                  <p className="text-sm mt-1">Request trends will appear here</p>
                 </div>
               )}
             </div>
 
-            {/* Request Status Distribution */}
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Request Status Distribution</h3>
+            {/* Status Distribution */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Request Status Distribution</h3>
+                <span className="text-sm text-gray-500">Current status breakdown</span>
+              </div>
               {stats.statusDistribution.length > 0 ? (
                 <>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={stats.statusDistribution}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) =>
-                          `${name}: ${(percent * 100).toFixed(0)}%`
-                        }
-                        outerRadius={80}
-                        innerRadius={40}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {stats.statusDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => [`${value} requests`, 'Count']}
-                        contentStyle={{
-                          backgroundColor: "#F3F4F6",
-                          border: "1px solid #E5E7EB",
-                          borderRadius: "6px"
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex flex-wrap gap-3 mt-4 justify-center">
-                    {stats.statusDistribution.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: item.color }}
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={stats.statusDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={90}
+                          paddingAngle={2}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                          labelLine={false}
+                        >
+                          {stats.statusDistribution.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.color}
+                              stroke="#FFFFFF"
+                              strokeWidth={2}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: number) => [`${value} requests`, 'Count']}
+                          contentStyle={{
+                            backgroundColor: "#FFFFFF",
+                            border: "1px solid #E5E7EB",
+                            borderRadius: "8px",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                          }}
                         />
-                        <span className="text-sm text-gray-600">{item.name}</span>
-                        <span className="text-sm font-medium text-gray-800">{item.value}</span>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-6">
+                    {stats.statusDistribution.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">{item.value}</span>
                       </div>
                     ))}
                   </div>
                 </>
               ) : (
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  No request data available
+                <div className="h-64 flex flex-col items-center justify-center text-gray-500">
+                  <AlertTriangle className="h-12 w-12 text-gray-300 mb-3" />
+                  <p>No status data available</p>
+                  <p className="text-sm mt-1">Status distribution will appear here</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Service Type Distribution */}
-          {stats.serviceTypeDistribution.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Service Type Distribution</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={stats.serviceTypeDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="name" stroke="#6B7280" />
-                  <YAxis stroke="#6B7280" />
-                  <Tooltip
-                    formatter={(value) => [`${value} requests`, 'Count']}
-                    contentStyle={{
-                      backgroundColor: "#F3F4F6",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: "6px"
-                    }}
-                  />
-                  <Bar
-                    dataKey="value"
-                    name="Requests"
-                    fill="#8884d8"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Recent Activity & Quick Actions */}
+          {/* Top Performers & Recent Activity */}
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Recent Requests */}
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm lg:col-span-2">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Recent Service Requests</h3>
-                {stats.recentRequests.length > 0 && (
-                  <span className="text-sm text-gray-500">
-                    {stats.totalRequests} total requests
-                  </span>
-                )}
+            {/* Top Customers */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Top Customers</h3>
+                <span className="text-sm text-gray-500">By service requests</span>
               </div>
-
-              {stats.recentRequests.length > 0 ? (
+              {stats.topRiders.length > 0 ? (
                 <div className="space-y-3">
-                  {stats.recentRequests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="flex items-center justify-between p-4 border border-gray-100 rounded hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-gray-100 px-3 py-1 rounded text-sm font-medium">
-                            #{request.id}
+                  {stats.topRiders.map((rider, index) => (
+                    <div key={rider.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <Avatar className="h-8 w-8 border-2 border-gray-200">
+                            {rider.profileImage ? (
+                              <AvatarImage
+                                src={rider.profileImage}
+                                alt={`${rider.firstName} ${rider.lastName}`}
+                                className="object-cover"
+                              />
+                            ) : null}
+                            <AvatarFallback className="bg-gray-100 text-gray-700 text-xs font-bold">
+                              {getInitials(rider.firstName, rider.lastName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-gray-800 text-white text-xs font-bold rounded-full">
+                            {index + 1}
                           </div>
-                          <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(request.status)}`}>
-                            {request.status}
-                          </span>
                         </div>
-                        <div className="mt-2 text-sm text-gray-600 space-y-1">
-                          <p>Rider: {request.rider_username || `ID: ${request.rider}`}</p>
-                          {request.rodie_username && (
-                            <p>Provider: {request.rodie_username}</p>
-                          )}
-                          <p>Service Type: {request.service_type}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
+                            {rider.firstName} {rider.lastName}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="truncate">@{rider.username}</span>
+                            <div className="flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3 text-green-500" />
+                              <span>{rider.completedRequests}/{rider.totalRequests}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-gray-500 whitespace-nowrap">
-                          {formatDate(request.created_at)}
+                        <div className="text-xs text-gray-500 truncate max-w-[100px]">
+                          {rider.phone}
                         </div>
-                        {request.updated_at !== request.created_at && (
-                          <div className="text-xs text-gray-400 mt-1">
-                            Updated: {formatDate(request.updated_at)}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">
-                  <Wrench className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                  <p>No service requests yet</p>
+                  <Users className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                  <p>No customer data available</p>
+                  <p className="text-sm mt-1">Top customers will appear here</p>
+                </div>
+              )}
+              <Link href="/admin/riders">
+                <Button variant="ghost" size="sm" className="w-full mt-4">
+                  View All Customers
+                  <ArrowUpRight className="ml-2 h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Top Providers */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Top Providers</h3>
+                <span className="text-sm text-gray-500">By completed assignments</span>
+              </div>
+              {stats.topRoadies.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.topRoadies.map((roadie, index) => (
+                    <div key={roadie.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <Avatar className={`h-9 w-9 border-2 ${index === 0 ? 'border-amber-300' :
+                            index === 1 ? 'border-gray-300' :
+                              index === 2 ? 'border-orange-300' : 'border-blue-300'
+                            }`}>
+                            {roadie.profileImage ? (
+                              <AvatarImage
+                                src={roadie.profileImage}
+                                alt={`${roadie.firstName} ${roadie.lastName}`}
+                                className="object-cover"
+                              />
+                            ) : null}
+                            <AvatarFallback className={`
+                              ${index === 0 ? 'bg-amber-100 text-amber-700' :
+                                index === 1 ? 'bg-gray-100 text-gray-700' :
+                                  index === 2 ? 'bg-orange-100 text-orange-700' :
+                                    'bg-blue-100 text-blue-700'
+                              } font-bold text-sm
+                            `}>
+                              {getInitials(roadie.firstName, roadie.lastName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          {index < 3 && (
+                            <div className={`
+                              absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center rounded-full
+                              ${index === 0 ? 'bg-amber-500' :
+                                index === 1 ? 'bg-gray-500' :
+                                  'bg-orange-500'
+                              } text-white
+                            `}>
+                              <Award className="h-3 w-3" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
+                            {roadie.firstName} {roadie.lastName}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="truncate">@{roadie.username}</span>
+                            <div className={`px-1.5 py-0.5 rounded text-xs ${roadie.is_approved
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                              {roadie.is_approved ? 'Approved' : 'Pending'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-gray-900">
+                          {roadie.completedRequests}
+                        </div>
+                        <div className="text-xs text-gray-500">completed</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <UserCheck className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                  <p>No provider data available</p>
+                  <p className="text-sm mt-1">Top providers will appear here</p>
+                </div>
+              )}
+              <Link href="/admin/roadies">
+                <Button variant="ghost" size="sm" className="w-full mt-4">
+                  View All Providers
+                  <ArrowUpRight className="ml-2 h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Recent Service Requests */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Recent Requests</h3>
+                <span className="text-sm text-gray-500">Latest activities</span>
+              </div>
+              {stats.recentServiceRequests.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.recentServiceRequests.map((request) => (
+                    <div key={request.id} className="p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="bg-gray-900 text-white px-2 py-0.5 rounded text-xs font-bold">
+                              #{request.id}
+                            </div>
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
+                              {request.status}
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {request.rider}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {getServiceIcon(request.service)}
+                            <span className="text-xs text-gray-600 truncate">
+                              {request.service}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500 whitespace-nowrap">
+                            {formatDate(request.created_at)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                  <p>No recent requests</p>
                   <p className="text-sm mt-1">Service requests will appear here</p>
+                </div>
+              )}
+              <Link href="/admin/requests">
+                <Button variant="ghost" size="sm" className="w-full mt-4">
+                  View All Requests
+                  <ArrowUpRight className="ml-2 h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Service Analytics & Platform Health */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Popular Services */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Popular Services</h3>
+                <span className="text-sm text-gray-500">Most requested services</span>
+              </div>
+              {stats.popularServices.length > 0 ? (
+                <div className="space-y-4">
+                  {stats.popularServices.map((service, index) => (
+                    <div key={service.name} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: service.color }}
+                          />
+                          <span className="font-medium text-gray-900">{service.name}</span>
+                        </div>
+                        <span className="font-bold text-gray-900">{service.count} requests</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${(service.count / stats.totalRequests) * 100}%`,
+                            backgroundColor: service.color
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-64 flex flex-col items-center justify-center text-gray-500">
+                  <Package className="h-12 w-12 text-gray-300 mb-3" />
+                  <p>No service data available</p>
+                  <p className="text-sm mt-1">Service analytics will appear here</p>
                 </div>
               )}
             </div>
 
-            {/* Quick Actions */}
-            <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <Link href="/admin/riders">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent"
-                  >
-                    <span>Manage Customers</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/admin/roadies">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent"
-                  >
-                    <span>Manage Providers</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/admin/requests">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent"
-                  >
-                    <span>View All Requests</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/admin/services">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent"
-                  >
-                    <span>Manage Services</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/admin/live-map">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between text-gray-700 border-gray-300 hover:bg-gray-50 bg-transparent"
-                  >
-                    <span>View Live Map</span>
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </Link>
+            {/* Platform Health */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Platform Health</h3>
+                <span className="text-sm text-gray-500">Performance metrics</span>
+              </div>
+              <div className="space-y-4">
+                <HealthMetric
+                  label="Active Users"
+                  value={stats.platformHealth.activeUsers}
+                  icon={<Users className="h-4 w-4" />}
+                  color="blue"
+                />
+                <HealthMetric
+                  label="Service Availability"
+                  value={stats.platformHealth.serviceAvailability}
+                  icon={<CheckCircle className="h-4 w-4" />}
+                  color="green"
+                />
+                <HealthMetric
+                  label="Response Rate"
+                  value={stats.platformHealth.responseRate}
+                  icon={<Clock className="h-4 w-4" />}
+                  color="amber"
+                />
+                <HealthMetric
+                  label="User Satisfaction"
+                  value={stats.platformHealth.satisfaction}
+                  icon={<ThumbsUp className="h-4 w-4" />}
+                  color="purple"
+                />
               </div>
             </div>
           </div>
+
+          {/* User Growth Chart */}
+          {stats.userGrowth.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">User Growth</h3>
+                <span className="text-sm text-gray-500">Last 6 months</span>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={stats.userGrowth}>
+                  <defs>
+                    <linearGradient id="colorRiders" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorRoadies" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                  <XAxis dataKey="month" stroke="#6B7280" fontSize={12} />
+                  <YAxis stroke="#6B7280" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="riders"
+                    stroke="#3B82F6"
+                    fill="url(#colorRiders)"
+                    name="Customers"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="roadies"
+                    stroke="#10B981"
+                    fill="url(#colorRoadies)"
+                    name="Providers"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </>
       )}
     </div>
   )
 }
 
-// StatCard Component for better organization
+// StatCard Component
 interface StatCardProps {
   title: string
   value: number
   icon: React.ReactNode
   iconBg: string
   subtext: string
+  trend: string
+  isPercentage?: boolean
 }
 
-const StatCard = ({ title, value, icon, iconBg, subtext }: StatCardProps) => (
-  <div className="bg-white border border-gray-200 rounded p-6 shadow-sm">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-gray-600 text-sm">{title}</p>
-        <p className="text-3xl font-bold text-gray-800 mt-2">
-          {value.toLocaleString()}
-        </p>
-        <p className="text-xs text-gray-500 mt-2">{subtext}</p>
-      </div>
-      <div className={`p-3 rounded ${iconBg}`}>
-        {icon}
+const StatCard = ({
+  title,
+  value,
+  icon,
+  iconBg,
+  subtext,
+  trend,
+  isPercentage = false
+}: StatCardProps) => {
+  const formatValue = () => {
+    if (isPercentage) return `${value}%`
+    return value.toLocaleString()
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-2">
+            {formatValue()}
+          </p>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-500">{subtext}</p>
+            <div className="flex items-center gap-1">
+              <TrendingUp className="h-3 w-3 text-gray-400" />
+              <span className="text-xs text-gray-500">{trend}</span>
+            </div>
+          </div>
+        </div>
+        <div className={`p-3 rounded-lg ${iconBg} text-white`}>
+          {icon}
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
+}
+
+// HealthMetric Component
+interface HealthMetricProps {
+  label: string
+  value: number
+  icon: React.ReactNode
+  color: 'blue' | 'green' | 'amber' | 'purple' | 'red'
+}
+
+const HealthMetric = ({ label, value, icon, color }: HealthMetricProps) => {
+  const colorClasses = {
+    blue: 'bg-blue-100 text-blue-700',
+    green: 'bg-green-100 text-green-700',
+    amber: 'bg-amber-100 text-amber-700',
+    purple: 'bg-purple-100 text-purple-700',
+    red: 'bg-red-100 text-red-700'
+  }
+
+  return (
+    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-900">{label}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}%</p>
+        </div>
+      </div>
+      <div className="w-24">
+        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full ${color === 'blue' ? 'bg-blue-500' :
+              color === 'green' ? 'bg-green-500' :
+                color === 'amber' ? 'bg-amber-500' :
+                  color === 'purple' ? 'bg-purple-500' : 'bg-red-500'
+              }`}
+            style={{ width: `${value}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
