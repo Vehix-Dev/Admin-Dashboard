@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { addInquiry } from '@/lib/json-db';
 
 export async function POST(request: Request) {
     try {
@@ -12,8 +12,12 @@ export async function POST(request: Request) {
         }
 
         // Insert into DB
-        const insert = db.prepare('INSERT INTO inquiries (name, email, subject, message) VALUES (?, ?, ?, ?)');
-        insert.run(name, email, subject || '', message);
+        addInquiry({
+            name,
+            email,
+            subject: subject || '',
+            message,
+        });
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -21,3 +25,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+

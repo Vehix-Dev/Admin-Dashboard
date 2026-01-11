@@ -25,3 +25,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local database files
+/data/*.json
+vehix.db
+vehix.db-shm
+vehix.db-wal

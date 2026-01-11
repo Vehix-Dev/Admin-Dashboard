@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getInquiries, deleteInquiry } from '@/lib/json-db';
 
 export async function GET() {
     try {
-        const stmt = db.prepare('SELECT * FROM inquiries ORDER BY created_at DESC');
-        const inquiries = stmt.all();
+        const inquiries = getInquiries();
         return NextResponse.json(inquiries);
     } catch (error) {
         console.error('Fetch Inquiries Error:', error);
@@ -19,8 +18,11 @@ export async function DELETE(request: Request) {
 
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
 
-        const stmt = db.prepare('DELETE FROM inquiries WHERE id = ?');
-        stmt.run(id);
+        const success = deleteInquiry(parseInt(id));
+
+        if (!success) {
+            return NextResponse.json({ error: 'Inquiry not found' }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -28,3 +30,4 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+

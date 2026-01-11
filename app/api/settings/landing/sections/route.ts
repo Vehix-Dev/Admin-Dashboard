@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getLandingSections, addLandingSection, updateLandingSection, deleteLandingSection } from '@/lib/json-db';
 
 export async function GET() {
     try {
-        const stmt = db.prepare('SELECT * FROM landing_sections ORDER BY order_index ASC');
-        const sections = stmt.all();
+        const sections = getLandingSections();
         return NextResponse.json(sections);
     } catch (error) {
         console.error('Fetch Sections Error:', error);
@@ -17,22 +16,17 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { type, title, content, image_url, video_url, order_index, style_config } = body;
 
-        const insert = db.prepare(`
-            INSERT INTO landing_sections (type, title, content, image_url, video_url, order_index, style_config)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        insert.run(
+        const newSection = addLandingSection({
             type,
-            title || null,
-            content || null,
-            image_url || null,
-            video_url || null,
-            order_index || 0,
-            JSON.stringify(style_config || {})
-        );
+            title: title || null,
+            content: content || null,
+            image_url: image_url || null,
+            video_url: video_url || null,
+            order_index: order_index || 0,
+            style_config: JSON.stringify(style_config || {}),
+        });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, section: newSection });
     } catch (error) {
         console.error('Create Section Error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -46,21 +40,18 @@ export async function PUT(request: Request) {
 
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
 
-        const update = db.prepare(`
-            UPDATE landing_sections 
-            SET title = ?, content = ?, image_url = ?, video_url = ?, order_index = ?, style_config = ?
-            WHERE id = ?
-        `);
+        const success = updateLandingSection(id, {
+            title: title || null,
+            content: content || null,
+            image_url: image_url || null,
+            video_url: video_url || null,
+            order_index: order_index || 0,
+            style_config: JSON.stringify(style_config || {}),
+        });
 
-        update.run(
-            title || null,
-            content || null,
-            image_url || null,
-            video_url || null,
-            order_index || 0,
-            JSON.stringify(style_config || {}),
-            id
-        );
+        if (!success) {
+            return NextResponse.json({ error: 'Section not found' }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -76,8 +67,11 @@ export async function DELETE(request: Request) {
 
         if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
 
-        const del = db.prepare('DELETE FROM landing_sections WHERE id = ?');
-        del.run(id);
+        const success = deleteLandingSection(parseInt(id));
+
+        if (!success) {
+            return NextResponse.json({ error: 'Section not found' }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -85,3 +79,4 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
