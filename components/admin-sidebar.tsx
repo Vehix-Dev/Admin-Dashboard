@@ -60,7 +60,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         items: [
           { name: "All Roadies", href: "/admin/roadies", icon: List },
           { name: "Add New", href: "/admin/roadies/add", icon: Plus },
-          { name: "Drivers Total Rides", href: "/admin/roadies/total-services", icon: BarChart },
+          { name: "Drivers Total Assists", href: "/admin/roadies/total-services", icon: BarChart },
         ]
       },
       {
