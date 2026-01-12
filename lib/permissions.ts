@@ -39,6 +39,33 @@ export const PERMISSIONS = {
     // Live Map
     MAP_VIEW: 'map.view',
 
+    // Moderation
+    MEDIA_VIEW: 'media.view',
+    MEDIA_MANAGE: 'media.manage',
+
+    // Notifications
+    NOTIFICATIONS_VIEW: 'notifications.view',
+    NOTIFICATIONS_MANAGE: 'notifications.manage',
+
+    // Referrals
+    REFERRALS_VIEW: 'referrals.view',
+    REFERRALS_MANAGE: 'referrals.manage',
+
+    // Reports
+    REPORTS_VIEW: 'reports.view',
+
+    // Rodie Services
+    RODIE_SERVICES_VIEW: 'rodie_services.view',
+    RODIE_SERVICES_DELETE: 'rodie_services.delete',
+
+    // Wallet
+    WALLET_VIEW: 'wallet.view',
+    WALLET_MANAGE: 'wallet.manage',
+
+    // Support
+    SUPPORT_VIEW: 'support.view',
+    SUPPORT_MANAGE: 'support.manage',
+
     // Settings
     SETTINGS_VIEW: 'settings.view',
     SETTINGS_CHANGE: 'settings.change',
@@ -99,6 +126,21 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         PERMISSIONS.REQUESTS_CHANGE,
         PERMISSIONS.REQUESTS_DELETE,
         PERMISSIONS.REQUESTS_ASSIGN,
+
+        // New Permissions
+        PERMISSIONS.MEDIA_VIEW,
+        PERMISSIONS.MEDIA_MANAGE,
+        PERMISSIONS.NOTIFICATIONS_VIEW,
+        PERMISSIONS.NOTIFICATIONS_MANAGE,
+        PERMISSIONS.REFERRALS_VIEW,
+        PERMISSIONS.REFERRALS_MANAGE,
+        PERMISSIONS.REPORTS_VIEW,
+        PERMISSIONS.RODIE_SERVICES_VIEW,
+        PERMISSIONS.RODIE_SERVICES_DELETE,
+        PERMISSIONS.WALLET_VIEW,
+        PERMISSIONS.WALLET_MANAGE,
+        PERMISSIONS.SUPPORT_VIEW,
+        PERMISSIONS.SUPPORT_MANAGE,
     ],
 
     MANAGER: [

@@ -20,6 +20,8 @@ import { DataTable } from "@/components/management/data-table"
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useCan, PermissionButton } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
@@ -27,6 +29,11 @@ export default function ServicesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const { toast } = useToast()
+
+  // Permission checks
+  const canAdd = useCan(PERMISSIONS.SERVICES_ADD)
+  const canChange = useCan(PERMISSIONS.SERVICES_CHANGE)
+  const canDelete = useCan(PERMISSIONS.SERVICES_DELETE)
 
   const fetchServices = async () => {
     setIsLoading(true)
@@ -243,6 +250,7 @@ export default function ServicesPage() {
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
+            disabled={!canChange}
             className={`data-[state=checked]:bg-green-600 ${!value ? 'bg-gray-300' : ''}`}
             aria-label={`Toggle service ${row.name || row.code} ${value ? 'off' : 'on'}`}
           />
@@ -326,13 +334,14 @@ export default function ServicesPage() {
             <FileDown className="h-4 w-4" />
             Export
           </Button>
-          <Button
+          <PermissionButton
+            permissions={PERMISSIONS.SERVICES_ADD}
             onClick={() => setIsFormOpen(true)}
             className="gap-2 bg-green-600 hover:bg-green-700"
           >
             <Plus className="h-4 w-4" />
             Add Service
-          </Button>
+          </PermissionButton>
         </div>
       </div>
 
@@ -407,23 +416,20 @@ export default function ServicesPage() {
               title="No services found"
               description="Add your first service type to get started."
               action={
-                <Button onClick={() => setIsFormOpen(true)} className="gap-2 bg-green-600 hover:bg-green-700">
-                  <Plus className="h-4 w-4" />
-                  Create Service
-                </Button>
+                canAdd ? (
+                  <Button onClick={() => setIsFormOpen(true)} className="gap-2 bg-green-600 hover:bg-green-700">
+                    <Plus className="h-4 w-4" />
+                    Create Service
+                  </Button>
+                ) : undefined
               }
             />
           ) : (
             <DataTable
               data={services}
               columns={columns}
-              onEdit={handleEditClick}
-              onDelete={handleDelete}
-              searchable={true}
-              searchPlaceholder="Search services..."
-              itemsPerPage={10}
-              showActions={true}
-              actionsLabel="Actions"
+              onEdit={canChange ? handleEditClick : undefined}
+              onDelete={canDelete ? handleDelete : undefined}
             />
           )}
         </CardContent>
@@ -434,9 +440,6 @@ export default function ServicesPage() {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleCreate}
-        title="Create New Service"
-        description="Add a new service type that roadies can offer and riders can request."
-        submitLabel="Create Service"
       />
 
       {/* Edit Modal */}
@@ -445,10 +448,6 @@ export default function ServicesPage() {
         onClose={() => setEditingService(null)}
         onSubmit={handleEdit}
         initialData={editingService || undefined}
-        isEditing={true}
-        title="Edit Service"
-        description="Update service details and status."
-        submitLabel="Update Service"
       />
     </div>
   )

@@ -28,25 +28,28 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
+import { useAuth } from "@/contexts/auth-context"
+import { PERMISSIONS, type Permission } from "@/lib/permissions"
 
 const navigationItems: Array<{ section: string; items: NavItem[] }> = [
   {
     section: "OPERATIONS",
     items: [
-      { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+      { name: "Dashboard", href: "/admin", icon: LayoutDashboard, permission: PERMISSIONS.DASHBOARD_VIEW },
       {
         name: "Service Requests",
         href: "/admin/requests",
         icon: Wrench,
         dropdown: true,
+        permission: PERMISSIONS.REQUESTS_VIEW,
         items: [
-          { name: "All Requests", href: "/admin/requests", icon: List },
-          { name: "Accepted", href: "/admin/requests/accepted", icon: UserCheck },
-          { name: "Completed", href: "/admin/requests/completed", icon: CheckCircle },
-          { name: "Cancelled", href: "/admin/requests/cancelled", icon: XCircle },
+          { name: "All Requests", href: "/admin/requests", icon: List, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Accepted", href: "/admin/requests/accepted", icon: UserCheck, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Completed", href: "/admin/requests/completed", icon: CheckCircle, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Cancelled", href: "/admin/requests/cancelled", icon: XCircle, permission: PERMISSIONS.REQUESTS_VIEW },
         ]
       },
-      { name: "Live Map", href: "/admin/live-map", icon: Map },
+      { name: "Live Map", href: "/admin/live-map", icon: Map, permission: PERMISSIONS.MAP_VIEW },
     ],
   },
   {
@@ -57,10 +60,11 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         href: "/admin/roadies",
         icon: UserCheck,
         dropdown: true,
+        permission: PERMISSIONS.ROADIES_VIEW,
         items: [
-          { name: "All Roadies", href: "/admin/roadies", icon: List },
-          { name: "Add New", href: "/admin/roadies/add", icon: Plus },
-          { name: "Drivers Total Assists", href: "/admin/roadies/total-services", icon: BarChart },
+          { name: "All Roadies", href: "/admin/roadies", icon: List, permission: PERMISSIONS.ROADIES_VIEW },
+          { name: "Add New", href: "/admin/roadies/add", icon: Plus, permission: PERMISSIONS.ROADIES_ADD },
+          { name: "Drivers Total Assists", href: "/admin/roadies/total-services", icon: BarChart, permission: PERMISSIONS.RODIE_SERVICES_VIEW },
         ]
       },
       {
@@ -68,34 +72,39 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         href: "/admin/riders",
         icon: Users,
         dropdown: true,
+        permission: PERMISSIONS.RIDERS_VIEW,
         items: [
-          { name: "All Riders", href: "/admin/riders", icon: List },
-          { name: "Add New", href: "/admin/riders/add", icon: Plus },
+          { name: "All Riders", href: "/admin/riders", icon: List, permission: PERMISSIONS.RIDERS_VIEW },
+          { name: "Add New", href: "/admin/riders/add", icon: Plus, permission: PERMISSIONS.RIDERS_ADD },
         ]
       },
       {
         name: "Services",
         href: "/admin/services",
         icon: Wrench,
+        permission: PERMISSIONS.SERVICES_VIEW,
       },
       {
         name: "Wallets",
         href: "/admin/wallet",
         icon: Wallet,
+        permission: PERMISSIONS.WALLET_VIEW,
       },
       {
         name: "Referrals",
         href: "/admin/referrals",
         icon: Gift,
+        permission: PERMISSIONS.REFERRALS_VIEW,
       },
       {
         name: "Admin Users",
         href: "/admin/users",
         icon: Shield,
         dropdown: true,
+        permission: PERMISSIONS.ADMIN_USERS_VIEW,
         items: [
-          { name: "All Admins", href: "/admin/users", icon: List },
-          { name: "Add New", href: "/admin/users/add", icon: Plus },
+          { name: "All Admins", href: "/admin/users", icon: List, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "Add New", href: "/admin/users/add", icon: Plus, permission: PERMISSIONS.ADMIN_USERS_ADD },
         ]
       },
       {
@@ -103,24 +112,28 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         href: "/admin/moderation/media",
         icon: CheckCircle,
         dropdown: true,
+        permission: PERMISSIONS.MEDIA_VIEW,
         items: [
-          { name: "Media", href: "/admin/moderation/media", icon: Image },
+          { name: "Media", href: "/admin/moderation/media", icon: Image, permission: PERMISSIONS.MEDIA_VIEW },
         ]
       },
       {
         name: "Notifications",
         href: "/admin/notifications",
         icon: Bell,
+        permission: PERMISSIONS.NOTIFICATIONS_VIEW,
       },
       {
         name: "Reports",
         href: "/admin/reports",
         icon: BarChart,
+        permission: PERMISSIONS.REPORTS_VIEW,
       },
       {
         name: "Support & Inquiries",
         href: "/admin/support",
         icon: Headphones,
+        permission: PERMISSIONS.SUPPORT_VIEW,
       },
     ],
   },
@@ -131,11 +144,13 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         name: "Platform Settings",
         href: "/admin/settings",
         icon: Settings,
+        permission: PERMISSIONS.SETTINGS_VIEW,
       },
       {
         name: "Landing Page",
         href: "/admin/settings/landing",
         icon: Globe,
+        permission: PERMISSIONS.SETTINGS_VIEW,
       },
     ],
   },
@@ -145,6 +160,7 @@ interface DropdownItem {
   name: string
   href: string
   icon: any
+  permission?: string
 }
 
 interface NavItem {
@@ -153,14 +169,41 @@ interface NavItem {
   icon: any
   dropdown?: boolean
   items?: DropdownItem[]
+  permission?: string
 }
 
 export function AdminSidebar() {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
+  const { sidebarOpen, toggleSidebar, hasPermission } = useAuth()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const [isHovering, setIsHovering] = useState(false)
+
+  // Filter navigation items based on permissions
+  const filteredNavigation = navigationItems.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      // If item has a permission, check it
+      if (item.permission && !hasPermission(item.permission as any)) {
+        return false
+      }
+      return true
+    }).map(item => {
+      // Also filter sub-items if they exist
+      if (item.items) {
+        return {
+          ...item,
+          items: item.items.filter(subItem => {
+            if (subItem.permission && !hasPermission(subItem.permission as any)) {
+              return false
+            }
+            return true
+          })
+        }
+      }
+      return item
+    })
+  })).filter(section => section.items.length > 0) // Hide empty sections
 
   // Auto-open dropdown based on current path
   useEffect(() => {
@@ -178,9 +221,9 @@ export function AdminSidebar() {
   }, [pathname])
 
   const handleDropdownToggle = (itemName: string) => {
-    if (collapsed) {
+    if (!sidebarOpen) {
       // When collapsed, clicking the item should navigate to main page
-      const item = navigationItems
+      const item = filteredNavigation
         .flatMap(section => section.items)
         .find(item => item.name.toLowerCase() === itemName.toLowerCase())
 
@@ -218,7 +261,7 @@ export function AdminSidebar() {
 
   // Get dropdown item count
   const getDropdownItemCount = (itemName: string) => {
-    const item = navigationItems
+    const item = filteredNavigation
       .flatMap(section => section.items)
       .find(item => item.name.toLowerCase() === itemName.toLowerCase())
 
@@ -245,15 +288,15 @@ export function AdminSidebar() {
     <aside
       className={cn(
         "fixed left-0 top-0 z-40 h-screen bg-sidebar transition-all duration-300 ease-in-out flex flex-col shadow-lg border-r border-sidebar-border/30",
-        collapsed ? "w-19" : "w-64", // Made slightly smaller
-        isHovering && collapsed ? "shadow-sidebar-primary/10" : ""
+        !sidebarOpen ? "w-19" : "w-64", // Made slightly smaller
+        isHovering && !sidebarOpen ? "shadow-sidebar-primary/10" : ""
       )}
       onMouseEnter={handleSidebarMouseEnter}
       onMouseLeave={handleSidebarMouseLeave}
     >
       {/* Logo area - Simplified */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border/30 px-4 bg-sidebar">
-        {!collapsed && (
+        {sidebarOpen && (
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-md bg-sidebar-primary flex items-center justify-center">
               <Wrench className="h-3.5 w-3.5 text-white" />
@@ -264,11 +307,11 @@ export function AdminSidebar() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={toggleSidebar}
           className="text-sidebar-foreground hover:bg-sidebar-accent h-7 w-7 rounded-md transition-all duration-300"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={!sidebarOpen ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? (
+          {!sidebarOpen ? (
             <ChevronRight className="h-4 w-4 transition-transform duration-300" />
           ) : (
             <ChevronLeft className="h-4 w-4 transition-transform duration-300" />
@@ -278,9 +321,9 @@ export function AdminSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4">
-        {navigationItems.map((section) => (
+        {filteredNavigation.map((section) => (
           <div key={section.section} className="space-y-2">
-            {!collapsed && (
+            {sidebarOpen && (
               <h3 className="px-2 py-1 text-xs font-bold text-sidebar-foreground/50 uppercase tracking-wider">
                 {section.section}
               </h3>
@@ -295,7 +338,7 @@ export function AdminSidebar() {
                 const dropdownItemHeight = getDropdownHeight(itemKey)
                 const isHovered = hoveredItem === itemKey
 
-                if (collapsed) {
+                if (!sidebarOpen) {
                   // Collapsed view - show only icon with tooltip
                   return (
                     <div key={item.name} className="relative">
@@ -314,7 +357,7 @@ export function AdminSidebar() {
                         <Icon className="h-4.5 w-4.5 shrink-0" />
 
                         {/* Tooltip for collapsed view */}
-                        {!isHovering && collapsed && (
+                        {!isHovering && !sidebarOpen && (
                           <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1.5 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
                             {item.name}
                             <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
@@ -445,7 +488,7 @@ export function AdminSidebar() {
       </nav>
 
       {/* Status indicator - Simplified */}
-      {!collapsed && (
+      {sidebarOpen && (
         <div className="px-3 pb-3">
           <div className="bg-sidebar-accent/10 rounded-md p-2 border border-sidebar-border/20">
             <div className="flex items-center justify-between text-xs">

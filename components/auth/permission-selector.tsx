@@ -72,20 +72,20 @@ export function PermissionSelector({ selectedPermissions, onChange, disabled = f
 
             <Accordion type="multiple" defaultValue={Object.keys(permissionsByCategory)} className="w-full">
                 {Object.entries(permissionsByCategory).map(([category, items]) => (
-                    <AccordionItem key={category} value={category}>
-                        <AccordionTrigger className="hover:no-underline py-3">
-                            <div className="flex items-center gap-4 w-full" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id={`cat-${category}`}
-                                        checked={isCategoryFullySelected(items) || (isCategoryPartiallySelected(items) ? "indeterminate" : false)}
-                                        onCheckedChange={(checked) => handleCategoryToggle(items, checked as boolean)}
-                                        disabled={disabled}
-                                    />
-                                    <span className="font-semibold text-sm">{category}</span>
-                                </div>
+                    <AccordionItem key={category} value={category} className="border-none">
+                        <div className="flex items-center pr-2">
+                            <div className="flex items-center space-x-2 pl-2 py-3">
+                                <Checkbox
+                                    id={`cat-${category}`}
+                                    checked={isCategoryFullySelected(items) || (isCategoryPartiallySelected(items) ? "indeterminate" : false)}
+                                    onCheckedChange={(checked) => handleCategoryToggle(items, checked as boolean)}
+                                    disabled={disabled}
+                                />
                             </div>
-                        </AccordionTrigger>
+                            <AccordionTrigger className="hover:no-underline py-3 pl-2 h-auto flex-1">
+                                <span className="font-semibold text-sm">{category}</span>
+                            </AccordionTrigger>
+                        </div>
                         <AccordionContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2 pl-6">
                                 {items.map((item) => (

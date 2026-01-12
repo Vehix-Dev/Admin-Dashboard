@@ -10,8 +10,11 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import {
     getWallets,
     getPlatformConfig,
-    type PlatformConfig
+    updatePlatformConfig,
+    PlatformConfig
 } from "@/lib/api"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { RefreshCw, TrendingUp, TrendingDown, DollarSign, Eye, ExternalLink, Wallet as WalletIcon, User, Users, ArrowRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -42,6 +45,7 @@ export default function WalletsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [platformConfig, setPlatformConfig] = useState<PlatformConfig | null>(null)
     const { toast } = useToast()
+    const canView = useCan(PERMISSIONS.WALLET_VIEW)
 
     const fetchData = async () => {
         setIsLoading(true)

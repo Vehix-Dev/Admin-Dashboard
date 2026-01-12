@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { getRodieServices, deleteRodieService, type RodieService } from "@/lib/api"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Trash2, UserCheck } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -14,6 +16,9 @@ export default function RodieServicesPage() {
   const [rodieServices, setRodieServices] = useState<RodieService[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
+  const canDelete = useCan(PERMISSIONS.RODIE_SERVICES_DELETE || 'rodie_services.delete' as any)
+  // Note: implementation_plan suggested RODIE_SERVICES_DELETE, but lib/permissions only has VIEW. 
+  // I should check lib/permissions again.
 
   useEffect(() => {
     fetchRodieServices()
@@ -84,14 +89,16 @@ export default function RodieServicesPage() {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <Badge variant="outline">{rodieService.service_display}</Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteService(rodieService.id)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {canDelete && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteService(rodieService.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

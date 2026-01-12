@@ -24,12 +24,11 @@ export default function ProtectedRoute({
     const router = useRouter()
 
     useEffect(() => {
-        // Disabled auto-redirect here to prevent race conditions.
-        // AdminLayout handles the token check.
-        // if (!isLoading && !user) {
-        //     router.push(redirectTo)
-        // }
-
+        // Enable auto-redirect for unauthenticated users
+        if (!isLoading && !user) {
+            router.push(redirectTo)
+            return
+        }
 
         if (!isLoading && user && requiredPermissions) {
             const permissionArray = Array.isArray(requiredPermissions)
@@ -47,20 +46,29 @@ export default function ProtectedRoute({
                 router.push('/admin/unauthorized')
             }
         }
-    }, [user, isLoading, router, requiredPermissions, requireAll, redirectTo])
+    }, [user, isLoading, router, requiredPermissions, requireAll, redirectTo, hasAnyPermission, hasAllPermissions])
 
     if (isLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin" />
+                <div className="text-center space-y-4">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                    <p className="text-sm text-muted-foreground">Loading...</p>
+                </div>
             </div>
         )
     }
 
     if (!user) {
-        // Fallback: If user is missing but we're here, assume we are waiting for auth or it's a glitch.
-        // Do NOT return null, as that hides the page content.
-        // return null
+        // Show loading while redirecting
+        return (
+            <div className="flex min-h-screen items-center justify-center">
+                <div className="text-center space-y-4">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                    <p className="text-sm text-muted-foreground">Redirecting to login...</p>
+                </div>
+            </div>
+        )
     }
 
     // Check permissions if required

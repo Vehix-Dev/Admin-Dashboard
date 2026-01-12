@@ -31,6 +31,8 @@ import { debounce } from "lodash"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useCan, PermissionButton } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 
 // Extended Roadie interface with thumbnail
 interface RoadieWithThumbnail extends Roadie {
@@ -56,6 +58,12 @@ export default function RoadiesPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   const { toast } = useToast()
+
+  // Permission checks
+  const canAdd = useCan(PERMISSIONS.ROADIES_ADD)
+  const canChange = useCan(PERMISSIONS.ROADIES_CHANGE)
+  const canDelete = useCan(PERMISSIONS.ROADIES_DELETE)
+  const canApprove = useCan(PERMISSIONS.ROADIES_APPROVE)
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -354,6 +362,7 @@ export default function RoadiesPage() {
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
+            disabled={!canApprove}
             className="data-[state=checked]:bg-green-600"
           />
           <div className="flex items-center gap-1">
@@ -407,13 +416,14 @@ export default function RoadiesPage() {
             <RefreshCw className={`h-4 w-4 ${isLoading || isLoadingThumbnails ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button
+          <PermissionButton
+            permissions={PERMISSIONS.ROADIES_ADD}
             onClick={() => router.push("/admin/roadies/add")}
             className="gap-2 bg-green-600 hover:bg-green-700 text-white"
           >
             <Plus className="h-4 w-4" />
             Add Roadie
-          </Button>
+          </PermissionButton>
         </div>
       </div>
 
@@ -684,13 +694,15 @@ export default function RoadiesPage() {
                 title="No roadies found"
                 description="No roadies have been added yet. Add your first roadie to get started."
                 action={
-                  <Button
-                    onClick={() => router.push("/admin/roadies/add")}
-                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Roadie
-                  </Button>
+                  canAdd ? (
+                    <Button
+                      onClick={() => router.push("/admin/roadies/add")}
+                      className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Roadie
+                    </Button>
+                  ) : undefined
                 }
               />
             )}
@@ -734,13 +746,8 @@ export default function RoadiesPage() {
             <DataTable
               data={filteredRoadies}
               columns={columns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              searchable={false}
-              pagination={{
-                pageSize: 10,
-                pageSizeOptions: [5, 10, 20, 50],
-              }}
+              onEdit={canChange ? handleEdit : undefined}
+              onDelete={canDelete ? handleDelete : undefined}
             />
           </div>
         )}

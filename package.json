@@ -66,14 +66,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
-    "@types/lodash": "^4.17.13",
+    "@types/lodash": "^4.17.23",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8.5",
+    "sqlite3": "^5.1.1",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
-    "sqlite3": "^5.1.1",
     "typescript": "^5"
   }
 }

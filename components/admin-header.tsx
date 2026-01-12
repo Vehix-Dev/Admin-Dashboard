@@ -12,7 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
+import { useAuth } from "@/contexts/auth-context"
+
 export function AdminHeader() {
+  const { user, logout } = useAuth()
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-sky-500 px-6 shadow-sm">
 
@@ -42,7 +46,11 @@ export function AdminHeader() {
                 </AvatarFallback>
               </Avatar>
               <span className="hidden sm:inline text-sm font-medium">
-                System Admin
+                {user ? (
+                  user.first_name || user.last_name
+                    ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
+                    : user.username || "System Admin"
+                ) : "System Admin"}
               </span>
             </Button>
           </DropdownMenuTrigger>
@@ -51,10 +59,7 @@ export function AdminHeader() {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => {
-                localStorage.removeItem("admin_token")
-                window.location.href = "/login"
-              }}
+              onClick={logout}
               className="gap-2 text-destructive"
             >
               <LogOut className="h-4 w-4" />

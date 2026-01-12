@@ -14,6 +14,8 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 
 interface Inquiry {
@@ -30,6 +32,7 @@ export default function SupportPage() {
     const [inquiries, setInquiries] = useState<Inquiry[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const { toast } = useToast()
+    const canManage = useCan(PERMISSIONS.SUPPORT_MANAGE)
 
     const fetchInquiries = async () => {
         setIsLoading(true)
@@ -117,22 +120,24 @@ export default function SupportPage() {
                                             <p className="text-xs text-gray-600 line-clamp-2 max-w-md">{inquiry.message}</p>
                                         </TableCell>
                                         <TableCell className="w-[100px]">
-                                            <div className="flex items-center gap-1">
-                                                <Button
-                                                    variant="ghost" size="icon"
-                                                    title="Reply"
-                                                    onClick={() => handleReply(inquiry.email, inquiry.subject)}
-                                                >
-                                                    <Reply className="h-4 w-4 text-blue-600" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost" size="icon"
-                                                    title="Delete"
-                                                    onClick={() => handleDelete(inquiry.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
-                                            </div>
+                                            {canManage && (
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        variant="ghost" size="icon"
+                                                        title="Reply"
+                                                        onClick={() => handleReply(inquiry.email, inquiry.subject)}
+                                                    >
+                                                        <Reply className="h-4 w-4 text-blue-600" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost" size="icon"
+                                                        title="Delete"
+                                                        onClick={() => handleDelete(inquiry.id)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}

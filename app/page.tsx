@@ -229,7 +229,7 @@ export default function Home() {
                             style={{ borderColor: primaryColor }}
                         />
                         <label htmlFor="terms" className="text-sm font-medium text-gray-800 cursor-pointer">
-                            By Continuing, you agree to our Terms.
+                            By Continuing, you agree to our Terms and Conditions.
                         </label>
                     </div>
 

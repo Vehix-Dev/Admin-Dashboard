@@ -176,34 +176,6 @@ export default function AdminUsersPage() {
             accessor: "created_at" as const,
             cell: (value: string) => new Date(value).toLocaleDateString(),
         },
-        {
-            header: "Actions",
-            accessor: "id",
-            cell: (_: any, row: AdminUser) => (
-                <div className="flex items-center gap-2">
-                    {canChange && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(row)}
-                            className="h-8 w-8 p-0"
-                        >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                    )}
-                    {canDelete && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(row)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
-            ),
-        },
     ]
 
     return (
@@ -256,6 +228,8 @@ export default function AdminUsersPage() {
                     <DataTable
                         data={admins}
                         columns={columns}
+                        onEdit={canChange ? handleEdit : undefined}
+                        onDelete={canDelete ? handleDelete : undefined}
                         onExport={() => {
                             // Export logic here
                         }}

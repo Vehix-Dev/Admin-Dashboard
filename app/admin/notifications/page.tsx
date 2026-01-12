@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Trash2, Send, Plus, UsersIcon } from "lucide-react"
+import { useCan, PermissionButton } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<AdminNotification[]>([])
@@ -23,6 +25,7 @@ export default function NotificationsPage() {
     const [targetType, setTargetType] = useState<"user" | "role" | "broadcast">("broadcast")
     const [targetId, setTargetId] = useState("")
     const [targetRole, setTargetRole] = useState<"RIDER" | "RODIE">("RIDER")
+    const canManage = useCan(PERMISSIONS.NOTIFICATIONS_MANAGE)
 
     useEffect(() => {
         fetchNotifications()
@@ -94,9 +97,12 @@ export default function NotificationsPage() {
                         View and send system-wide or targeted notifications.
                     </p>
                 </div>
-                <Button onClick={() => setFormOpen(!isFormOpen)}>
+                <PermissionButton
+                    permissions={PERMISSIONS.NOTIFICATIONS_MANAGE}
+                    onClick={() => setFormOpen(!isFormOpen)}
+                >
                     {isFormOpen ? "Cancel" : "New Notification"}
-                </Button>
+                </PermissionButton>
             </div>
 
             {isFormOpen && (
@@ -245,9 +251,11 @@ export default function NotificationsPage() {
                                         </TableCell>
                                         <TableCell>{new Date(notification.created_at).toLocaleString()}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(notification.id)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
+                                            {canManage && (
+                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(notification.id)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))

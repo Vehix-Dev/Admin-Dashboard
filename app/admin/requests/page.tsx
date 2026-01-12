@@ -44,11 +44,11 @@ import { RequestFormModal } from "@/components/forms/request-form-modal"
 import { debounce } from "lodash"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import { useCan, PermissionButton } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 
 interface RequestRow extends Omit<ServiceRequest, "id"> {
   id: string
-  rider_lat: string | number | null
-  rider_lng: string | number | null
 }
 
 // Helper component for reverse geocoding
@@ -145,6 +145,12 @@ export default function RequestsPage() {
 
   const { toast } = useToast()
 
+  // Permission checks
+  const canAdd = useCan(PERMISSIONS.REQUESTS_ADD)
+  const canChange = useCan(PERMISSIONS.REQUESTS_CHANGE)
+  const canDelete = useCan(PERMISSIONS.REQUESTS_DELETE)
+  const canAssign = useCan(PERMISSIONS.REQUESTS_ASSIGN)
+
   // Debounced search function
   const debouncedSearch = useCallback(
     debounce((query: string) => {
@@ -231,7 +237,7 @@ export default function RequestsPage() {
           request.id.toLowerCase(),
           request.rider_username?.toLowerCase() || "",
           request.rodie_username?.toLowerCase() || "",
-          request.service_type_name?.toLowerCase() || getServiceName(request).toLowerCase(),
+          request.service_type_name?.toLowerCase() || getServiceName(request as unknown as ServiceRequest).toLowerCase(),
           request.service_type_details?.name?.toLowerCase() || "",
           request.service_type_details?.code?.toLowerCase() || "",
           request.status?.toLowerCase() || "",
@@ -343,7 +349,7 @@ export default function RequestsPage() {
         request.rodie || '',
         `"${request.rodie_username || ''}"`,
         request.service_type,
-        `"${request.service_type_name || getServiceName(request)}"`,
+        `"${request.service_type_name || getServiceName(request as unknown as ServiceRequest)}"`,
         `"${request.service_type_details?.code || ''}"`,
         `"${getStatusLabel(request.status as ServiceStatus)}"`,
         request.rider_lat,
@@ -449,7 +455,7 @@ export default function RequestsPage() {
   }
 
   const getServiceDisplayName = (request: RequestRow): string => {
-    return request.service_type_name || getServiceName(request)
+    return request.service_type_name || getServiceName(request as unknown as ServiceRequest)
   }
 
   // Get unique statuses for filter
@@ -584,13 +590,14 @@ export default function RequestsPage() {
             <FileDown className="h-4 w-4" />
             Export CSV
           </Button>
-          <Button
+          <PermissionButton
+            permissions={PERMISSIONS.REQUESTS_ADD}
             onClick={() => setIsFormOpen(true)}
             className="gap-2 bg-green-600 hover:bg-green-700 text-white"
           >
             <Plus className="h-4 w-4" />
             New Request
-          </Button>
+          </PermissionButton>
         </div>
       </div>
 
@@ -788,16 +795,18 @@ export default function RequestsPage() {
                     : "No service requests match the current filters"
                 }
                 action={
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      clearSearch()
-                      clearFilters()
-                    }}
-                    className="gap-2"
-                  >
-                    Clear Search & Filters
-                  </Button>
+                  canAdd ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        clearSearch()
+                        clearFilters()
+                      }}
+                      className="gap-2"
+                    >
+                      Clear Search & Filters
+                    </Button>
+                  ) : undefined
                 }
               />
             ) : (
@@ -855,13 +864,8 @@ export default function RequestsPage() {
             <DataTable
               data={filteredRequests}
               columns={columns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              searchable={false}
-              pagination={{
-                pageSize: 10,
-                pageSizeOptions: [5, 10, 20, 50],
-              }}
+              onEdit={canChange ? handleEdit : undefined}
+              onDelete={canDelete ? handleDelete : undefined}
             />
           </div>
         )}

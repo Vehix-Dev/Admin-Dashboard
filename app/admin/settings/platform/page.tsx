@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { getPlatformConfig, updatePlatformConfig, PlatformConfig } from "@/lib/api"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,6 +21,7 @@ export default function PlatformConfigPage() {
         max_negative_balance: "",
         service_fee: "",
     })
+    const canChange = useCan(PERMISSIONS.SETTINGS_CHANGE)
 
     useEffect(() => {
         fetchConfig()
@@ -120,6 +123,7 @@ export default function PlatformConfigPage() {
                                         placeholder="50.00"
                                         value={formData.max_negative_balance}
                                         onChange={handleChange}
+                                        disabled={!canChange}
                                     />
                                 </div>
                                 <p className="text-sm text-muted-foreground">
@@ -138,6 +142,7 @@ export default function PlatformConfigPage() {
                                     placeholder="30.00"
                                     value={formData.service_fee}
                                     onChange={handleChange}
+                                    disabled={!canChange}
                                 />
                                 <p className="text-sm text-muted-foreground">
                                     Fixed fee charged to Roadies when a service is completed.
@@ -146,11 +151,13 @@ export default function PlatformConfigPage() {
                         </div>
 
                         <div className="flex justify-end">
-                            <Button type="submit" disabled={saving}>
-                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <Save className="mr-2 h-4 w-4" />
-                                Save Changes
-                            </Button>
+                            {canChange && (
+                                <Button type="submit" disabled={saving}>
+                                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Save Changes
+                                </Button>
+                            )}
                         </div>
                     </form>
                 </CardContent>

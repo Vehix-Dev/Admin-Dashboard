@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useCan, PermissionButton } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -64,6 +66,7 @@ export default function LandingSettingsPage() {
     const [uploadTarget, setUploadTarget] = useState<string | null>(null) // 'section' or setting key
 
     const { toast } = useToast()
+    const canChange = useCan(PERMISSIONS.SETTINGS_CHANGE)
 
     // 2. Effects and Callbacks
     const loadData = useCallback(async () => {
@@ -342,7 +345,8 @@ export default function LandingSettingsPage() {
                         Manage content, design, and system settings.
                     </p>
                 </div>
-                <Button
+                <PermissionButton
+                    permissions={PERMISSIONS.SETTINGS_CHANGE}
                     onClick={handleSaveSettings}
                     disabled={isSaving || isUploading}
                     className="gap-2"
@@ -353,7 +357,7 @@ export default function LandingSettingsPage() {
                         <Save className="h-4 w-4" />
                     )}
                     Save Config
-                </Button>
+                </PermissionButton>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -374,14 +378,15 @@ export default function LandingSettingsPage() {
                                     Drag and drop support coming soon. Use arrows to reorder.
                                 </CardDescription>
                             </div>
-                            <Button
+                            <PermissionButton
+                                permissions={PERMISSIONS.SETTINGS_CHANGE}
                                 size="sm"
                                 onClick={openAddSection}
                                 disabled={isUploading}
                             >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Section
-                            </Button>
+                            </PermissionButton>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             {sections.length === 0 ? (

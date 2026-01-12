@@ -33,6 +33,8 @@ import { debounce } from "lodash"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useCan, PermissionButton } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 
 // Extended Rider interface with thumbnail
 interface RiderWithThumbnail extends Rider {
@@ -57,6 +59,12 @@ export default function RidersPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   const { toast } = useToast()
+
+  // Permission checks
+  const canAdd = useCan(PERMISSIONS.RIDERS_ADD)
+  const canChange = useCan(PERMISSIONS.RIDERS_CHANGE)
+  const canDelete = useCan(PERMISSIONS.RIDERS_DELETE)
+  const canApprove = useCan(PERMISSIONS.RIDERS_APPROVE)
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -334,6 +342,7 @@ export default function RidersPage() {
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
+            disabled={!canApprove}
             className="data-[state=checked]:bg-green-600"
           />
           <div className="flex items-center gap-1">
@@ -387,13 +396,14 @@ export default function RidersPage() {
             <RefreshCw className={`h-4 w-4 ${isLoading || isLoadingThumbnails ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button
+          <PermissionButton
+            permissions={PERMISSIONS.RIDERS_ADD}
             onClick={() => router.push("/admin/riders/add")}
             className="gap-2 bg-green-600 hover:bg-green-700 text-white"
           >
             <Plus className="h-4 w-4" />
             Add Customer
-          </Button>
+          </PermissionButton>
         </div>
       </div>
 
@@ -664,13 +674,15 @@ export default function RidersPage() {
                 title="No customers found"
                 description="No customers have been added yet. Add your first customer to get started."
                 action={
-                  <Button
-                    onClick={() => router.push("/admin/riders/add")}
-                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Customer
-                  </Button>
+                  canAdd ? (
+                    <Button
+                      onClick={() => router.push("/admin/riders/add")}
+                      className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Customer
+                    </Button>
+                  ) : undefined
                 }
               />
             )}
@@ -714,13 +726,8 @@ export default function RidersPage() {
             <DataTable
               data={filteredRiders}
               columns={columns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              searchable={false}
-              pagination={{
-                pageSize: 10,
-                pageSizeOptions: [5, 10, 20, 50],
-              }}
+              onEdit={canChange ? handleEdit : undefined}
+              onDelete={canDelete ? handleDelete : undefined}
             />
           </div>
         )}

@@ -6,6 +6,8 @@ export interface AdminUser {
   name: string
   role: string
   username?: string
+  is_superuser?: boolean
+  is_staff?: boolean
 }
 
 // Token management
@@ -206,6 +208,8 @@ export async function getAdminProfile(): Promise<AdminUser | null> {
         name: payload.name || payload.username || "Admin User",
         role: payload.role || "admin",
         username: payload.username || undefined,
+        is_superuser: payload.is_superuser || false,
+        is_staff: payload.is_staff || false,
       }
     }
 
@@ -272,7 +276,7 @@ export function isAuthenticated(): boolean {
 export function logoutAdmin(): void {
   removeAuthTokens()
   if (typeof window !== "undefined") {
-    window.location.href = "/admin/login"
+    window.location.href = "/login"
   }
 }
 

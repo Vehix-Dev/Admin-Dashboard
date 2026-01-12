@@ -12,8 +12,11 @@ import { useToast } from "@/hooks/use-toast"
 import { loginAdmin, getAdminProfile } from "@/lib/auth"
 import { checkBackendConnection } from "@/lib/api"
 import { Loader2, AlertCircle, Lock, User, Server } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function LoginPage() {
+  const { login: authLogin } = useAuth()
+
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -58,6 +61,19 @@ export default function LoginPage() {
       const user = await getAdminProfile()
 
       if (user) {
+        // Call AuthContext login to update state globally
+        const token = localStorage.getItem('admin_access_token') || ""
+
+        // Adapt AdminUser to User interface
+        const adaptedUser = {
+          ...user,
+          first_name: user.name.split(' ')[0],
+          last_name: user.name.split(' ').slice(1).join(' '),
+          is_approved: true
+        }
+
+        authLogin(adaptedUser as any, token)
+
         toast({
           title: "Login successful",
           description: `Welcome back, ${user.name}!`,

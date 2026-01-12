@@ -8,6 +8,8 @@ import {
     deleteReferral,
     type Referral
 } from "@/lib/api"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Trash2, UserPlus, Gift, TrendingUp } from "lucide-react"
@@ -19,6 +21,7 @@ export default function ReferralsPage() {
     const [referrals, setReferrals] = useState<Referral[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const { toast } = useToast()
+    const canManage = useCan(PERMISSIONS.REFERRALS_MANAGE)
 
     const fetchReferrals = async () => {
         setIsLoading(true)
@@ -115,7 +118,7 @@ export default function ReferralsPage() {
         {
             header: "Actions",
             accessor: "id",
-            cell: (_: any, row: Referral) => (
+            cell: (_: any, row: Referral) => canManage ? (
                 <Button
                     variant="ghost"
                     size="sm"
@@ -124,7 +127,7 @@ export default function ReferralsPage() {
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
-            ),
+            ) : null,
         },
     ]
 
@@ -191,9 +194,6 @@ export default function ReferralsPage() {
                 <DataTable
                     data={referrals}
                     columns={columns}
-                    searchable={true}
-                    searchPlaceholder="Search by username..."
-                    itemsPerPage={10}
                 />
             )}
         </div>

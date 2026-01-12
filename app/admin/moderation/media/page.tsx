@@ -8,6 +8,8 @@ import {
     getStatusColorForImage,
     type AdminImage
 } from "@/lib/api"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, CheckCircle, XCircle, Filter, Search } from "lucide-react"
@@ -30,6 +32,7 @@ export default function MediaModerationPage() {
     const [filterStatus, setFilterStatus] = useState<string>("ALL")
     const [searchQuery, setSearchQuery] = useState("")
     const { toast } = useToast()
+    const canManage = useCan(PERMISSIONS.MEDIA_MANAGE)
 
     const fetchImages = async () => {
         setIsLoading(true)
@@ -238,20 +241,20 @@ export default function MediaModerationPage() {
                                                         <div className="flex gap-1 pt-1">
                                                             <Button
                                                                 size="icon"
-                                                                className="h-7 w-7 bg-green-600 hover:bg-green-700"
+                                                                className="h-7 w-7 bg-green-600 hover:bg-green-700 disabled:opacity-50"
                                                                 onClick={() => handleUpdateStatus(image, 'APPROVED')}
-                                                                disabled={image.status === 'APPROVED'}
-                                                                title="Approve"
+                                                                disabled={image.status === 'APPROVED' || !canManage}
+                                                                title={canManage ? "Approve" : "No permission to moderate"}
                                                             >
                                                                 <CheckCircle className="h-3 w-3" />
                                                             </Button>
                                                             <Button
                                                                 size="icon"
                                                                 variant="destructive"
-                                                                className="h-7 w-7 bg-red-600 hover:bg-red-700"
+                                                                className="h-7 w-7 bg-red-600 hover:bg-red-700 disabled:opacity-50"
                                                                 onClick={() => handleUpdateStatus(image, 'REJECTED')}
-                                                                disabled={image.status === 'REJECTED'}
-                                                                title="Reject"
+                                                                disabled={image.status === 'REJECTED' || !canManage}
+                                                                title={canManage ? "Reject" : "No permission to moderate"}
                                                             >
                                                                 <XCircle className="h-3 w-3" />
                                                             </Button>
@@ -266,8 +269,9 @@ export default function MediaModerationPage() {
                         </div>
                     ))}
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     )
 }
 

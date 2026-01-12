@@ -15,6 +15,8 @@ import {
     type Service,
     type PlatformConfig
 } from "@/lib/api"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Download, FileDown, TrendingUp, DollarSign, Users, BarChart2, Activity, Calendar } from "lucide-react"
@@ -68,6 +70,7 @@ export default function ReportsPage() {
     const [data, setData] = useState<ReportData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const { toast } = useToast()
+    const canView = useCan(PERMISSIONS.REPORTS_VIEW)
 
     const fetchReportData = async () => {
         setIsLoading(true)
@@ -404,7 +407,7 @@ export default function ReportsPage() {
                                     ))}
                                 </Pie>
                                 <Tooltip />
-                                <Legend layout="bottom" iconType="circle" />
+                                <Legend layout="horizontal" verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     </CardContent>

@@ -6,9 +6,11 @@ import { UserRole, getUserRole, hasPermission, hasAnyPermission, hasAllPermissio
 import type { Permission } from '@/lib/permissions'
 import { getAccessToken, fetchLocalPermissions } from '@/lib/api'
 import { getAdminProfile } from '@/lib/auth'
+import { InactivityWarning } from '@/components/auth/inactivity-warning'
+
 
 interface User {
-    id: number
+    id: string
     username: string
     email: string
     first_name: string
@@ -43,6 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
     const [sidebarOpen, setSidebarOpenState] = useState(true)
     const [localPermissions, setLocalPermissions] = useState<string[]>(Object.values(PERMISSIONS))
+
+    // Inactivity tracking
+    const [lastActivity, setLastActivity] = useState<number>(Date.now())
+    const [showInactivityWarning, setShowInactivityWarning] = useState(false)
+    const [warningCountdown, setWarningCountdown] = useState(120) // 2 minutes in seconds
+
 
     // Initialize auth from localStorage on mount
     useEffect(() => {
@@ -142,6 +150,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('sidebar_open', JSON.stringify(sidebarOpen))
     }, [sidebarOpen])
 
+    // Inactivity tracking and auto-logout
+    useEffect(() => {
+        if (!user) return
+
+        const INACTIVITY_TIMEOUT = 2 * 60 * 1000 // 2 minutes in milliseconds (for testing)
+        const WARNING_TIME = 30 * 1000 // 30 seconds before logout (for testing)
+
+        // Reset activity timer 
+        const resetActivity = () => {
+            setLastActivity(Date.now())
+            setShowInactivityWarning(false)
+            setWarningCountdown(120)
+        }
+
+        // Activity event listeners
+        const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click']
+        events.forEach(event => {
+            window.addEventListener(event, resetActivity)
+        })
+
+        // Check inactivity every 10 seconds
+        const checkInterval = setInterval(() => {
+            const now = Date.now()
+            const timeSinceActivity = now - lastActivity
+
+            // Show warning 2 minutes before logout
+            if (timeSinceActivity >= INACTIVITY_TIMEOUT - WARNING_TIME && !showInactivityWarning) {
+                setShowInactivityWarning(true)
+                const remainingSeconds = Math.floor((INACTIVITY_TIMEOUT - timeSinceActivity) / 1000)
+                setWarningCountdown(remainingSeconds)
+            }
+
+            // Auto-logout after 1 hour
+            if (timeSinceActivity >= INACTIVITY_TIMEOUT) {
+                logout()
+            }
+        }, 10000) // Check every 10 seconds
+
+        return () => {
+            events.forEach(event => {
+                window.removeEventListener(event, resetActivity)
+            })
+            clearInterval(checkInterval)
+        }
+    }, [user, lastActivity, showInactivityWarning])
+
+
     const setSidebarOpen = (open: boolean) => {
         setSidebarOpenState(open)
     }
@@ -161,15 +216,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = async (userData: User, token: string) => {
         setUser(userData)
         localStorage.setItem('admin_user_data', JSON.stringify(userData))
+        localStorage.setItem('admin_access_token', token)
 
         // Fetch permissions
         try {
             const perms = await fetchLocalPermissions(userData.id)
             if (perms && perms.length > 0) {
                 setLocalPermissions(perms)
+            } else {
+                setLocalPermissions(Object.values(PERMISSIONS))
             }
         } catch (e) {
             console.error("[Auth] Login permission fetch failed", e)
+            setLocalPermissions(Object.values(PERMISSIONS))
         }
     }
 
@@ -181,7 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('admin_access_token')
         localStorage.removeItem('admin_refresh_token')
         localStorage.removeItem('sidebar_open')
-        window.location.href = '/admin/login'
+        window.location.href = '/login'
     }
 
     const role = user ? getUserRole(user) : null
@@ -223,7 +282,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSidebarOpen,
     }
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    const handleStayLoggedIn = () => {
+        setLastActivity(Date.now())
+        setShowInactivityWarning(false)
+        setWarningCountdown(120)
+    }
+
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+            <InactivityWarning
+                open={showInactivityWarning}
+                remainingSeconds={warningCountdown}
+                onStayLoggedIn={handleStayLoggedIn}
+                onLogout={logout}
+            />
+        </AuthContext.Provider>
+    )
 }
 
 export function useAuth() {
