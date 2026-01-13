@@ -30,7 +30,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
-    RefreshCw,
     FileDown,
     Plus,
     Search,
@@ -462,16 +461,6 @@ export default function CompletedRequestsPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchAllData}
-                        className="gap-2 border-gray-300 bg-white hover:bg-gray-50"
-                        disabled={isLoading}
-                    >
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
                     <Button
                         variant="outline"
                         size="sm"

@@ -44,7 +44,6 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
-  RefreshCw,
   Activity,
   Image as ImageIcon,
   Upload,
@@ -350,7 +349,7 @@ export default function EditRiderPage() {
 
   const handleImageReplace = async (imageId: number, file: File) => {
     try {
-      await adminReplaceImage(imageId, file)
+      await replaceImage(imageId, file)
       toast({
         title: "Success",
         description: "Image replaced successfully",
@@ -1319,7 +1318,6 @@ export default function EditRiderPage() {
                 className="w-full justify-start gap-2"
                 onClick={() => window.open(`/admin/requests?search=${rider?.username}`, '_blank')}
               >
-                <RefreshCw className="h-4 w-4" />
                 View All Requests
               </Button>
               <Button

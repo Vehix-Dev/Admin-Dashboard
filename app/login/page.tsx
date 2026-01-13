@@ -11,8 +11,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { loginAdmin, getAdminProfile } from "@/lib/auth"
 import { checkBackendConnection } from "@/lib/api"
-import { Loader2, AlertCircle, Lock, User, Server } from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
+import { Loader2, AlertCircle, Lock, User as UserIcon, Server } from "lucide-react"
+import { useAuth, type User } from "@/contexts/auth-context"
 
 export default function LoginPage() {
   const { login: authLogin } = useAuth()
@@ -57,20 +57,24 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await loginAdmin(username, password)
-      const user = await getAdminProfile()
+      const loginResponse = await loginAdmin(username, password)
+      const user = loginResponse.user ? {
+        ...loginResponse.user,
+        id: String(loginResponse.user.id),
+        name: `${loginResponse.user.first_name} ${loginResponse.user.last_name}`,
+      } : await getAdminProfile()
 
       if (user) {
         // Call AuthContext login to update state globally
         const token = localStorage.getItem('admin_access_token') || ""
 
         // Adapt AdminUser to User interface
-        const adaptedUser = {
+        const adaptedUser: User = {
           ...user,
-          first_name: user.name.split(' ')[0],
-          last_name: user.name.split(' ').slice(1).join(' '),
+          first_name: user.first_name || user.name?.split(' ')[0] || "",
+          last_name: user.last_name || user.name?.split(' ').slice(1).join(' ') || "",
           is_approved: true
-        }
+        } as any
 
         authLogin(adaptedUser as any, token)
 
@@ -206,7 +210,7 @@ export default function LoginPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-sm font-medium text-white/90">
-                  <User className="mr-2 inline h-4 w-4" />
+                  <UserIcon className="mr-2 inline h-4 w-4" />
                   Username
                 </Label>
                 <div className="relative">

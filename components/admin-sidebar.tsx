@@ -287,7 +287,7 @@ export function AdminSidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-sidebar transition-all duration-300 ease-in-out flex flex-col shadow-lg border-r border-sidebar-border/30",
+        "fixed left-0 top-0 z-40 h-screen bg-sidebar transition-all duration-930 ease-in-out flex flex-col shadow-lg border-r border-sidebar-border/30",
         !sidebarOpen ? "w-19" : "w-64", // Made slightly smaller
         isHovering && !sidebarOpen ? "shadow-sidebar-primary/10" : ""
       )}
@@ -301,7 +301,7 @@ export function AdminSidebar() {
             <div className="h-6 w-6 rounded-md bg-sidebar-primary flex items-center justify-center">
               <Wrench className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="font-bold text-sidebar-foreground text-sm tracking-tight">ADMIN</span>
+            <span className="font-bold text-sidebar-foreground text-sm tracking-tight">Vehix Ops</span>
           </div>
         )}
         <Button
@@ -379,7 +379,7 @@ export function AdminSidebar() {
                           onMouseEnter={() => setHoveredItem(itemKey)}
                           onMouseLeave={() => setHoveredItem(null)}
                           className={cn(
-                            "group flex items-center justify-between w-full gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-300 cursor-pointer",
+                            "group flex items-center justify-between w-full gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-930 cursor-pointer",
                             isActive
                               ? "bg-sidebar-primary/10 text-sidebar-primary-foreground border-l-2 border-sidebar-primary"
                               : "text-sidebar-foreground hover:bg-sidebar-accent border-l-2 border-transparent",
@@ -402,7 +402,7 @@ export function AdminSidebar() {
 
                         {/* Animated dropdown sub-items container */}
                         <div
-                          className="overflow-hidden transition-all duration-600 ease-in-out"
+                          className="overflow-hidden transition-all duration-930 ease-in-out"
                           style={{
                             height: isCurrentDropdownOpen ? `${dropdownItemHeight}px` : '0px',
                             opacity: isCurrentDropdownOpen ? 1 : 0,
@@ -420,7 +420,7 @@ export function AdminSidebar() {
                                   href={subItem.href}
                                   onClick={() => handleSubItemClick(item.name)}
                                   className={cn(
-                                    "flex items-center gap-2.5 rounded-md px-2 py-2 text-sm font-medium transition-all duration-300 relative",
+                                    "flex items-center gap-2.5 rounded-md px-2 py-2 text-sm font-medium transition-all duration-930 relative",
                                     "hover:translate-x-0.5",
                                     isSubActive
                                       ? "bg-sidebar-primary text-white shadow-sm"

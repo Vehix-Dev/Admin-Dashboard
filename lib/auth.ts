@@ -4,6 +4,8 @@ export interface AdminUser {
   id: string
   email: string
   name: string
+  first_name?: string
+  last_name?: string
   role: string
   username?: string
   is_superuser?: boolean
@@ -47,6 +49,14 @@ export function removeAuthTokens() {
 export interface AuthResponse {
   access: string
   refresh: string
+  user?: {
+    id: number
+    username: string
+    email: string
+    first_name: string
+    last_name: string
+    role: string
+  }
 }
 
 // Check backend connection
@@ -205,7 +215,9 @@ export async function getAdminProfile(): Promise<AdminUser | null> {
       return {
         id: payload.user_id?.toString() || payload.id?.toString() || "unknown",
         email: payload.email || "",
-        name: payload.name || payload.username || "Admin User",
+        name: payload.name || `${payload.first_name || ''} ${payload.last_name || ''}`.trim() || payload.username || "Admin User",
+        first_name: payload.first_name || undefined,
+        last_name: payload.last_name || undefined,
         role: payload.role || "admin",
         username: payload.username || undefined,
         is_superuser: payload.is_superuser || false,

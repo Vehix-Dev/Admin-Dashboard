@@ -12,7 +12,7 @@ import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Trash2, UserPlus, Gift, TrendingUp } from "lucide-react"
+import { Trash2, UserPlus, Gift, TrendingUp } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -138,15 +138,6 @@ export default function ReferralsPage() {
                     <h1 className="text-3xl font-bold text-gray-900">Referrals</h1>
                     <p className="text-gray-600 mt-1">Track user referrals and rewards</p>
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchReferrals}
-                    className="gap-2 border-gray-300"
-                >
-                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    Refresh
-                </Button>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">

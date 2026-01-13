@@ -14,7 +14,6 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   Plus,
-  RefreshCw,
   Search,
   X,
   Filter,
@@ -386,16 +385,6 @@ export default function RidersPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchRiders}
-            className="gap-2 border-gray-300 bg-white hover:bg-gray-50"
-            disabled={isLoading || isLoadingThumbnails}
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading || isLoadingThumbnails ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
           <PermissionButton
             permissions={PERMISSIONS.RIDERS_ADD}
             onClick={() => router.push("/admin/riders/add")}

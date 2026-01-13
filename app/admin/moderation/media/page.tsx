@@ -12,7 +12,7 @@ import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, CheckCircle, XCircle, Filter, Search } from "lucide-react"
+import { CheckCircle, XCircle, Filter, Search } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -105,15 +105,6 @@ export default function MediaModerationPage() {
                     <p className="text-gray-600 mt-1">Review and moderate all user uploads</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchImages}
-                        className="gap-2 border-gray-300"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
                 </div>
             </div>
 

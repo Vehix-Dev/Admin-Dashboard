@@ -16,7 +16,7 @@ import {
 import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
-import { RefreshCw, TrendingUp, TrendingDown, DollarSign, Eye, ExternalLink, Wallet as WalletIcon, User, Users, ArrowRight } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, Eye, ExternalLink, Wallet as WalletIcon, User, Users, ArrowRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -207,16 +207,6 @@ export default function WalletsPage() {
                         View Rider and Roadie wallet balances
                     </p>
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchData}
-                    className="gap-2 border-gray-300 hover:bg-gray-50"
-                    disabled={isLoading}
-                >
-                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    Refresh
-                </Button>
             </div>
 
             {/* Statistics Cards */}
@@ -387,12 +377,6 @@ export default function WalletsPage() {
                                 searchQuery
                                     ? "Try a different search term"
                                     : "No rider or roadie wallets found"
-                            }
-                            action={
-                                <Button onClick={fetchData} className="gap-2">
-                                    <RefreshCw className="h-4 w-4" />
-                                    Refresh Data
-                                </Button>
                             }
                         />
                     ) : (

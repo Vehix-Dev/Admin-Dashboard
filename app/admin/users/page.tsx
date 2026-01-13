@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { getAdminUsers, updateAdminUser, deleteAdminUser, type AdminUser } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Plus, RefreshCw, Edit, Trash2, Shield, ShieldOff, Eye, EyeOff } from "lucide-react"
+import { Plus, Edit, Trash2, Shield, ShieldOff, Eye, EyeOff } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
@@ -187,15 +187,6 @@ export default function AdminUsersPage() {
                         <p className="text-sm text-gray-600 mt-1">Manage system administrators</p>
                     </div>
                     <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={fetchAdmins}
-                            className="gap-2 border-gray-300 bg-transparent"
-                        >
-                            <RefreshCw className="h-4 w-4" />
-                            Refresh
-                        </Button>
                         <PermissionButton
                             permissions={PERMISSIONS.ADMIN_USERS_ADD}
                             className="gap-2 bg-blue-600 hover:bg-blue-700"

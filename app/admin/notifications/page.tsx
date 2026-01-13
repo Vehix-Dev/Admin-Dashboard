@@ -1,47 +1,76 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { getNotifications, createNotification, deleteNotification, AdminNotification } from "@/lib/api"
+import { useEffect, useState, useMemo } from "react"
+import { createNotification, getRiders, getRoadies, Rider, Roadie } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, Trash2, Send, Plus, UsersIcon } from "lucide-react"
-import { useCan, PermissionButton } from "@/components/auth/permission-guard"
+import { Card, CardContent } from "@/components/ui/card"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Loader2, Send, History, Check, ChevronsUpDown } from "lucide-react"
+import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
+import { cn } from "@/lib/utils"
+import Link from "next/link"
+import { Separator } from "@/components/ui/separator"
 
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState<AdminNotification[]>([])
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
     const [creating, setCreating] = useState(false)
 
+    // Data for selection
+    const [riders, setRiders] = useState<Rider[]>([])
+    const [roadies, setRoadies] = useState<Roadie[]>([])
+    const [fetchingUsers, setFetchingUsers] = useState(false)
+
     // Form State
+    const [audienceType, setAudienceType] = useState<"driver" | "user">("driver")
+    const [selectionMode, setSelectionMode] = useState<"manual" | "audience">("manual")
+    const [deliveryType, setDeliveryType] = useState<"single" | "broadcast">("single")
+    const [selectedUserId, setSelectedUserId] = useState<string>("")
     const [title, setTitle] = useState("")
-    const [body, setBody] = useState("")
-    const [targetType, setTargetType] = useState<"user" | "role" | "broadcast">("broadcast")
-    const [targetId, setTargetId] = useState("")
-    const [targetRole, setTargetRole] = useState<"RIDER" | "RODIE">("RIDER")
+    const [url, setUrl] = useState("")
+    const [message, setMessage] = useState("")
+
+    // Combobox state
+    const [open, setOpen] = useState(false)
+
     const canManage = useCan(PERMISSIONS.NOTIFICATIONS_MANAGE)
 
     useEffect(() => {
-        fetchNotifications()
+        fetchUsers()
     }, [])
 
-    async function fetchNotifications() {
+    async function fetchUsers() {
         try {
-            setLoading(true)
-            const data = await getNotifications()
-            setNotifications(data)
+            setFetchingUsers(true)
+            const [ridersData, roadiesData] = await Promise.all([
+                getRiders(),
+                getRoadies()
+            ])
+            setRiders(ridersData)
+            setRoadies(roadiesData)
         } catch (err) {
-            console.error("Failed to fetch notifications", err)
+            console.error("Failed to fetch users", err)
         } finally {
-            setLoading(false)
+            setFetchingUsers(false)
         }
     }
+
+    const currentSelectionOptions = useMemo(() => {
+        if (audienceType === "driver") {
+            return roadies.map(r => ({ value: String(r.id), label: `${r.first_name} ${r.last_name} (${r.username})` }))
+        }
+        return riders.map(r => ({ value: String(r.id), label: `${r.first_name} ${r.last_name} (${r.username})` }))
+    }, [audienceType, riders, roadies])
+
+    const selectedLabel = useMemo(() => {
+        const found = currentSelectionOptions.find(opt => opt.value === selectedUserId)
+        return found ? found.label : `Select ${audienceType === "driver" ? "Drivers" : "Users"}`
+    }, [selectedUserId, currentSelectionOptions, audienceType])
 
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault()
@@ -50,218 +79,218 @@ export default function NotificationsPage() {
         try {
             const payload: any = {
                 title,
-                body,
-                broadcast: targetType === "broadcast",
+                body: message,
+                broadcast: deliveryType === "broadcast",
             }
 
-            if (targetType === "role") {
-                payload.target_role = targetRole
-            } else if (targetType === "user" && targetId) {
-                payload.user = parseInt(targetId)
+            if (url) {
+                payload.data = { url }
+            }
+
+            if (deliveryType === "single") {
+                if (selectionMode === "manual" && selectedUserId) {
+                    payload.user = parseInt(selectedUserId)
+                } else if (selectionMode === "audience") {
+                    payload.target_role = audienceType === "driver" ? "RODIE" : "RIDER"
+                }
+            } else {
+                payload.broadcast = true
             }
 
             await createNotification(payload)
 
             // Reset form
             setTitle("")
-            setBody("")
-            setDraggingOpen(false) // Close modal/form if implemented as such, here just refresh
-            fetchNotifications()
+            setMessage("")
+            setUrl("")
+            setSelectedUserId("")
+
+            alert("Notification sent successfully!")
         } catch (err) {
             console.error("Failed to create notification", err)
+            alert("Failed to send notification. Check console for details.")
         } finally {
             setCreating(false)
         }
     }
 
-    async function handleDelete(id: number) {
-        if (!confirm("Are you sure you want to delete this notification?")) return
-        try {
-            await deleteNotification(id)
-            setNotifications(prev => prev.filter(n => n.id !== id))
-        } catch (err) {
-            console.error("Failed to delete notification", err)
-        }
+    if (!canManage) {
+        return <div className="p-6">You do not have permission to view this page.</div>
     }
 
-    // Placeholder for "New Notification" dialog or inline form
-    const [isFormOpen, setFormOpen] = useState(false)
-    const [draggingOpen, setDraggingOpen] = useState(false) // Using this name for consistency with pattern if needed, but simple boolean is fine
-
     return (
-        <div className="space-y-6 p-6">
+        <div className="space-y-6 p-6 pb-20">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
-                    <p className="text-muted-foreground">
-                        View and send system-wide or targeted notifications.
-                    </p>
+                    <h1 className="text-3xl font-bold tracking-tight">Send Notification</h1>
                 </div>
-                <PermissionButton
-                    permissions={PERMISSIONS.NOTIFICATIONS_MANAGE}
-                    onClick={() => setFormOpen(!isFormOpen)}
-                >
-                    {isFormOpen ? "Cancel" : "New Notification"}
-                </PermissionButton>
+                <Button variant="outline" asChild>
+                    <Link href="/admin/notifications/history">
+                        <History className="mr-2 h-4 w-4" />
+                        View History
+                    </Link>
+                </Button>
             </div>
 
-            {isFormOpen && (
-                <Card className="max-w-xl animate-in fade-in slide-in-from-top-4">
-                    <CardHeader>
-                        <CardTitle>Send Notification</CardTitle>
-                        <CardDescription>Send a message to users' devices.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleCreate} className="space-y-4">
+            <Card className="border-none shadow-none bg-transparent">
+                <CardContent className="p-0">
+                    <form onSubmit={handleCreate} className="space-y-10">
+                        <div className="space-y-6">
+                            <div>
+                                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Audience Info</h2>
+                                <Separator className="mb-6" />
+                            </div>
+
+                            <RadioGroup
+                                value={audienceType}
+                                onValueChange={(val: any) => {
+                                    setAudienceType(val)
+                                    setSelectedUserId("")
+                                }}
+                                className="flex gap-8"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="driver" id="driver" />
+                                    <Label htmlFor="driver" className="font-normal cursor-pointer">Driver</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="user" id="user" />
+                                    <Label htmlFor="user" className="font-normal cursor-pointer">User</Label>
+                                </div>
+                            </RadioGroup>
+
+                            <RadioGroup
+                                value={selectionMode}
+                                onValueChange={(val: any) => setSelectionMode(val)}
+                                className="flex gap-8"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="manual" id="manual" />
+                                    <Label htmlFor="manual" className="font-normal cursor-pointer">Manual Selection</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="audience" id="audience" />
+                                    <Label htmlFor="audience" className="font-normal cursor-pointer">Audience</Label>
+                                </div>
+                            </RadioGroup>
+
+                            <RadioGroup
+                                value={deliveryType}
+                                onValueChange={(val: any) => setDeliveryType(val)}
+                                className="flex gap-8 items-center"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="single" id="single" />
+                                    <Label htmlFor="single" className="font-normal cursor-pointer text-sm">Single</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="broadcast" id="broadcast" />
+                                    <Label htmlFor="broadcast" className="font-normal cursor-pointer text-sm">Broadcast</Label>
+                                    <span className="text-[10px] text-red-500 italic ml-2">
+                                        - *The broadcast notification will only be sent as a notification and will not be saved on the notification page.
+                                    </span>
+                                </div>
+                            </RadioGroup>
+
+                            {selectionMode === "manual" && (
+                                <div className="space-y-3">
+                                    <Label className="text-sm font-medium">Select {audienceType === "driver" ? "Drivers" : "Users"}</Label>
+                                    <Popover open={open} onOpenChange={setOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={open}
+                                                className="w-full justify-between font-normal"
+                                                disabled={fetchingUsers}
+                                            >
+                                                {fetchingUsers ? "Loading users..." : selectedLabel}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                            <Command>
+                                                <CommandInput placeholder={`Search ${audienceType === "driver" ? "drivers" : "users"}...`} />
+                                                <CommandList>
+                                                    <CommandEmpty>No {audienceType === "driver" ? "driver" : "user"} found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {currentSelectionOptions.map((option) => (
+                                                            <CommandItem
+                                                                key={option.value}
+                                                                value={option.label}
+                                                                onSelect={() => {
+                                                                    setSelectedUserId(option.value === selectedUserId ? "" : option.value)
+                                                                    setOpen(false)
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        selectedUserId === option.value ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                {option.label}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-6 pt-2">
+                            <div>
+                                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Notification Info</h2>
+                                <Separator className="mb-6" />
+                            </div>
+
                             <div className="space-y-2">
-                                <Label>Title</Label>
+                                <Label htmlFor="title" className="text-sm font-medium">Title</Label>
                                 <Input
+                                    id="title"
                                     required
                                     value={title}
                                     onChange={e => setTitle(e.target.value)}
-                                    placeholder="Notification Title"
+                                    placeholder="Enter Title"
+                                    className="w-full"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Body (Optional)</Label>
+                                <Label htmlFor="url" className="text-sm font-medium">URL</Label>
+                                <Input
+                                    id="url"
+                                    value={url}
+                                    onChange={e => setUrl(e.target.value)}
+                                    placeholder="http://www.example.com"
+                                    className="w-full"
+                                />
+                                <p className="text-[10px] text-muted-foreground">URL requires HTTP/HTTPS protocol</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="message" className="text-sm font-medium">Message</Label>
                                 <Textarea
-                                    value={body}
-                                    onChange={e => setBody(e.target.value)}
-                                    placeholder="Notification message body..."
+                                    id="message"
+                                    required
+                                    value={message}
+                                    onChange={e => setMessage(e.target.value)}
+                                    placeholder="Enter Message"
+                                    className="min-h-[160px] w-full resize-none"
                                 />
                             </div>
+                        </div>
 
-                            <div className="space-y-2">
-                                <Label>Target Audience</Label>
-                                <div className="flex flex-wrap gap-4">
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="target_broadcast"
-                                            checked={targetType === "broadcast"}
-                                            onCheckedChange={() => setTargetType("broadcast")}
-                                        />
-                                        <label htmlFor="target_broadcast" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                            Broadcast (Everyone)
-                                        </label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="target_role"
-                                            checked={targetType === "role"}
-                                            onCheckedChange={() => setTargetType("role")}
-                                        />
-                                        <label htmlFor="target_role" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                            By Role
-                                        </label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="target_user"
-                                            checked={targetType === "user"}
-                                            onCheckedChange={() => setTargetType("user")}
-                                        />
-                                        <label htmlFor="target_user" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                            Specific User
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {targetType === "role" && (
-                                <div className="space-y-2">
-                                    <Label>Select Role</Label>
-                                    <Select value={targetRole} onValueChange={(val: any) => setTargetRole(val)}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="RIDER">Rider</SelectItem>
-                                            <SelectItem value="RODIE">Roadie</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
-
-                            {targetType === "user" && (
-                                <div className="space-y-2">
-                                    <Label>User ID</Label>
-                                    <Input
-                                        required
-                                        type="number"
-                                        value={targetId}
-                                        onChange={e => setTargetId(e.target.value)}
-                                        placeholder="Enter User ID"
-                                    />
-                                </div>
-                            )}
-
-                            <Button type="submit" className="w-full" disabled={creating}>
+                        <div className="flex justify-end">
+                            <Button type="submit" className="w-[200px]" disabled={creating}>
                                 {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                                 Send Notification
                             </Button>
-                        </form>
-                    </CardContent>
-                </Card>
-            )}
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>History</CardTitle>
-                    <CardDescription>
-                        Past notifications sent from the admin panel.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Title</TableHead>
-                                <TableHead>Target</TableHead>
-                                <TableHead>Created At</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
-                                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                                    </TableCell>
-                                </TableRow>
-                            ) : notifications.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                        No notifications found.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                notifications.map((notification) => (
-                                    <TableRow key={notification.id}>
-                                        <TableCell>{notification.id}</TableCell>
-                                        <TableCell>
-                                            <div className="font-medium">{notification.title}</div>
-                                            <div className="text-xs text-muted-foreground truncate max-w-[300px]">{notification.body}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {notification.broadcast && <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">Broadcast</span>}
-                                            {notification.target_role && <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">Role: {notification.target_role}</span>}
-                                            {notification.user && <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-muted text-muted-foreground hover:bg-muted/80">User: {notification.user}</span>}
-                                        </TableCell>
-                                        <TableCell>{new Date(notification.created_at).toLocaleString()}</TableCell>
-                                        <TableCell className="text-right">
-                                            {canManage && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(notification.id)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                        </div>
+                    </form>
                 </CardContent>
             </Card>
         </div>

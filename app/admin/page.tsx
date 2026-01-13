@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import {
   Users, UserCheck, Wrench, TrendingUp, Clock, CheckCircle,
   Star, Award, MapPin, Target, Zap, Package,
-  RefreshCw, Shield, Activity, DollarSign, Calendar,
+  Shield, Activity, DollarSign, Calendar,
   AlertCircle, ThumbsUp, AlertTriangle, Battery, Car,
   Navigation, Phone, Mail, User, Map, Image
 } from "lucide-react"
@@ -635,16 +635,6 @@ export default function AdminDashboardPage() {
           <div className="text-sm text-gray-500 px-3 py-1 bg-gray-100 rounded-lg">
             Live Updates
           </div>
-          <Button
-            onClick={fetchDashboardData}
-            disabled={isRefreshing}
-            variant="outline"
-            size="sm"
-            className="gap-2 border-gray-300"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
         </div>
       </div>
 

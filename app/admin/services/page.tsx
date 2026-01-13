@@ -13,7 +13,7 @@ import {
   getServiceById
 } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, RefreshCw, Edit, FileDown, Users } from "lucide-react"
+import { Plus, Edit, FileDown, Users } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ServiceFormModal } from "@/components/forms/service-form-modal"
 import { DataTable } from "@/components/management/data-table"
@@ -314,16 +314,6 @@ export default function ServicesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchServices}
-            className="gap-2 border-gray-300 hover:bg-gray-50"
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
           <Button
             variant="outline"
             size="sm"

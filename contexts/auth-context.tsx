@@ -9,7 +9,7 @@ import { getAdminProfile } from '@/lib/auth'
 import { InactivityWarning } from '@/components/auth/inactivity-warning'
 
 
-interface User {
+export interface User {
     id: string
     username: string
     email: string
@@ -56,59 +56,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                // Try to get fresh profile from API using token
+                // Get stored user data first (contains detailed names from login response)
+                const storedUserData = localStorage.getItem('admin_user_data')
+                const parsedStoredUser = storedUserData ? JSON.parse(storedUserData) : null
+
+                if (parsedStoredUser) {
+                    setUser(parsedStoredUser)
+                }
+
                 const token = getAccessToken()
                 if (token) {
                     try {
-                        console.log("[Auth] Fetching fresh admin profile...")
+                        console.log("[Auth] Refreshing admin profile from token...")
                         const freshUser = await getAdminProfile()
 
-                        // Use fresh user data if available
                         if (freshUser) {
-                            console.log("[Auth] Fresh profile loaded:", freshUser.username)
-                            // Adapt AdminUser to User interface if needed or just cast
+                            console.log("[Auth] Profile data retrieved:", freshUser.username)
+
+                            // Merge fresh token info with detailed stored info
                             const adaptedUser: User = {
+                                ...parsedStoredUser,
                                 ...freshUser,
-                                // ensure required fields exist
-                                username: freshUser.username || "",
-                                first_name: freshUser.name.split(' ')[0],
-                                last_name: freshUser.name.split(' ').slice(1).join(' '),
-                                is_approved: true, // assume true if we got profile
+                                // Prioritize names from storage if not in token
+                                first_name: freshUser.first_name || parsedStoredUser?.first_name || freshUser.name?.split(' ')[0] || "",
+                                last_name: freshUser.last_name || parsedStoredUser?.last_name || freshUser.name?.split(' ').slice(1).join(' ') || "",
+                                is_approved: true,
                             } as any
 
                             setUser(adaptedUser)
                             localStorage.setItem('admin_user_data', JSON.stringify(adaptedUser))
 
-                            // Check for TUTU immediately for logging
+                            // Master user log
                             if (adaptedUser.username?.toUpperCase() === 'TUTU') {
-                                console.log("[Auth] MASTER USER DETECTED: TUTU - Granting Full Access")
+                                console.log("[Auth] MASTER USER TUTU ACTIVE")
                             }
 
-                            // Fetch permissions with fresh ID
+                            // Update permissions
                             try {
-                                console.log("[Auth] Fetching permissions for user", adaptedUser.id)
                                 const perms = await fetchLocalPermissions(adaptedUser.id)
-
                                 if (perms && perms.length > 0) {
-                                    console.log("[Auth] Fetched permissions count:", perms.length)
                                     setLocalPermissions(perms)
                                 } else {
-                                    console.log("[Auth] No permissions found, defaulting to ALL")
                                     setLocalPermissions(Object.values(PERMISSIONS))
                                 }
                             } catch (e) {
-                                console.error("[Auth] Failed to load permissions", e)
                                 setLocalPermissions(Object.values(PERMISSIONS))
                             }
-                            // Load sidebar preference
-                            const savedSidebarState = localStorage.getItem('sidebar_open')
-                            if (savedSidebarState !== null) {
-                                setSidebarOpenState(JSON.parse(savedSidebarState))
-                            }
-                            return // Exit successfully
                         }
                     } catch (e) {
-                        console.error("[Auth] Failed to fetch fresh profile, falling back to local storage", e)
+                        console.error("[Auth] Token profile sync failed:", e)
                     }
                 }
 
@@ -154,8 +150,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!user) return
 
-        const INACTIVITY_TIMEOUT = 2 * 60 * 1000 // 2 minutes in milliseconds (for testing)
-        const WARNING_TIME = 30 * 1000 // 30 seconds before logout (for testing)
+        const INACTIVITY_TIMEOUT = 60 * 60 * 1000
+        const WARNING_TIME = 60 * 1000
 
         // Reset activity timer 
         const resetActivity = () => {

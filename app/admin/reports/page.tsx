@@ -19,7 +19,7 @@ import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Download, FileDown, TrendingUp, DollarSign, Users, BarChart2, Activity, Calendar } from "lucide-react"
+import { Download, FileDown, TrendingUp, DollarSign, Users, BarChart2, Activity, Calendar } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
@@ -273,9 +273,6 @@ export default function ReportsPage() {
                     <p className="text-gray-600 mt-1">Detailed system analytics, financials, and operational metrics</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={fetchReportData} variant="outline" size="sm">
-                        <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-                    </Button>
                     <Button onClick={() => handleExport('usage')} variant="outline" size="sm">
                         <FileDown className="h-4 w-4 mr-2" /> Export Usage
                     </Button>
