@@ -74,7 +74,7 @@ export default function SupportPage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Support & Inquiries</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Support & Inquiries</h1>
                 <p className="text-muted-foreground">Manage messages submitted via the contact form.</p>
             </div>
 
@@ -88,10 +88,10 @@ export default function SupportPage() {
                 <CardContent>
                     {isLoading ? (
                         <div className="flex justify-center p-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : inquiries.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500">
+                        <div className="text-center py-12 text-muted-foreground">
                             <Mail className="h-12 w-12 mx-auto mb-3 opacity-20" />
                             <p>No messages yet.</p>
                         </div>
@@ -108,16 +108,16 @@ export default function SupportPage() {
                             <TableBody>
                                 {inquiries.map((inquiry) => (
                                     <TableRow key={inquiry.id}>
-                                        <TableCell className="whitespace-nowrap w-[150px] text-xs text-gray-500">
+                                        <TableCell className="whitespace-nowrap w-[150px] text-xs text-muted-foreground">
                                             {format(new Date(inquiry.created_at), "MMM d, yyyy h:mm a")}
                                         </TableCell>
                                         <TableCell>
-                                            <div className="font-medium text-sm">{inquiry.name}</div>
-                                            <div className="text-xs text-gray-500">{inquiry.email}</div>
+                                            <div className="font-medium text-sm text-foreground">{inquiry.name}</div>
+                                            <div className="text-xs text-muted-foreground">{inquiry.email}</div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="font-medium text-sm mb-1">{inquiry.subject || "No Subject"}</div>
-                                            <p className="text-xs text-gray-600 line-clamp-2 max-w-md">{inquiry.message}</p>
+                                            <div className="font-medium text-sm mb-1 text-foreground">{inquiry.subject || "No Subject"}</div>
+                                            <p className="text-xs text-muted-foreground line-clamp-2 max-w-md">{inquiry.message}</p>
                                         </TableCell>
                                         <TableCell className="w-[100px]">
                                             {canManage && (

@@ -51,7 +51,7 @@ export default function NotificationHistoryPage() {
                                 <ArrowLeft className="h-4 w-4" />
                             </Link>
                         </Button>
-                        <h1 className="text-3xl font-bold tracking-tight">Notification History</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Notification History</h1>
                     </div>
                     <p className="text-muted-foreground ml-10">
                         View past notifications sent from the admin panel.

@@ -337,49 +337,49 @@ export default function ServicesPage() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Services</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Services</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
-            <CardDescription className="text-xs text-gray-500 mt-1">
+            <div className="text-3xl font-bold text-foreground">{stats.total}</div>
+            <CardDescription className="text-xs text-muted-foreground mt-1">
               All service types
             </CardDescription>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Active Services</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Services</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{stats.active}</div>
-            <CardDescription className="text-xs text-gray-500 mt-1">
+            <div className="text-3xl font-bold text-emerald-500">{stats.active}</div>
+            <CardDescription className="text-xs text-muted-foreground mt-1">
               Available for requests
             </CardDescription>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Roadies</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Roadies</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{stats.totalRoadies}</div>
-            <CardDescription className="text-xs text-gray-500 mt-1">
+            <div className="text-3xl font-bold text-primary">{stats.totalRoadies}</div>
+            <CardDescription className="text-xs text-muted-foreground mt-1">
               Across all services
             </CardDescription>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Avg. Roadies/Service</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Roadies/Service</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-600">{stats.avgRoadiesPerService}</div>
-            <CardDescription className="text-xs text-gray-500 mt-1">
+            <div className="text-3xl font-bold text-purple-500">{stats.avgRoadiesPerService}</div>
+            <CardDescription className="text-xs text-muted-foreground mt-1">
               Average per service type
             </CardDescription>
           </CardContent>
@@ -387,10 +387,10 @@ export default function ServicesPage() {
       </div>
 
       {/* Main Table */}
-      <Card className="bg-white border border-gray-200 shadow-sm">
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold">Service Types</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg font-semibold text-foreground">Service Types</CardTitle>
+          <CardDescription className="text-muted-foreground">
             List of all service types in the system. Toggle status to activate/deactivate.
           </CardDescription>
         </CardHeader>
@@ -407,7 +407,7 @@ export default function ServicesPage() {
               description="Add your first service type to get started."
               action={
                 canAdd ? (
-                  <Button onClick={() => setIsFormOpen(true)} className="gap-2 bg-green-600 hover:bg-green-700">
+                  <Button onClick={() => setIsFormOpen(true)} className="gap-2 bg-primary hover:bg-primary/90 text-white">
                     <Plus className="h-4 w-4" />
                     Create Service
                   </Button>

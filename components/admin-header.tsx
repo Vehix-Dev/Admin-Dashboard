@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 import { useAuth } from "@/contexts/auth-context"
 
@@ -18,7 +19,7 @@ export function AdminHeader() {
   const { user, logout } = useAuth()
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-sky-500 px-6 shadow-sm">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-primary px-6 shadow-sm border-b border-primary/10">
 
       {/* Left: Logo / Brand */}
       <div className="flex items-center gap-3">
@@ -33,7 +34,8 @@ export function AdminHeader() {
       </div>
 
       {/* Right: Admin dropdown */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

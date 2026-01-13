@@ -137,8 +137,8 @@ export default function SettingsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Settings className="h-8 w-8 mx-auto animate-spin text-blue-600" />
-          <p className="mt-2 text-gray-600">Loading settings...</p>
+          <Settings className="h-8 w-8 mx-auto animate-spin text-primary" />
+          <p className="mt-2 text-muted-foreground">Loading settings...</p>
         </div>
       </div>
     )
@@ -147,23 +147,23 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
-        <p className="text-gray-600 mt-1">Manage system configuration and branding</p>
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="text-muted-foreground mt-1">Manage system configuration and branding</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Branding Card */}
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-800">Branding</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg font-semibold text-foreground">Branding</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Upload your logo for the admin system and login pages
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <Label>Upload New Logo</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded p-6 text-center">
+              <div className="border-2 border-dashed border-border rounded p-6 text-center">
                 {logoPreview ? (
                   <div className="space-y-3">
                     <img
@@ -171,13 +171,13 @@ export default function SettingsPage() {
                       alt="Logo preview"
                       className="h-20 mx-auto object-contain"
                     />
-                    <p className="text-sm text-gray-600 truncate">{logoFile?.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">{logoFile?.name}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Upload className="h-8 w-8 mx-auto text-gray-400" />
-                    <p className="text-sm text-gray-600">Click to select a logo</p>
-                    <p className="text-xs text-gray-500">Max 5MB, PNG/JPG/SVG</p>
+                    <Upload className="h-8 w-8 mx-auto text-muted-foreground/50" />
+                    <p className="text-sm text-muted-foreground">Click to select a logo</p>
+                    <p className="text-xs text-muted-foreground/70">Max 5MB, PNG/JPG/SVG</p>
                   </div>
                 )}
                 <Input
@@ -216,7 +216,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={handleLogoUpload}
                   disabled={isUploading}
-                  className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 gap-2 bg-primary hover:bg-primary/90"
                 >
                   {isUploading ? (
                     "Uploading..."
@@ -233,10 +233,10 @@ export default function SettingsPage() {
         </Card>
 
         {/* Platform Configuration Card */}
-        <Card>
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-800">Platform Configuration</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg font-semibold text-foreground">Platform Configuration</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Configure platform-wide settings and fees
             </CardDescription>
           </CardHeader>
@@ -250,7 +250,7 @@ export default function SettingsPage() {
                   </div>
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">UGX</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">UGX</span>
                   <Input
                     id="maxNegativeBalance"
                     type="number"
@@ -262,7 +262,7 @@ export default function SettingsPage() {
                     placeholder="50000.00"
                   />
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Maximum allowed negative wallet balance. Users with balance below -{maxNegativeBalance} cannot receive services.
                 </p>
               </div>
@@ -275,7 +275,7 @@ export default function SettingsPage() {
                   </div>
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">UGX</span>
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">UGX</span>
                   <Input
                     id="serviceFee"
                     type="number"
@@ -287,7 +287,7 @@ export default function SettingsPage() {
                     placeholder="30000.00"
                   />
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Fixed fee charged to Roadies when a service is completed.
                 </p>
               </div>
@@ -295,20 +295,20 @@ export default function SettingsPage() {
 
             <Separator />
 
-            <div className="bg-gray-50 p-4 rounded border">
-              <h4 className="font-medium text-gray-800 mb-2">Current Configuration</h4>
+            <div className="bg-muted/50 p-4 rounded border border-border">
+              <h4 className="font-medium text-foreground mb-2">Current Configuration</h4>
               <div className="grid grid-cols-1 gap-3 text-sm">
                 <div>
-                  <span className="text-gray-600">Max Negative Balance:</span>
-                  <span className="font-medium ml-2">UGX {platformConfig?.max_negative_balance}</span>
+                  <span className="text-muted-foreground">Max Negative Balance:</span>
+                  <span className="font-medium ml-2 text-foreground">UGX {platformConfig?.max_negative_balance}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Service Fee:</span>
-                  <span className="font-medium ml-2">UGX {platformConfig?.service_fee}</span>
+                  <span className="text-muted-foreground">Service Fee:</span>
+                  <span className="font-medium ml-2 text-foreground">UGX {platformConfig?.service_fee}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Last Updated:</span>
-                  <span className="font-medium ml-2">
+                  <span className="text-muted-foreground">Last Updated:</span>
+                  <span className="font-medium ml-2 text-foreground">
                     {platformConfig?.updated_at ? new Date(platformConfig.updated_at).toLocaleString() : 'Never'}
                   </span>
                 </div>
@@ -318,7 +318,7 @@ export default function SettingsPage() {
             <div className="flex justify-end">
               <Button
                 onClick={handleSavePlatformConfig}
-                className="gap-2 bg-blue-600 hover:bg-blue-700"
+                className="gap-2 bg-primary hover:bg-primary/90"
               >
                 <Save className="h-4 w-4" />
                 Save Platform Configuration

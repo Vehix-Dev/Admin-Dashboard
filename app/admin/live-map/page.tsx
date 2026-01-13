@@ -75,9 +75,9 @@ const FullscreenControl = () => {
           : document.exitFullscreen()
         setFs(!fs)
       }}
-      className="absolute bottom-4 right-4 z-[1000] bg-white p-2 rounded shadow"
+      className="absolute bottom-4 right-4 z-[1000] bg-card p-2 rounded shadow border border-border text-foreground hover:bg-muted transition-colors"
     >
-      {fs ? <Minimize2 /> : <Maximize2 />}
+      {fs ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
     </button>
   )
 }
@@ -87,9 +87,9 @@ const RecenterControl = ({ center }: { center: [number, number] }) => {
   return (
     <button
       onClick={() => map.flyTo(center, map.getZoom())}
-      className="absolute bottom-16 right-4 z-[1000] bg-white p-2 rounded shadow"
+      className="absolute bottom-16 right-4 z-[1000] bg-card p-2 rounded shadow border border-border text-foreground hover:bg-muted transition-colors"
     >
-      <Target />
+      <Target className="h-4 w-4" />
     </button>
   )
 }
@@ -131,9 +131,9 @@ export default function LiveServiceMap() {
   }
 
   return (
-    <Card className="h-[85vh] relative overflow-hidden">
+    <Card className="h-[85vh] relative overflow-hidden border-border">
       {/* MAP STYLE TOGGLE */}
-      <div className="absolute top-4 left-4 z-[1000] bg-white rounded shadow p-2 flex gap-1">
+      <div className="absolute top-4 left-4 z-[1000] bg-card rounded shadow p-2 flex gap-1 border border-border">
         {Object.entries({
           Streets: MAP_STYLES.streets,
           Satellite: MAP_STYLES.satellite,
@@ -143,7 +143,7 @@ export default function LiveServiceMap() {
           <button
             key={value}
             onClick={() => setMapStyle(value)}
-            className={`px-2 py-1 text-xs rounded ${mapStyle === value ? "bg-black text-white" : "bg-gray-100"
+            className={`px-2 py-1 text-xs rounded transition-colors ${mapStyle === value ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80 text-foreground"
               }`}
           >
             {label}
@@ -189,12 +189,12 @@ export default function LiveServiceMap() {
           >
             <Popup>
               <div className="min-w-[220px] space-y-1">
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-foreground">
                   {r.rider_first_name} {r.rider_last_name}
                 </h3>
-                <p className="text-xs text-gray-600">@{r.rider_username}</p>
+                <p className="text-xs text-muted-foreground">@{r.rider_username}</p>
 
-                <hr />
+                <hr className="border-border" />
 
                 <div className="text-sm">
                   <b>Request ID:</b> {r.request_id}
@@ -205,7 +205,7 @@ export default function LiveServiceMap() {
                 <div className="text-sm">
                   <b>Status:</b> {r.status}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   Updated:{" "}
                   {new Date(r.updated_at).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -226,8 +226,8 @@ export default function LiveServiceMap() {
           >
             <Popup>
               <div className="min-w-[200px]">
-                <h3 className="font-semibold">{r.rodie_username}</h3>
-                <p className="text-xs text-gray-500">
+                <h3 className="font-semibold text-foreground">{r.rodie_username}</h3>
+                <p className="text-xs text-muted-foreground">
                   Provider • Updated{" "}
                   {new Date(r.updated_at).toLocaleTimeString()}
                 </p>

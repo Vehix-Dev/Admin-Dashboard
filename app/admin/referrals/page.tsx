@@ -98,13 +98,13 @@ export default function ReferralsPage() {
             accessor: "status",
             cell: (value: string) => {
                 const colors: Record<string, string> = {
-                    'PENDING': 'bg-yellow-100 text-yellow-800',
-                    'PAID': 'bg-green-100 text-green-800',
-                    'COMPLETED': 'bg-green-100 text-green-800',
-                    'REJECTED': 'bg-red-100 text-red-800'
+                    'PENDING': 'border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/30 dark:bg-yellow-900/20 dark:text-yellow-400',
+                    'PAID': 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/30 dark:bg-green-900/20 dark:text-green-400',
+                    'COMPLETED': 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/30 dark:bg-green-900/20 dark:text-green-400',
+                    'REJECTED': 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-400'
                 }
                 return (
-                    <Badge variant="secondary" className={colors[value] || 'bg-gray-100'}>
+                    <Badge variant="outline" className={`capitalize font-medium border-2 ${colors[value] || 'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-800/20 dark:text-gray-400'}`}>
                         {value}
                     </Badge>
                 )
@@ -135,8 +135,8 @@ export default function ReferralsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Referrals</h1>
-                    <p className="text-gray-600 mt-1">Track user referrals and rewards</p>
+                    <h1 className="text-3xl font-bold text-foreground">Referrals</h1>
+                    <p className="text-muted-foreground mt-1">Track user referrals and rewards</p>
                 </div>
             </div>
 

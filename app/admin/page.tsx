@@ -628,11 +628,11 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Platform Dashboard</h1>
-          <p className="text-gray-600 mt-1">Real-time insights and analytics</p>
+          <h1 className="text-3xl font-bold text-foreground">Platform Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Real-time insights and analytics</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="text-sm text-gray-500 px-3 py-1 bg-gray-100 rounded-lg">
+          <div className="text-sm text-muted-foreground px-3 py-1 bg-muted rounded-lg border border-border">
             Live Updates
           </div>
         </div>
@@ -640,7 +640,7 @@ export default function AdminDashboardPage() {
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
             <div>
@@ -696,64 +696,64 @@ export default function AdminDashboardPage() {
 
           {/* User Statistics */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Total Customers</h3>
+                <h3 className="font-semibold text-foreground">Total Customers</h3>
                 <Users className="h-5 w-5 text-blue-500" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900">{stats.totalRiders}</span>
-                  <div className="text-sm px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                  <span className="text-3xl font-bold text-foreground">{stats.totalRiders}</span>
+                  <div className="text-sm px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300">
                     {stats.approvedRiders} approved
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Pending: {stats.pendingRiders}</span>
                   <span>{stats.activeRiders} active</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Total Providers</h3>
+                <h3 className="font-semibold text-foreground">Total Providers</h3>
                 <UserCheck className="h-5 w-5 text-emerald-500" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900">{stats.totalRoadies}</span>
-                  <div className="text-sm px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                  <span className="text-3xl font-bold text-foreground">{stats.totalRoadies}</span>
+                  <div className="text-sm px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
                     {stats.approvedRoadies} approved
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Pending: {stats.pendingRoadies}</span>
                   <span>{stats.activeRoadies} active</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Service Status</h3>
+                <h3 className="font-semibold text-foreground">Service Status</h3>
                 <Target className="h-5 w-5 text-purple-500" />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-gray-900">{stats.totalServices}</span>
-                  <div className="text-sm px-2 py-1 rounded-full bg-purple-100 text-purple-800">
+                  <span className="text-3xl font-bold text-foreground">{stats.totalServices}</span>
+                  <div className="text-sm px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300">
                     Services
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Active Requests:</span>
-                    <span className="font-medium">{stats.activeRequests}</span>
+                    <span className="text-muted-foreground">Active Requests:</span>
+                    <span className="font-medium text-foreground">{stats.activeRequests}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Completed Today:</span>
-                    <span className="font-medium">
+                    <span className="text-muted-foreground">Completed Today:</span>
+                    <span className="font-medium text-foreground">
                       {stats.recentRequests.filter(r =>
                         r.status === 'completed' &&
                         new Date(r.created_at).toDateString() === new Date().toDateString()
@@ -764,20 +764,20 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Quick Actions</h3>
+                <h3 className="font-semibold text-foreground">Quick Actions</h3>
                 <Zap className="h-5 w-5 text-amber-500" />
               </div>
               <div className="space-y-3">
                 <Link href="/admin/requests/create">
-                  <Button size="sm" className="w-full justify-start bg-blue-600 hover:bg-blue-700">
+                  <Button size="sm" className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground">
                     <Wrench className="mr-2 h-3 w-3" />
                     Create Service Request
                   </Button>
                 </Link>
                 <Link href="/admin/live-map">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
+                  <Button variant="outline" size="sm" className="w-full justify-start border-border text-foreground hover:bg-muted">
                     <Map className="mr-2 h-3 w-3" />
                     View Live Map
                   </Button>
@@ -789,10 +789,10 @@ export default function AdminDashboardPage() {
           {/* Charts Section */}
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Request Trends */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Weekly Request Trends</h3>
-                <span className="text-sm text-gray-500">Last 7 days</span>
+                <h3 className="text-lg font-semibold text-foreground">Weekly Request Trends</h3>
+                <span className="text-sm text-muted-foreground">Last 7 days</span>
               </div>
               {stats.requestTrends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
@@ -802,11 +802,13 @@ export default function AdminDashboardPage() {
                     <YAxis stroke="#6B7280" fontSize={12} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#FFFFFF",
-                        border: "1px solid #E5E7EB",
+                        backgroundColor: "var(--card)",
+                        border: "1px solid var(--border)",
                         borderRadius: "8px",
-                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        color: "var(--foreground)"
                       }}
+                      itemStyle={{ color: "var(--foreground)" }}
                     />
                     <Line
                       type="monotone"
@@ -829,8 +831,8 @@ export default function AdminDashboardPage() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-64 flex flex-col items-center justify-center text-gray-500">
-                  <Activity className="h-12 w-12 text-gray-300 mb-3" />
+                <div className="h-64 flex flex-col items-center justify-center text-muted-foreground">
+                  <Activity className="h-12 w-12 text-muted-foreground/30 mb-3" />
                   <p>No activity data available</p>
                   <p className="text-sm mt-1">Request trends will appear here</p>
                 </div>
@@ -838,10 +840,10 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Status Distribution */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Request Status Distribution</h3>
-                <span className="text-sm text-gray-500">Current status breakdown</span>
+                <h3 className="text-lg font-semibold text-foreground">Request Status Distribution</h3>
+                <span className="text-sm text-muted-foreground">Current status breakdown</span>
               </div>
               {stats.statusDistribution.length > 0 ? (
                 <>
@@ -871,11 +873,13 @@ export default function AdminDashboardPage() {
                         <Tooltip
                           formatter={(value: number) => [`${value} requests`, 'Count']}
                           contentStyle={{
-                            backgroundColor: "#FFFFFF",
-                            border: "1px solid #E5E7EB",
+                            backgroundColor: "var(--card)",
+                            border: "1px solid var(--border)",
                             borderRadius: "8px",
-                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                            color: "var(--foreground)"
                           }}
+                          itemStyle={{ color: "var(--foreground)" }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -884,23 +888,23 @@ export default function AdminDashboardPage() {
                     {stats.statusDistribution.map((item, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
                       >
                         <div className="flex items-center gap-2">
                           <div
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: item.color }}
                           />
-                          <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                          <span className="text-sm font-medium text-muted-foreground">{item.name}</span>
                         </div>
-                        <span className="text-sm font-bold text-gray-900">{item.value}</span>
+                        <span className="text-sm font-bold text-foreground">{item.value}</span>
                       </div>
                     ))}
                   </div>
                 </>
               ) : (
-                <div className="h-64 flex flex-col items-center justify-center text-gray-500">
-                  <AlertTriangle className="h-12 w-12 text-gray-300 mb-3" />
+                <div className="h-64 flex flex-col items-center justify-center text-muted-foreground">
+                  <AlertTriangle className="h-12 w-12 text-muted-foreground/30 mb-3" />
                   <p>No status data available</p>
                   <p className="text-sm mt-1">Status distribution will appear here</p>
                 </div>
@@ -911,18 +915,18 @@ export default function AdminDashboardPage() {
           {/* Top Performers & Recent Activity */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Top Customers */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Top Customers</h3>
-                <span className="text-sm text-gray-500">By service requests</span>
+                <h3 className="text-lg font-semibold text-foreground">Top Customers</h3>
+                <span className="text-sm text-muted-foreground">By service requests</span>
               </div>
               {stats.topRiders.length > 0 ? (
                 <div className="space-y-3">
                   {stats.topRiders.map((rider, index) => (
-                    <div key={rider.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={rider.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <Avatar className="h-8 w-8 border-2 border-gray-200">
+                          <Avatar className="h-8 w-8 border-2 border-border">
                             {rider.profileImage ? (
                               <AvatarImage
                                 src={rider.profileImage}
@@ -930,19 +934,19 @@ export default function AdminDashboardPage() {
                                 className="object-cover"
                               />
                             ) : null}
-                            <AvatarFallback className="bg-gray-100 text-gray-700 text-xs font-bold">
+                            <AvatarFallback className="bg-muted text-muted-foreground text-xs font-bold">
                               {getInitials(rider.firstName, rider.lastName)}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-gray-800 text-white text-xs font-bold rounded-full">
+                          <div className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-foreground text-background text-[10px] font-bold rounded-full border border-background">
                             {index + 1}
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">
+                          <p className="font-medium text-foreground truncate">
                             {rider.firstName} {rider.lastName}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span className="truncate">@{rider.username}</span>
                             <div className="flex items-center gap-1">
                               <CheckCircle className="h-3 w-3 text-green-500" />
@@ -952,7 +956,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs text-gray-500 truncate max-w-[100px]">
+                        <div className="text-xs text-muted-foreground truncate max-w-[100px]">
                           {rider.phone}
                         </div>
                       </div>
@@ -960,8 +964,8 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <Users className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
                   <p>No customer data available</p>
                   <p className="text-sm mt-1">Top customers will appear here</p>
                 </div>
@@ -975,15 +979,15 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Top Providers */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Top Providers</h3>
-                <span className="text-sm text-gray-500">By completed assignments</span>
+                <h3 className="text-lg font-semibold text-foreground">Top Providers</h3>
+                <span className="text-sm text-muted-foreground">By completed assignments</span>
               </div>
               {stats.topRoadies.length > 0 ? (
                 <div className="space-y-3">
                   {stats.topRoadies.map((roadie, index) => (
-                    <div key={roadie.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={roadie.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Avatar className={`h-9 w-9 border-2 ${index === 0 ? 'border-amber-300' :
@@ -1020,10 +1024,10 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">
+                          <p className="font-medium text-foreground truncate">
                             {roadie.firstName} {roadie.lastName}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span className="truncate">@{roadie.username}</span>
                             <div className={`px-1.5 py-0.5 rounded text-xs ${roadie.is_approved
                               ? 'bg-green-100 text-green-800'
@@ -1035,17 +1039,17 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-semibold text-gray-900">
+                        <div className="text-sm font-semibold text-foreground">
                           {roadie.completedRequests}
                         </div>
-                        <div className="text-xs text-gray-500">completed</div>
+                        <div className="text-xs text-muted-foreground">completed</div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <UserCheck className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                <div className="text-center py-12 text-muted-foreground">
+                  <UserCheck className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
                   <p>No provider data available</p>
                   <p className="text-sm mt-1">Top providers will appear here</p>
                 </div>
@@ -1059,37 +1063,37 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Recent Service Requests */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Requests</h3>
-                <span className="text-sm text-gray-500">Latest activities</span>
+                <h3 className="text-lg font-semibold text-foreground">Recent Requests</h3>
+                <span className="text-sm text-muted-foreground">Latest activities</span>
               </div>
               {stats.recentServiceRequests.length > 0 ? (
                 <div className="space-y-3">
                   {stats.recentServiceRequests.map((request) => (
-                    <div key={request.id} className="p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={request.id} className="p-3 border border-border rounded-lg hover:bg-muted transition-colors">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <div className="bg-gray-900 text-white px-2 py-0.5 rounded text-xs font-bold">
+                            <div className="bg-foreground text-background px-2 py-0.5 rounded text-[10px] font-bold">
                               #{request.id}
                             </div>
                             <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
                               {request.status}
                             </span>
                           </div>
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <p className="text-sm font-medium text-foreground truncate">
                             {request.rider}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             {getServiceIcon(request.service)}
-                            <span className="text-xs text-gray-600 truncate">
+                            <span className="text-xs text-muted-foreground truncate">
                               {request.service}
                             </span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-gray-500 whitespace-nowrap">
+                          <div className="text-xs text-muted-foreground whitespace-nowrap">
                             {formatDate(request.created_at)}
                           </div>
                         </div>
@@ -1098,8 +1102,8 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <Clock className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                <div className="text-center py-12 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
                   <p>No recent requests</p>
                   <p className="text-sm mt-1">Service requests will appear here</p>
                 </div>
@@ -1116,10 +1120,10 @@ export default function AdminDashboardPage() {
           {/* Service Analytics & Platform Health */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Popular Services */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm lg:col-span-2">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Popular Services</h3>
-                <span className="text-sm text-gray-500">Most requested services</span>
+                <h3 className="text-lg font-semibold text-foreground">Popular Services</h3>
+                <span className="text-sm text-muted-foreground">Most requested services</span>
               </div>
               {stats.popularServices.length > 0 ? (
                 <div className="space-y-4">
@@ -1131,11 +1135,11 @@ export default function AdminDashboardPage() {
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: service.color }}
                           />
-                          <span className="font-medium text-gray-900">{service.name}</span>
+                          <span className="font-medium text-foreground">{service.name}</span>
                         </div>
-                        <span className="font-bold text-gray-900">{service.count} requests</span>
+                        <span className="font-bold text-foreground">{service.count} requests</span>
                       </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{
@@ -1148,8 +1152,8 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="h-64 flex flex-col items-center justify-center text-gray-500">
-                  <Package className="h-12 w-12 text-gray-300 mb-3" />
+                <div className="h-64 flex flex-col items-center justify-center text-muted-foreground">
+                  <Package className="h-12 w-12 text-muted-foreground/30 mb-3" />
                   <p>No service data available</p>
                   <p className="text-sm mt-1">Service analytics will appear here</p>
                 </div>
@@ -1157,10 +1161,10 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Platform Health */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Platform Health</h3>
-                <span className="text-sm text-gray-500">Performance metrics</span>
+                <h3 className="text-lg font-semibold text-foreground">Platform Health</h3>
+                <span className="text-sm text-muted-foreground">Performance metrics</span>
               </div>
               <div className="space-y-4">
                 <HealthMetric
@@ -1193,33 +1197,35 @@ export default function AdminDashboardPage() {
 
           {/* User Growth Chart */}
           {stats.userGrowth.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">User Growth</h3>
-                <span className="text-sm text-gray-500">Last 6 months</span>
+                <h3 className="text-lg font-semibold text-foreground">User Growth</h3>
+                <span className="text-sm text-muted-foreground">Last 6 months</span>
               </div>
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={stats.userGrowth}>
                   <defs>
                     <linearGradient id="colorRiders" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1} />
                     </linearGradient>
                     <linearGradient id="colorRoadies" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                  <XAxis dataKey="month" stroke="#6B7280" fontSize={12} />
-                  <YAxis stroke="#6B7280" fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
+                  <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#FFFFFF",
-                      border: "1px solid #E5E7EB",
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
                       borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      color: "var(--foreground)"
                     }}
+                    itemStyle={{ color: "var(--foreground)" }}
                   />
                   <Area
                     type="monotone"
@@ -1271,18 +1277,18 @@ const StatCard = ({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mb-2">
+          <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
+          <p className="text-3xl font-bold text-foreground mb-2">
             {formatValue()}
           </p>
           <div className="space-y-1">
-            <p className="text-xs text-gray-500">{subtext}</p>
+            <p className="text-xs text-muted-foreground">{subtext}</p>
             <div className="flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-gray-400" />
-              <span className="text-xs text-gray-500">{trend}</span>
+              <TrendingUp className="h-3 w-3 text-muted-foreground/50" />
+              <span className="text-xs text-muted-foreground/80">{trend}</span>
             </div>
           </div>
         </div>
@@ -1312,18 +1318,18 @@ const HealthMetric = ({ label, value, icon, color }: HealthMetricProps) => {
   }
 
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
           {icon}
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-900">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}%</p>
+          <p className="text-sm font-medium text-foreground">{label}</p>
+          <p className="text-2xl font-bold text-foreground">{value}%</p>
         </div>
       </div>
       <div className="w-24">
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full ${color === 'blue' ? 'bg-blue-500' :
               color === 'green' ? 'bg-green-500' :

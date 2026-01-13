@@ -154,21 +154,21 @@ export default function WalletsPage() {
     }
 
     const getBalanceColor = (balance: number) => {
-        if (balance > 0) return "text-green-600"
-        if (balance === 0) return "text-gray-600"
-        if (balance < 0 && balance >= -10000) return "text-yellow-600"
-        return "text-red-600"
+        if (balance > 0) return "text-emerald-500"
+        if (balance === 0) return "text-muted-foreground"
+        if (balance < 0 && balance >= -10000) return "text-amber-500"
+        return "text-destructive"
     }
 
     const getBalanceBadge = (balance: number) => {
         if (balance > 0) {
-            return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Positive</Badge>
+            return <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-900/20 dark:text-emerald-400">Positive</Badge>
         } else if (balance === 0) {
-            return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Zero</Badge>
+            return <Badge variant="outline" className="border-border bg-muted text-muted-foreground">Zero</Badge>
         } else if (balance < 0 && balance >= -10000) {
-            return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Warning</Badge>
+            return <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/30 dark:bg-amber-900/20 dark:text-amber-400">Warning</Badge>
         } else {
-            return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Critical</Badge>
+            return <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive dark:border-destructive/30 dark:bg-destructive/20 dark:text-red-400">Critical</Badge>
         }
     }
 
@@ -185,9 +185,9 @@ export default function WalletsPage() {
 
     const getUserRoleColor = (wallet: WalletWithUser) => {
         const role = getUserRole(wallet)
-        return role === 'RIDER' ? 'bg-blue-100 text-blue-800' :
-            role === 'RODIE' ? 'bg-purple-100 text-purple-800' :
-                'bg-gray-100 text-gray-800'
+        return role === 'RIDER' ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/30 dark:bg-blue-900/20 dark:text-blue-400' :
+            role === 'RODIE' ? 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/30 dark:bg-purple-900/20 dark:text-purple-400' :
+                'border-border bg-muted text-muted-foreground'
     }
 
     const getTransactionCount = (wallet: WalletWithUser) => {
@@ -202,8 +202,8 @@ export default function WalletsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Wallets Management</h1>
-                    <p className="text-gray-600 mt-2">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Wallets Management</h1>
+                    <p className="text-muted-foreground mt-2">
                         View Rider and Roadie wallet balances
                     </p>
                 </div>
@@ -211,69 +211,69 @@ export default function WalletsPage() {
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-white border border-gray-200 shadow-sm">
+                <Card className="bg-card border-border shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                             <WalletIcon className="h-4 w-4" />
                             Total Wallets
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-gray-900">
+                        <div className="text-3xl font-bold text-foreground">
                             {isLoading ? <Skeleton className="h-8 w-16" /> : stats.totalWallets}
                         </div>
-                        <CardDescription className="text-xs text-gray-500 mt-1">
+                        <CardDescription className="text-xs text-muted-foreground mt-1">
                             {stats.totalRiders} riders, {stats.totalRoadies} roadies
                         </CardDescription>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-gray-200 shadow-sm">
+                <Card className="bg-card border-border shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                             <DollarSign className="h-4 w-4" />
                             Total Balance
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className={`text-3xl font-bold ${stats.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className={`text-3xl font-bold ${stats.totalBalance >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
                             {isLoading ? <Skeleton className="h-8 w-24" /> : formatCurrency(stats.totalBalance)}
                         </div>
-                        <CardDescription className="text-xs text-gray-500 mt-1">
+                        <CardDescription className="text-xs text-muted-foreground mt-1">
                             Combined wallet value
                         </CardDescription>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-gray-200 shadow-sm">
+                <Card className="bg-card border-border shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                             <TrendingUp className="h-4 w-4" />
                             Positive Wallets
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-green-600">
+                        <div className="text-3xl font-bold text-emerald-500">
                             {isLoading ? <Skeleton className="h-8 w-12" /> : stats.positiveBalanceCount}
                         </div>
-                        <CardDescription className="text-xs text-gray-500 mt-1">
+                        <CardDescription className="text-xs text-muted-foreground mt-1">
                             {stats.totalWallets > 0 ? `${((stats.positiveBalanceCount / stats.totalWallets) * 100).toFixed(1)}% of wallets` : 'No wallets'}
                         </CardDescription>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-gray-200 shadow-sm">
+                <Card className="bg-card border-border shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                             <TrendingDown className="h-4 w-4" />
                             Negative Wallets
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-red-600">
+                        <div className="text-3xl font-bold text-destructive">
                             {isLoading ? <Skeleton className="h-8 w-12" /> : stats.negativeBalanceCount}
                         </div>
-                        <CardDescription className="text-xs text-gray-500 mt-1">
+                        <CardDescription className="text-xs text-muted-foreground mt-1">
                             {stats.totalWallets > 0 ? `${((stats.negativeBalanceCount / stats.totalWallets) * 100).toFixed(1)}% of wallets` : 'No wallets'}
                         </CardDescription>
                     </CardContent>
@@ -282,22 +282,22 @@ export default function WalletsPage() {
 
             {/* Platform Config Info */}
             {platformConfig && (
-                <Card className="bg-blue-50 border-blue-200">
+                <Card className="bg-primary/10 border-primary/20">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-blue-700">Platform Configuration</CardTitle>
+                        <CardTitle className="text-sm font-medium text-primary">Platform Configuration</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div>
-                                <span className="text-blue-600 font-medium">Max Negative Balance: </span>
-                                <span className="font-bold text-blue-800">{formatCurrency(platformConfig.max_negative_balance)}</span>
+                                <span className="text-primary/70 font-medium">Max Negative Balance: </span>
+                                <span className="font-bold text-primary">{formatCurrency(platformConfig.max_negative_balance)}</span>
                             </div>
                             <div>
-                                <span className="text-blue-600 font-medium">Service Fee: </span>
-                                <span className="font-bold text-blue-800">{formatCurrency(platformConfig.service_fee)}</span>
+                                <span className="text-primary/70 font-medium">Service Fee: </span>
+                                <span className="font-bold text-primary">{formatCurrency(platformConfig.service_fee)}</span>
                             </div>
                         </div>
-                        <p className="text-xs text-blue-600 mt-2">
+                        <p className="text-xs text-primary/70 mt-2">
                             Users with balance below {formatCurrency(parseFloat(platformConfig.max_negative_balance) * -1)} cannot receive services
                         </p>
                     </CardContent>
@@ -306,35 +306,35 @@ export default function WalletsPage() {
 
             {/* Role Breakdown */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-white border border-gray-200 shadow-sm">
+                <Card className="bg-card border-border shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                             <User className="h-4 w-4" />
                             Rider Wallets
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-2xl font-bold text-blue-500">
                             {isLoading ? <Skeleton className="h-7 w-12" /> : stats.totalRiders}
                         </div>
-                        <CardDescription className="text-xs text-gray-500 mt-1">
+                        <CardDescription className="text-xs text-muted-foreground mt-1">
                             Total balance: {formatCurrency(riderWallets.reduce((sum, w) => sum + parseFloat(w.balance), 0))}
                         </CardDescription>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-gray-200 shadow-sm">
+                <Card className="bg-card border-border shadow-sm">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             Roadie Wallets
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-purple-600">
+                        <div className="text-2xl font-bold text-purple-500">
                             {isLoading ? <Skeleton className="h-7 w-12" /> : stats.totalRoadies}
                         </div>
-                        <CardDescription className="text-xs text-gray-500 mt-1">
+                        <CardDescription className="text-xs text-muted-foreground mt-1">
                             Total balance: {formatCurrency(roadieWallets.reduce((sum, w) => sum + parseFloat(w.balance), 0))}
                         </CardDescription>
                     </CardContent>
@@ -342,12 +342,12 @@ export default function WalletsPage() {
             </div>
 
             {/* Main Table */}
-            <Card className="bg-white border border-gray-200 shadow-sm">
+            <Card className="bg-card border-border shadow-sm">
                 <CardHeader>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <CardTitle>User Wallets</CardTitle>
-                            <CardDescription>
+                            <CardTitle className="text-foreground">User Wallets</CardTitle>
+                            <CardDescription className="text-muted-foreground">
                                 View Rider and Roadie wallet balances
                             </CardDescription>
                         </div>
@@ -356,7 +356,7 @@ export default function WalletsPage() {
                                 placeholder="Search by username or external ID..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full"
+                                className="w-full bg-background"
                                 disabled={isLoading || wallets.length === 0}
                             />
                         </div>
@@ -381,17 +381,17 @@ export default function WalletsPage() {
                         />
                     ) : (
                         <>
-                            <div className="border rounded-lg overflow-hidden">
+                            <div className="border border-border rounded-lg overflow-hidden">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow className="bg-gray-50">
-                                            <TableHead className="font-semibold">User</TableHead>
-                                            <TableHead className="font-semibold">External ID</TableHead>
-                                            <TableHead className="font-semibold">Role</TableHead>
-                                            <TableHead className="font-semibold">Wallet Balance</TableHead>
-                                            <TableHead className="font-semibold">Status</TableHead>
-                                            <TableHead className="font-semibold">Transactions</TableHead>
-                                            <TableHead className="font-semibold text-right">Actions</TableHead>
+                                        <TableRow className="bg-muted/50 border-b border-border">
+                                            <TableHead className="font-semibold text-foreground">User</TableHead>
+                                            <TableHead className="font-semibold text-foreground">External ID</TableHead>
+                                            <TableHead className="font-semibold text-foreground">Role</TableHead>
+                                            <TableHead className="font-semibold text-foreground">Wallet Balance</TableHead>
+                                            <TableHead className="font-semibold text-foreground">Status</TableHead>
+                                            <TableHead className="font-semibold text-foreground">Transactions</TableHead>
+                                            <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -402,28 +402,28 @@ export default function WalletsPage() {
                                             const roleLabel = getUserRoleLabel(wallet)
 
                                             return (
-                                                <TableRow key={wallet.id} className="hover:bg-gray-50">
+                                                <TableRow key={wallet.id} className="hover:bg-muted/30 border-b border-border transition-colors">
                                                     <TableCell>
                                                         <div className="space-y-1">
-                                                            <div className="font-medium">
+                                                            <div className="font-medium text-foreground">
                                                                 {wallet.user_username}
                                                             </div>
-                                                            <div className="text-sm text-gray-500">
+                                                            <div className="text-sm text-muted-foreground">
                                                                 ID: {wallet.user_id}
                                                             </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
-                                                            <ExternalLink className="h-3 w-3 text-gray-400" />
-                                                            <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                                                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                                                            <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-foreground">
                                                                 {wallet.user_external_id}
                                                             </code>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge className={`${roleColor} hover:${roleColor}`}>
-                                                            {roleLabel}
+                                                        <Badge variant="outline" className={`${roleColor} capitalize font-medium border-2`}>
+                                                            {roleLabel.toLowerCase()}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
@@ -436,7 +436,7 @@ export default function WalletsPage() {
                                                     <TableCell>
                                                         {getBalanceBadge(balance)}
                                                         {platformConfig && balance < -parseFloat(platformConfig.max_negative_balance) && (
-                                                            <div className="text-xs text-red-600 mt-1 font-medium">
+                                                            <div className="text-xs text-destructive mt-1 font-medium">
                                                                 Below threshold
                                                             </div>
                                                         )}
@@ -445,15 +445,15 @@ export default function WalletsPage() {
                                                         <div className="text-sm">
                                                             {transactionCount > 0 ? (
                                                                 <div className="space-y-1">
-                                                                    <div className="text-gray-900">{transactionCount} transaction{transactionCount !== 1 ? 's' : ''}</div>
+                                                                    <div className="text-foreground">{transactionCount} transaction{transactionCount !== 1 ? 's' : ''}</div>
                                                                     {transactionCount > 0 && (
-                                                                        <div className="text-xs text-gray-600">
+                                                                        <div className="text-xs text-muted-foreground">
                                                                             Last: {new Date(wallet.transactions[0].created_at).toLocaleDateString()}
                                                                         </div>
                                                                     )}
                                                                 </div>
                                                             ) : (
-                                                                <div className="text-xs text-gray-400">No transactions</div>
+                                                                <div className="text-xs text-muted-foreground">No transactions</div>
                                                             )}
                                                         </div>
                                                     </TableCell>
@@ -477,22 +477,22 @@ export default function WalletsPage() {
                             </div>
 
                             {!isLoading && filteredWallets.length > 0 && (
-                                <div className="flex flex-col md:flex-row items-center justify-between mt-4 text-sm text-gray-500 gap-2">
+                                <div className="flex flex-col md:flex-row items-center justify-between mt-4 text-sm text-muted-foreground gap-2">
                                     <div>
                                         Showing {filteredWallets.length} of {wallets.length} wallets
                                         {searchQuery && ` matching "${searchQuery}"`}
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
                                             <span>Positive Balance</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
                                             <span>Warning ({platformConfig ? `>-${formatCurrency(platformConfig.max_negative_balance)}` : '>-10,000'})</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-destructive"></div>
                                             <span>Critical ({platformConfig ? `<-${formatCurrency(platformConfig.max_negative_balance)}` : '<-10,000'})</span>
                                         </div>
                                     </div>

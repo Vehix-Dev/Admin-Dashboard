@@ -100,22 +100,22 @@ const LocationCell = ({ lat, lng }: { lat: string | number | null, lng: string |
     fetchAddress()
   }, [lat, lng])
 
-  if (!lat || !lng) return <span className="text-gray-400 text-xs">N/A</span>
+  if (!lat || !lng) return <span className="text-muted-foreground text-xs">N/A</span>
 
   return (
     <div className="flex flex-col max-w-[250px]">
       {loading ? (
-        <div className="flex items-center gap-1 text-xs text-gray-400">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin bg-none" /> Loading address...
         </div>
       ) : error ? (
-        <span className="text-xs text-red-400">Address lookup failed</span>
+        <span className="text-xs text-destructive">Address lookup failed</span>
       ) : address ? (
-        <span className="text-xs text-gray-700 font-medium truncate" title={address}>
+        <span className="text-xs text-foreground font-medium truncate" title={address}>
           {address}
         </span>
       ) : null}
-      <span className="text-[10px] text-gray-400 font-mono mt-0.5">
+      <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
         {Number(lat).toFixed(6)}, {Number(lng).toFixed(6)}
       </span>
     </div>
@@ -520,13 +520,13 @@ export default function RequestsPage() {
             variant="outline"
             className={`
               capitalize font-medium border-2
-              ${color === 'blue' ? 'border-blue-200 bg-blue-50 text-blue-700' : ''}
-              ${color === 'orange' ? 'border-orange-200 bg-orange-50 text-orange-700' : ''}
-              ${color === 'purple' ? 'border-purple-200 bg-purple-50 text-purple-700' : ''}
-              ${color === 'green' ? 'border-green-200 bg-green-50 text-green-700' : ''}
-              ${color === 'teal' ? 'border-teal-200 bg-teal-50 text-teal-700' : ''}
-              ${color === 'red' ? 'border-red-200 bg-red-50 text-red-700' : ''}
-              ${color === 'gray' ? 'border-gray-200 bg-gray-50 text-gray-700' : ''}
+              ${color === 'blue' ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/30 dark:bg-blue-900/20 dark:text-blue-400' : ''}
+              ${color === 'orange' ? 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/30 dark:bg-orange-900/20 dark:text-orange-400' : ''}
+              ${color === 'purple' ? 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/30 dark:bg-purple-900/20 dark:text-purple-400' : ''}
+              ${color === 'green' ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/30 dark:bg-green-900/20 dark:text-green-400' : ''}
+              ${color === 'teal' ? 'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/30 dark:bg-teal-900/20 dark:text-teal-400' : ''}
+              ${color === 'red' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-400' : ''}
+              ${color === 'gray' ? 'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-800/20 dark:text-gray-400' : ''}
             `}
           >
             {getStatusLabel(status as ServiceStatus)}
@@ -563,8 +563,8 @@ export default function RequestsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Service Requests</h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Service Requests</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Manage all service requests from riders
           </p>
         </div>
@@ -573,7 +573,7 @@ export default function RequestsPage() {
             variant="outline"
             size="sm"
             onClick={handleExport}
-            className="gap-2 border-gray-300 bg-white hover:bg-gray-50"
+            className="gap-2 border-border bg-card hover:bg-muted"
             disabled={filteredRequests.length === 0}
           >
             <FileDown className="h-4 w-4" />
@@ -582,7 +582,7 @@ export default function RequestsPage() {
           <PermissionButton
             permissions={PERMISSIONS.REQUESTS_ADD}
             onClick={() => setIsFormOpen(true)}
-            className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+            className="gap-2 bg-primary hover:bg-primary/90 text-white"
           >
             <Plus className="h-4 w-4" />
             New Request
@@ -591,29 +591,29 @@ export default function RequestsPage() {
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="bg-white rounded-lg border shadow-sm p-4">
+      <div className="bg-card rounded-lg border border-border shadow-sm p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-xl">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search requests by ID, rider, roadie, service, status, or location..."
                 value={searchInput}
                 onChange={handleSearchChange}
-                className="pl-10 pr-20"
+                className="pl-10 pr-20 bg-background"
                 disabled={isLoading}
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                 {isSearching ? (
-                  <div className="flex items-center gap-1 text-gray-400">
+                  <div className="flex items-center gap-1 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-xs">Searching...</span>
                   </div>
                 ) : searchInput ? (
                   <button
                     onClick={clearSearch}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                    className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted"
                     title="Clear search"
                   >
                     <X className="h-4 w-4" />
@@ -639,17 +639,17 @@ export default function RequestsPage() {
               )}
             </Button>
 
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <span className="font-medium">Total:</span>
-                <Badge variant="outline" className="bg-gray-50">
+                <Badge variant="outline" className="bg-muted">
                   {totalRequests}
                 </Badge>
               </div>
               {(searchActive || filtersActive) && (
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Showing:</span>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     {shownRequests} of {totalRequests}
                   </Badge>
                 </div>
@@ -660,10 +660,10 @@ export default function RequestsPage() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Status Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Status</label>
+              <label className="text-sm font-medium text-foreground">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -681,7 +681,7 @@ export default function RequestsPage() {
 
             {/* Service Type Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Service Type</label>
+              <label className="text-sm font-medium text-foreground">Service Type</label>
               <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select service type" />
@@ -699,7 +699,7 @@ export default function RequestsPage() {
 
             {/* Date Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Created Date</label>
+              <label className="text-sm font-medium text-foreground">Created Date</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -747,7 +747,7 @@ export default function RequestsPage() {
 
         {/* Search tips - FIXED: No more object rendering error */}
         {searchActive && shownRequests === 0 && !isSearching && (
-          <div className="mt-3 text-sm text-gray-500">
+          <div className="mt-3 text-sm text-muted-foreground">
             No results found for "{searchQuery}". Try searching by:
             <ul className="list-disc pl-5 mt-1 space-y-1">
               <li>Request ID</li>
@@ -762,16 +762,16 @@ export default function RequestsPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border shadow-sm min-h-[400px]">
+      <div className="bg-card rounded-lg border border-border shadow-sm min-h-[400px]">
         {isLoading ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            <p className="text-gray-600">Loading service requests...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-muted-foreground">Loading service requests...</p>
           </div>
         ) : isSearching ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            <p className="text-gray-600">Searching for "{searchInput}"...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Searching for "{searchInput}"...</p>
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="p-8">

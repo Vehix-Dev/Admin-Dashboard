@@ -102,7 +102,7 @@ export default function PlatformConfigPage() {
                     )}
 
                     {success && (
-                        <Alert className="mb-6 border-green-500 text-green-700">
+                        <Alert className="mb-6 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
                             <CheckCircle className="h-4 w-4" />
                             <AlertTitle>Success</AlertTitle>
                             <AlertDescription>{success}</AlertDescription>

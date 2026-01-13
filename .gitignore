@@ -31,3 +31,6 @@ next-env.d.ts
 vehix.db
 vehix.db-shm
 vehix.db-wal
+
+# public files
+public/uploads/*

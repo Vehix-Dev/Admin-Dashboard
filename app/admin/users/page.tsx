@@ -183,13 +183,13 @@ export default function AdminUsersPage() {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Admin Users</h2>
-                        <p className="text-sm text-gray-600 mt-1">Manage system administrators</p>
+                        <h2 className="text-2xl font-bold text-foreground">Admin Users</h2>
+                        <p className="text-sm text-muted-foreground mt-1">Manage system administrators</p>
                     </div>
                     <div className="flex gap-2">
                         <PermissionButton
                             permissions={PERMISSIONS.ADMIN_USERS_ADD}
-                            className="gap-2 bg-blue-600 hover:bg-blue-700"
+                            className="gap-2 bg-primary hover:bg-primary/90 text-white"
                             onClick={() => window.location.href = "/admin/users/add"}
                         >
                             <Plus className="h-4 w-4" />
@@ -207,7 +207,7 @@ export default function AdminUsersPage() {
                         action={
                             canAdd ? (
                                 <Link href="/admin/users/add">
-                                    <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+                                    <Button className="gap-2 bg-primary hover:bg-primary/90 text-white">
                                         <Plus className="h-4 w-4" />
                                         Add Admin User
                                     </Button>

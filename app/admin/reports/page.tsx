@@ -269,14 +269,14 @@ export default function ReportsPage() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Reports Center</h1>
-                    <p className="text-gray-600 mt-1">Detailed system analytics, financials, and operational metrics</p>
+                    <h1 className="text-3xl font-bold text-foreground">Reports Center</h1>
+                    <p className="text-muted-foreground mt-1">Detailed system analytics, financials, and operational metrics</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={() => handleExport('usage')} variant="outline" size="sm">
+                    <Button onClick={() => handleExport('usage')} variant="outline" size="sm" className="border-border bg-card hover:bg-muted">
                         <FileDown className="h-4 w-4 mr-2" /> Export Usage
                     </Button>
-                    <Button onClick={() => handleExport('financial')} className="bg-green-600 hover:bg-green-700" size="sm">
+                    <Button onClick={() => handleExport('financial')} className="bg-primary hover:bg-primary/90" size="sm">
                         <Download className="h-4 w-4 mr-2" /> Export Financials
                     </Button>
                 </div>
@@ -284,14 +284,14 @@ export default function ReportsPage() {
 
             {/* Top Level Financials */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-t-4 border-t-green-600 shadow-sm relative overflow-hidden">
-                    <div className="absolute right-0 top-0 h-16 w-16 -mr-4 -mt-4 rounded-full bg-green-50 opacity-50"></div>
+                <Card className="border-t-4 border-t-emerald-500 shadow-sm relative overflow-hidden bg-card">
+                    <div className="absolute right-0 top-0 h-16 w-16 -mr-4 -mt-4 rounded-full bg-emerald-500/10 opacity-50"></div>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
-                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-900">
+                        <div className="text-2xl font-bold text-foreground">
                             {new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', maximumSignificantDigits: 3 }).format(data?.revenue.totalServiceFees || 0)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -300,39 +300,39 @@ export default function ReportsPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-t-4 border-t-blue-600 shadow-sm">
+                <Card className="border-t-4 border-t-blue-500 shadow-sm bg-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600">User Wallets</CardTitle>
-                        <Activity className="h-4 w-4 text-blue-600" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">User Wallets</CardTitle>
+                        <Activity className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-900">
+                        <div className="text-2xl font-bold text-foreground">
                             {new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', maximumSignificantDigits: 3 }).format(data?.revenue.totalWalletBalance || 0)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Total held by all users</p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-t-4 border-t-purple-600 shadow-sm">
+                <Card className="border-t-4 border-t-purple-500 shadow-sm bg-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600">Completion Rate</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-purple-600" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Completion Rate</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-purple-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-900">{data?.services.completionRate}%</div>
+                        <div className="text-2xl font-bold text-foreground">{data?.services.completionRate}%</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {data?.services.completedRequests} / {data?.services.totalRequests} requests
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-t-4 border-t-orange-600 shadow-sm">
+                <Card className="border-t-4 border-t-orange-500 shadow-sm bg-card">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>
-                        <Users className="h-4 w-4 text-orange-600" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+                        <Users className="h-4 w-4 text-orange-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-900">{data?.users.total}</div>
+                        <div className="text-2xl font-bold text-foreground">{data?.users.total}</div>
                         <div className="flex text-xs text-muted-foreground mt-1 gap-2">
                             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> {data?.users.riders} Riders</span>
                             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span> {data?.users.roadies} Roadies</span>
@@ -343,10 +343,10 @@ export default function ReportsPage() {
 
             <div className="grid gap-6 lg:grid-cols-7">
                 {/* Main Trend Chart */}
-                <Card className="lg:col-span-4 shadow-sm">
+                <Card className="lg:col-span-4 shadow-sm bg-card border-border">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-500" />
+                        <CardTitle className="flex items-center gap-2 text-foreground">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
                             Request Trends (Last 7 Days)
                         </CardTitle>
                         <CardDescription>Daily volume and completion tracking</CardDescription>
@@ -364,11 +364,18 @@ export default function ReportsPage() {
                                         <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                <XAxis dataKey="date" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" strokeOpacity={0.1} />
+                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.6 }} fontSize={12} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.6 }} fontSize={12} />
                                 <Tooltip
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    contentStyle={{
+                                        backgroundColor: 'var(--card)',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border)',
+                                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                        color: 'var(--foreground)'
+                                    }}
+                                    itemStyle={{ color: 'var(--foreground)' }}
                                 />
                                 <Legend />
                                 <Area type="monotone" dataKey="requests" name="Total Requests" stroke="#8884d8" fillOpacity={1} fill="url(#colorRequests)" />
@@ -379,9 +386,9 @@ export default function ReportsPage() {
                 </Card>
 
                 {/* Status Breakdown */}
-                <Card className="lg:col-span-3 shadow-sm">
+                <Card className="lg:col-span-3 shadow-sm bg-card border-border">
                     <CardHeader>
-                        <CardTitle>Request Status</CardTitle>
+                        <CardTitle className="text-foreground">Request Status</CardTitle>
                         <CardDescription>Current state distribution</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[350px]">
@@ -412,9 +419,9 @@ export default function ReportsPage() {
             </div>
 
             {/* Service Popularity Bar Chart */}
-            <Card className="shadow-sm">
+            <Card className="shadow-sm bg-card border-border">
                 <CardHeader>
-                    <CardTitle>Service Popularity</CardTitle>
+                    <CardTitle className="text-foreground">Service Popularity</CardTitle>
                     <CardDescription>Which services are most in demand?</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[300px]">
@@ -424,14 +431,20 @@ export default function ReportsPage() {
                             layout="vertical"
                             margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                         >
-                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" strokeOpacity={0.1} />
                             <XAxis type="number" hide />
-                            <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 12 }} />
+                            <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 12, fill: 'currentColor', opacity: 0.8 }} />
                             <Tooltip
-                                cursor={{ fill: '#f4f4f5' }}
-                                contentStyle={{ borderRadius: '8px' }}
+                                cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+                                contentStyle={{
+                                    backgroundColor: 'var(--card)',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border)',
+                                    color: 'var(--foreground)'
+                                }}
+                                itemStyle={{ color: 'var(--foreground)' }}
                             />
-                            <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} name="Requests" />
+                            <Bar dataKey="value" fill="var(--primary)" radius={[0, 4, 4, 0]} barSize={20} name="Requests" />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>

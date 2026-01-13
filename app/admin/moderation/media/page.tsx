@@ -101,18 +101,18 @@ export default function MediaModerationPage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Media Moderation</h1>
-                    <p className="text-gray-600 mt-1">Review and moderate all user uploads</p>
+                    <h1 className="text-3xl font-bold text-foreground">Media Moderation</h1>
+                    <p className="text-muted-foreground mt-1">Review and moderate all user uploads</p>
                 </div>
                 <div className="flex gap-2">
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-lg border border-gray-200">
+            <div className="flex flex-col md:flex-row gap-4 bg-card p-4 rounded-lg border border-border">
                 <div className="flex-1">
                     <form onSubmit={handleSearch} className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search by username or external ID..."
                             value={searchQuery}
@@ -143,8 +143,8 @@ export default function MediaModerationPage() {
             {isLoading ? (
                 <div className="space-y-8">
                     {[1, 2].map(i => (
-                        <div key={i} className="border rounded-lg overflow-hidden">
-                            <div className="h-10 bg-gray-200 animate-pulse" />
+                        <div key={i} className="border border-border rounded-lg overflow-hidden">
+                            <div className="h-10 bg-muted animate-pulse" />
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <Skeleton className="h-64 rounded-xl" />
                                 <Skeleton className="h-64 rounded-xl" />
@@ -162,12 +162,12 @@ export default function MediaModerationPage() {
             ) : (
                 <div className="space-y-8">
                     {/* Main Table Header Style for Legend/Context if needed, though mostly visual per user request */}
-                    <div className="hidden md:block text-sm font-semibold text-gray-500 border-b pb-2 mb-4">
+                    <div className="hidden md:block text-sm font-semibold text-muted-foreground border-b border-border pb-2 mb-4">
                         SR No. &nbsp;&nbsp; User Asset Detail
                     </div>
 
                     {Object.entries(groupedImages).map(([externalId, group], groupIndex) => (
-                        <div key={externalId} className="border rounded-lg overflow-hidden shadow-sm bg-white">
+                        <div key={externalId} className="border border-border rounded-lg overflow-hidden shadow-sm bg-card">
                             {/* User Header - Cyan/Blue Bar */}
                             <div className="bg-[#00B4D8] text-white px-4 py-3 font-semibold text-lg flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -191,8 +191,8 @@ export default function MediaModerationPage() {
                                             </div> */}
 
                                             {/* Image Card */}
-                                            <Card className="w-full overflow-hidden group border hover:border-blue-200 transition-colors">
-                                                <div className="relative aspect-video bg-gray-100">
+                                            <Card className="w-full overflow-hidden group border border-border hover:border-primary/50 transition-colors bg-card">
+                                                <div className="relative aspect-video bg-muted">
                                                     {/* Image */}
                                                     <img
                                                         src={image.original_url || image.thumbnail_url}
@@ -218,10 +218,10 @@ export default function MediaModerationPage() {
                                                     <div className="space-y-2">
                                                         <div className="space-y-1">
                                                             <div className="flex items-center justify-between gap-2">
-                                                                <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 text-[10px] px-1 h-5 truncate max-w-[100px]">
+                                                                <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/20 dark:text-primary-foreground text-[10px] px-1 h-5 truncate max-w-[100px]">
                                                                     {getImageTypeLabel(image.image_type as any)}
                                                                 </Badge>
-                                                                <span className="text-[10px] text-gray-400 font-mono">#{idx + 1}</span>
+                                                                <span className="text-[10px] text-muted-foreground font-mono">#{idx + 1}</span>
                                                             </div>
                                                             {/* <p className="text-[10px] text-gray-400 truncate">
                                                                 {new Date(image.created_at).toLocaleDateString()}

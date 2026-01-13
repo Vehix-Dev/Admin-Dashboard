@@ -281,7 +281,7 @@ export default function RidersPage() {
       accessor: "external_id" as const,
       cell: (value: string, row: RiderWithThumbnail) => (
         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 border-2 border-gray-200">
+          <Avatar className="h-10 w-10 border-2 border-border/50">
             {row.thumbnail ? (
               <AvatarImage
                 src={row.thumbnail}
@@ -289,18 +289,22 @@ export default function RidersPage() {
                 className="object-cover"
               />
             ) : null}
-            <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-50 text-blue-700">
+            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
               {getInitials(row.first_name, row.last_name)}
             </AvatarFallback>
           </Avatar>
-          <button
-            onClick={() => handleIdClick(row)}
-            className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1 transition-colors group"
-            title="Edit rider"
-          >
-            {value || "N/A"}
-            <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </button>
+          {canChange ? (
+            <button
+              onClick={() => handleIdClick(row)}
+              className="text-primary hover:text-primary/80 font-medium hover:underline flex items-center gap-1 transition-colors group"
+              title="Edit rider"
+            >
+              {value || "N/A"}
+              <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          ) : (
+            <span className="font-medium text-foreground">{value || "N/A"}</span>
+          )}
         </div>
       )
     },
@@ -309,8 +313,8 @@ export default function RidersPage() {
       accessor: "first_name" as const,
       cell: (value: string, row: RiderWithThumbnail) => (
         <div className="flex flex-col">
-          <span className="font-medium">{row.first_name} {row.last_name}</span>
-          <span className="text-xs text-gray-500">@{row.username}</span>
+          <span className="font-medium text-foreground">{row.first_name} {row.last_name}</span>
+          <span className="text-xs text-muted-foreground">@{row.username}</span>
         </div>
       )
     },
@@ -319,8 +323,8 @@ export default function RidersPage() {
       accessor: "email" as const,
       cell: (value: string, row: RiderWithThumbnail) => (
         <div className="flex flex-col">
-          <span className="font-medium">{row.email}</span>
-          <span className="text-xs text-gray-500">{row.phone}</span>
+          <span className="font-medium text-foreground">{row.email}</span>
+          <span className="text-xs text-muted-foreground">{row.phone}</span>
         </div>
       )
     },
@@ -328,7 +332,7 @@ export default function RidersPage() {
       header: "NIN",
       accessor: "nin" as const,
       cell: (value: string) => (
-        <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+        <span className="font-mono text-xs bg-muted px-2 py-1 rounded border border-border/50 text-foreground">
           {value || "N/A"}
         </span>
       ),
@@ -379,8 +383,8 @@ export default function RidersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Customers</h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Customers</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Manage rider customers and their status
           </p>
         </div>
@@ -388,7 +392,7 @@ export default function RidersPage() {
           <PermissionButton
             permissions={PERMISSIONS.RIDERS_ADD}
             onClick={() => router.push("/admin/riders/add")}
-            className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+            className="gap-2 bg-primary hover:bg-primary/90 text-white"
           >
             <Plus className="h-4 w-4" />
             Add Customer
@@ -398,49 +402,49 @@ export default function RidersPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg border p-4 shadow-sm">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Customers</p>
-              <p className="text-2xl font-bold mt-1">{totalRiders}</p>
+              <p className="text-sm text-muted-foreground">Total Customers</p>
+              <p className="text-2xl font-bold mt-1 text-foreground">{totalRiders}</p>
             </div>
-            <div className="bg-blue-100 p-2 rounded-full">
-              <Users className="h-5 w-5 text-blue-600" />
+            <div className="bg-primary/10 p-2 rounded-full">
+              <Users className="h-5 w-5 text-primary" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-4 shadow-sm">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Active</p>
-              <p className="text-2xl font-bold mt-1 text-green-600">{activeRiders}</p>
+              <p className="text-sm text-muted-foreground">Active</p>
+              <p className="text-2xl font-bold mt-1 text-emerald-500">{activeRiders}</p>
             </div>
-            <div className="bg-green-100 p-2 rounded-full">
-              <Check className="h-5 w-5 text-green-600" />
+            <div className="bg-emerald-500/10 p-2 rounded-full">
+              <Check className="h-5 w-5 text-emerald-500" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-4 shadow-sm">
+        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Pending Approval</p>
-              <p className="text-2xl font-bold mt-1 text-yellow-600">{pendingRiders}</p>
+              <p className="text-sm text-muted-foreground">Pending Approval</p>
+              <p className="text-2xl font-bold mt-1 text-amber-500">{pendingRiders}</p>
             </div>
-            <div className="bg-yellow-100 p-2 rounded-full">
-              <XCircle className="h-5 w-5 text-yellow-600" />
+            <div className="bg-amber-500/10 p-2 rounded-full">
+              <XCircle className="h-5 w-5 text-amber-500" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="bg-white rounded-lg border shadow-sm p-4">
+      <div className="bg-card rounded-lg border border-border shadow-sm p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-xl">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search customers by name, email, phone, username, NIN, or status..."
@@ -451,14 +455,14 @@ export default function RidersPage() {
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                 {isSearching ? (
-                  <div className="flex items-center gap-1 text-gray-400">
+                  <div className="flex items-center gap-1 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-xs">Searching...</span>
                   </div>
                 ) : searchInput ? (
                   <button
                     onClick={clearSearch}
-                    className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                    className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted"
                     title="Clear search"
                   >
                     <X className="h-4 w-4" />
@@ -484,17 +488,17 @@ export default function RidersPage() {
               )}
             </Button>
 
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <span className="font-medium">Total:</span>
-                <Badge variant="outline" className="bg-gray-50">
+                <Badge variant="outline" className="bg-muted border-border">
                   {totalRiders}
                 </Badge>
               </div>
               {(searchActive || filtersActive) && (
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Showing:</span>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     {shownRiders} of {totalRiders}
                   </Badge>
                 </div>
@@ -505,25 +509,25 @@ export default function RidersPage() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Status Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Status</label>
+              <label className="text-sm font-medium text-foreground">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-card border-border">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="approved">
                     <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-emerald-500" />
                       Active Only
                     </div>
                   </SelectItem>
                   <SelectItem value="pending">
                     <div className="flex items-center gap-2">
-                      <XCircle className="h-4 w-4 text-yellow-600" />
+                      <XCircle className="h-4 w-4 text-amber-500" />
                       Pending Only
                     </div>
                   </SelectItem>
@@ -533,13 +537,13 @@ export default function RidersPage() {
 
             {/* From Date Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">From Date</label>
+              <label className="text-sm font-medium text-foreground">From Date</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal bg-card border-border",
                       !fromDate && "text-muted-foreground"
                     )}
                   >
@@ -560,13 +564,13 @@ export default function RidersPage() {
 
             {/* To Date Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">To Date</label>
+              <label className="text-sm font-medium text-foreground">To Date</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal bg-card border-border",
                       !toDate && "text-muted-foreground"
                     )}
                     disabled={!fromDate}
@@ -610,7 +614,7 @@ export default function RidersPage() {
 
         {/* Search tips */}
         {searchActive && shownRiders === 0 && !isSearching && (
-          <div className="mt-3 text-sm text-gray-500">
+          <div className="mt-3 text-sm text-muted-foreground">
             No results found for "{searchQuery}". Try searching by:
             <ul className="list-disc pl-5 mt-1 space-y-1">
               <li>Name (first or last)</li>
@@ -624,16 +628,16 @@ export default function RidersPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border shadow-sm min-h-[400px]">
+      <div className="bg-card rounded-lg border border-border shadow-sm min-h-[400px]">
         {isLoading || isLoadingThumbnails ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            <p className="text-gray-600">Loading customers...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-muted-foreground">Loading customers...</p>
           </div>
         ) : isSearching ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            <p className="text-gray-600">Searching for "{searchInput}"...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Searching for "{searchInput}"...</p>
           </div>
         ) : filteredRiders.length === 0 ? (
           <div className="p-8">
@@ -678,13 +682,13 @@ export default function RidersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-sm text-gray-600">
+            <div className="p-4 border-b border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-sm text-muted-foreground">
                 {searchActive || filtersActive ? (
                   <>
-                    Showing <span className="font-semibold">{shownRiders}</span> customer{shownRiders !== 1 ? 's' : ''}
+                    Showing <span className="font-semibold text-foreground">{shownRiders}</span> customer{shownRiders !== 1 ? 's' : ''}
                     <span className="mx-1">•</span>
-                    <span className="text-blue-600">
+                    <span className="text-primary">
                       {searchActive && `Search: "${searchQuery}"`}
                       {searchActive && filtersActive && ' • '}
                       {filtersActive && 'Filtered'}
@@ -692,7 +696,7 @@ export default function RidersPage() {
                   </>
                 ) : (
                   <>
-                    Showing all <span className="font-semibold">{shownRiders}</span> customer{shownRiders !== 1 ? 's' : ''}
+                    Showing all <span className="font-semibold text-foreground">{shownRiders}</span> customer{shownRiders !== 1 ? 's' : ''}
                   </>
                 )}
               </div>

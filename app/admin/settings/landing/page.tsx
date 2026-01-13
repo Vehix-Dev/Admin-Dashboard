@@ -390,7 +390,7 @@ export default function LandingSettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-2">
                             {sections.length === 0 ? (
-                                <div className="text-center py-12 border-2 border-dashed rounded-lg text-gray-500">
+                                <div className="text-center py-12 border-2 border-dashed border-border rounded-lg text-muted-foreground">
                                     No sections yet. Add one to get started!
                                 </div>
                             ) : (
@@ -399,10 +399,10 @@ export default function LandingSettingsPage() {
                                     .map((section, index) => (
                                         <div
                                             key={section.id || index}
-                                            className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm group hover:border-blue-200 transition-colors"
+                                            className="flex items-center justify-between p-4 border border-border rounded-lg bg-card shadow-sm group hover:border-primary/50 transition-colors"
                                         >
                                             <div className="flex items-center gap-4">
-                                                <div className="bg-gray-100 p-2 rounded text-gray-500">
+                                                <div className="bg-muted p-2 rounded text-muted-foreground">
                                                     {section.type === 'hero' && <Globe className="h-5 w-5" />}
                                                     {section.type === 'text_image' && <ImageIcon className="h-5 w-5" />}
                                                     {section.type === 'banner' && <Video className="h-5 w-5" />}
@@ -410,7 +410,7 @@ export default function LandingSettingsPage() {
                                                 </div>
                                                 <div>
                                                     <h4 className="font-semibold text-sm">{section.title}</h4>
-                                                    <p className="text-xs text-gray-500 uppercase">{section.type}</p>
+                                                    <p className="text-xs text-muted-foreground uppercase">{section.type}</p>
                                                 </div>
                                             </div>
 
@@ -431,14 +431,14 @@ export default function LandingSettingsPage() {
                                                 >
                                                     <MoveDown className="h-4 w-4" />
                                                 </Button>
-                                                <div className="h-4 w-px bg-gray-200 mx-2"></div>
+                                                <div className="h-4 w-px bg-border mx-2"></div>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => openEditSection(section)}
                                                     disabled={isUploading}
                                                 >
-                                                    <Edit className="h-4 w-4 text-blue-600" />
+                                                    <Edit className="h-4 w-4 text-primary" />
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
@@ -446,7 +446,7 @@ export default function LandingSettingsPage() {
                                                     onClick={() => section.id && handleDeleteSection(section.id)}
                                                     disabled={isUploading}
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </div>
                                         </div>
@@ -480,7 +480,7 @@ export default function LandingSettingsPage() {
                                         onChange={e => handleSettingsChange("rider_link", e.target.value)}
                                         disabled={isUploading}
                                     />
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         Default: /admin/riders/add?role=rider
                                     </p>
                                 </div>
@@ -506,7 +506,7 @@ export default function LandingSettingsPage() {
                                         <img
                                             src={settings.rider_image}
                                             alt="Rider Card Preview"
-                                            className="h-32 w-full object-cover rounded border"
+                                            className="h-32 w-full object-cover rounded border border-border"
                                         />
                                     )}
                                 </div>
@@ -526,7 +526,7 @@ export default function LandingSettingsPage() {
                                         onChange={e => handleSettingsChange("roadie_link", e.target.value)}
                                         disabled={isUploading}
                                     />
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         Default: /admin/roadies/add?role=roadie
                                     </p>
                                 </div>
@@ -552,7 +552,7 @@ export default function LandingSettingsPage() {
                                         <img
                                             src={settings.roadie_image}
                                             alt="Roadie Card Preview"
-                                            className="h-32 w-full object-cover rounded border"
+                                            className="h-32 w-full object-cover rounded border border-border"
                                         />
                                     )}
                                 </div>
