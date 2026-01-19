@@ -12,7 +12,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Vehix Admin CRM",
+  title: "Vehix Admin",
   description: "Professional control panel for roadside assistance platform",
   generator: "Melchizedek Tutu",
   icons: {

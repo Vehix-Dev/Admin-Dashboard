@@ -1,9 +1,7 @@
-const API_BASE_URL = "https://vehix-backend-rxha.onrender.com"
+const API_BASE_URL = "http://127.0.0.1:8000"
 
-// Import auth functions
 let authToken: string | null = null
 
-// Simple token management to work with your existing auth system
 export function setAccessToken(token: string) {
   authToken = token
   if (typeof window !== "undefined") {
@@ -27,7 +25,6 @@ export function getAccessToken(): string | null {
   return null
 }
 
-// Helper function to get refresh token
 function getRefreshToken(): string | null {
   if (typeof window !== "undefined") {
     return localStorage.getItem("admin_refresh_token")
@@ -35,7 +32,6 @@ function getRefreshToken(): string | null {
   return null
 }
 
-// Main API request function
 export async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
     const headers: HeadersInit = {
@@ -43,7 +39,6 @@ export async function apiRequest<T>(endpoint: string, options?: RequestInit): Pr
       ...options?.headers,
     }
 
-    // Add Authorization header if token exists
     const token = getAccessToken()
     if (token) {
       headers["Authorization"] = `Bearer ${token}`
@@ -66,12 +61,10 @@ export async function apiRequest<T>(endpoint: string, options?: RequestInit): Pr
   }
 }
 
-// Helper function for multipart/form-data requests (for file uploads)
 export async function apiMultipartRequest<T>(endpoint: string, formData: FormData, method: string = 'POST'): Promise<T> {
   try {
     const headers: HeadersInit = {}
 
-    // Add Authorization header if token exists
     const token = getAccessToken()
     if (token) {
       headers["Authorization"] = `Bearer ${token}`
@@ -95,7 +88,6 @@ export async function apiMultipartRequest<T>(endpoint: string, formData: FormDat
   }
 }
 
-// Admin Authentication
 export interface AdminLoginResponse {
   access: string
   refresh: string
@@ -133,7 +125,6 @@ export async function adminLogin(
   return response
 }
 
-// Admin Registration (Public - no auth required)
 export interface AdminRegisterResponse {
   id: number
   external_id: string
@@ -164,7 +155,6 @@ export async function adminRegister(data: {
   })
 }
 
-// Admin User Management (requires auth)
 export interface AdminUser {
   id: number
   external_id: string
@@ -218,9 +208,24 @@ export async function deleteAdminUser(id: number): Promise<void> {
   })
 }
 
-// ============================================
-// IMAGE MANAGEMENT APIS
-// ============================================
+export interface DeletedAdminUser extends AdminUser {
+  nin?: string
+  wallet?: {
+    id: number
+    balance: string
+    [key: string]: any
+  }
+}
+
+export async function getDeletedAdminUsers(): Promise<DeletedAdminUser[]> {
+  return apiRequest<DeletedAdminUser[]>("/api/auth/admin/users/deleted/")
+}
+
+export async function restoreAdminUser(id: number): Promise<AdminUser> {
+  return apiRequest<AdminUser>(`/api/auth/admin/users/${id}/restore/`, {
+    method: "POST",
+  })
+}
 
 export interface UserImage {
   id: number
@@ -229,7 +234,7 @@ export interface UserImage {
   image_type: string
   original_image: string
   thumbnail: string
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  status: 'APPROVED' | 'REJECTED'
   description: string
   created_at: string
   updated_at: string
@@ -325,7 +330,6 @@ export interface FileStructureResponse {
   }
 }
 
-// User Image Management (requires user auth)
 export async function getUserImages(): Promise<UserImage[]> {
   return apiRequest<UserImage[]>("/api/images/user-images/")
 }
@@ -345,7 +349,7 @@ export async function uploadUserImage(imageFile: File, imageType: string, descri
   return apiMultipartRequest<UserImage>("/api/images/user-images/", formData)
 }
 
-export async function updateUserImageStatus(id: number, status: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<UserImage> {
+export async function updateUserImageStatus(id: number, status: 'APPROVED' | 'REJECTED'): Promise<UserImage> {
   return apiRequest<UserImage>(`/api/images/user-images/${id}/update_status/`, {
     method: "POST",
     body: JSON.stringify({ status }),
@@ -372,7 +376,6 @@ export async function getUserThumbnails(): Promise<Array<{
   return apiRequest(`/api/images/user-images/thumbnails/`)
 }
 
-// Admin Image Management (REQUIRES AUTH - updated per documentation)
 export async function getAllImages(params?: {
   external_id?: string
   image_type?: string
@@ -399,7 +402,6 @@ export async function getAdminImageById(id: number): Promise<AdminImage> {
   return apiRequest<AdminImage>(`/api/images/admin-images/${id}/`)
 }
 
-// Admin upload image for user (requires admin auth)
 export async function adminUploadForUser(
   imageFile: File,
   externalId: string,
@@ -419,7 +421,6 @@ export async function adminUploadForUser(
   return apiMultipartRequest<AdminImage>("/api/images/admin-upload/", formData)
 }
 
-// Admin bulk upload images for user (requires admin auth)
 export async function adminBulkUploadForUser(
   imageFiles: File[],
   externalId: string,
@@ -429,7 +430,6 @@ export async function adminBulkUploadForUser(
 ): Promise<BulkImageUploadResponse> {
   const formData = new FormData()
 
-  // Append each image file
   imageFiles.forEach((file, index) => {
     formData.append('images', file)
   })
@@ -444,7 +444,6 @@ export async function adminBulkUploadForUser(
   return apiMultipartRequest<BulkImageUploadResponse>("/api/images/bulk-upload/", formData)
 }
 
-// Get all thumbnails (NO AUTH REQUIRED - public endpoint)
 export async function getAllThumbnails(params?: {
   external_id?: string
   prefix?: string
@@ -457,7 +456,6 @@ export async function getAllThumbnails(params?: {
 
   const url = `/api/images/thumbnails/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
 
-  // This is a public endpoint, so we call fetch directly without auth
   try {
     const response = await fetch(`${API_BASE_URL}${url}`)
     if (!response.ok) {
@@ -471,7 +469,6 @@ export async function getAllThumbnails(params?: {
   }
 }
 
-// Get images for specific user by external_id (NO AUTH REQUIRED - public endpoint)
 export async function getImagesByUser(
   externalId: string,
   params?: {
@@ -486,7 +483,6 @@ export async function getImagesByUser(
 
   const url = `/api/images/user-images-by-id/?${queryParams.toString()}`
 
-  // This is a public endpoint, so we call fetch directly without auth
   try {
     const response = await fetch(`${API_BASE_URL}${url}`)
     if (!response.ok) {
@@ -500,8 +496,7 @@ export async function getImagesByUser(
   }
 }
 
-// Update image status (requires admin auth)
-export async function updateImageStatus(id: number, status: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<{
+export async function updateImageStatus(id: number, status: 'APPROVED' | 'REJECTED'): Promise<{
   status: string
   new_status: string
   image_id: number
@@ -515,8 +510,7 @@ export async function updateImageStatus(id: number, status: 'PENDING' | 'APPROVE
   })
 }
 
-// Bulk update image status (requires admin auth)
-export async function bulkUpdateImageStatus(imageIds: number[], status: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<{
+export async function bulkUpdateImageStatus(imageIds: number[], status: 'APPROVED' | 'REJECTED'): Promise<{
   message: string
   status: string
   updated_count: number
@@ -527,7 +521,6 @@ export async function bulkUpdateImageStatus(imageIds: number[], status: 'PENDING
   })
 }
 
-// Replace existing image (requires admin auth)
 export async function replaceImage(imageId: number, newImageFile: File): Promise<AdminImage> {
   const formData = new FormData()
   formData.append('image', newImageFile)
@@ -535,7 +528,6 @@ export async function replaceImage(imageId: number, newImageFile: File): Promise
   return apiMultipartRequest<AdminImage>(`/api/images/admin-images/${imageId}/replace/`, formData, 'POST')
 }
 
-// Download all images for a user as zip (requires admin auth)
 export async function downloadUserImages(externalId: string): Promise<Blob> {
   const token = getAccessToken()
   const headers: HeadersInit = {}
@@ -555,9 +547,7 @@ export async function downloadUserImages(externalId: string): Promise<Blob> {
   return response.blob()
 }
 
-// Get file structure (NO AUTH REQUIRED - public endpoint)
 export async function getFileStructure(): Promise<FileStructureResponse> {
-  // This is a public endpoint, so we call fetch directly without auth
   try {
     const response = await fetch(`${API_BASE_URL}/api/images/file-structure/`)
     if (!response.ok) {
@@ -571,7 +561,6 @@ export async function getFileStructure(): Promise<FileStructureResponse> {
   }
 }
 
-// Image type helpers
 export const IMAGE_TYPES = {
   PROFILE: 'PROFILE',
   NIN_FRONT: 'NIN_FRONT',
@@ -613,7 +602,6 @@ export function getStatusLabelForImage(status: string): string {
   }
 }
 
-// Helper to format file size
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
@@ -622,17 +610,12 @@ export function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// Helper to get image dimensions string
 export function getImageDimensions(image: UserImage | AdminImage): string {
   if (image.width && image.height) {
     return `${image.width} × ${image.height}`
   }
   return 'Unknown'
 }
-
-// ============================================
-// WALLET MANAGEMENT (Public - no auth required per documentation)
-// ============================================
 
 export interface WalletTransaction {
   id: number
@@ -681,10 +664,6 @@ export async function deleteWallet(id: number): Promise<void> {
   })
 }
 
-// ============================================
-// REFERRAL MANAGEMENT (Public - no auth required per documentation)
-// ============================================
-
 export interface Referral {
   id: number
   referrer: number
@@ -732,14 +711,9 @@ export async function deleteReferral(id: number): Promise<void> {
   })
 }
 
-// User referrals (authenticated)
 export async function getUserReferrals(): Promise<Referral[]> {
   return apiRequest<Referral[]>("/api/auth/referrals/")
 }
-
-// ============================================
-// PLATFORM CONFIG (Public - no auth required per documentation)
-// ============================================
 
 export interface PlatformConfig {
   id: number
@@ -762,9 +736,6 @@ export async function updatePlatformConfig(data: {
   })
 }
 
-// ============================================
-// ROADIE STATUS (User API - requires roadie auth)
-// ============================================
 
 export interface RoadieStatusResponse {
   is_online: boolean
@@ -777,9 +748,6 @@ export async function updateRoadieStatus(isOnline: boolean): Promise<RoadieStatu
   })
 }
 
-// ============================================
-// RIDER AND ROADIE INTERFACES WITH WALLET DATA
-// ============================================
 
 export interface RiderStatusBreakdown {
   [status: string]: number
@@ -814,7 +782,6 @@ export interface RiderSummary {
   last_active: string
 }
 
-// Roadie Summary Interfaces
 export interface RoadieStatusBreakdown {
   [status: string]: number
 }
@@ -851,7 +818,6 @@ export interface RoadieSummary {
   rating: number
 }
 
-// Rider Management (public - no auth required per documentation)
 export interface Rider {
   id: number
   external_id: string
@@ -868,7 +834,6 @@ export interface Rider {
   updated_at: string
   wallet?: Wallet
   summary?: RiderSummary
-  // Additional fields from documentation
   services?: Array<{
     service_id: number
     service_name: string
@@ -917,7 +882,6 @@ export async function getActiveRiders(search?: string): Promise<Rider[]> {
   return apiRequest<Rider[]>(`/api/auth/admin/riders/realtime/?${params.toString()}`)
 }
 
-// Roadie Management (public - no auth required per documentation)
 export interface Roadie {
   id: number
   external_id: string
@@ -934,7 +898,6 @@ export interface Roadie {
   updated_at: string
   wallet?: Wallet
   summary?: RoadieSummary
-  // Additional fields from documentation
   services?: Array<{
     service_id: number
     service_name: string
@@ -977,13 +940,12 @@ export async function deleteRoadie(id: number): Promise<void> {
   })
 }
 
-// Service Management (public - no auth required per documentation)
 export interface Service {
   id: number
   name: string
   code: string
   is_active: boolean
-  rodie_count?: number // Added per documentation
+  rodie_count?: number
   created_at: string
   updated_at: string
 }
@@ -1020,7 +982,7 @@ export async function deleteService(id: number): Promise<void> {
   })
 }
 
-// Rodie Service Assignment (public - no auth required per documentation)
+
 export interface RodieService {
   id: number
   rodie: number
@@ -1061,7 +1023,6 @@ export async function deleteRodieService(id: number): Promise<void> {
   })
 }
 
-// Roadie Manage Services (User API - requires roadie auth)
 export async function getRoadieServices(): Promise<Service[]> {
   return apiRequest<Service[]>("/api/auth/rodie/services/")
 }
@@ -1073,7 +1034,6 @@ export async function updateRoadieServices(serviceIds: number[]): Promise<Servic
   })
 }
 
-// Service Type Interface (for service_type_details)
 export interface ServiceType {
   id: number
   name: string
@@ -1083,7 +1043,6 @@ export interface ServiceType {
   updated_at: string
 }
 
-// Service Request Management (public - no auth required per documentation)
 export interface ServiceRequest {
   id: number
   rider: number
@@ -1100,10 +1059,8 @@ export interface ServiceRequest {
   rider_lng: string
   created_at: string
   updated_at: string
-  // New fields from documentation
   is_paid?: boolean
   fee_charged?: boolean
-  // Optional write fields
   rider_username_input?: string
   rodie_username_input?: string
 }

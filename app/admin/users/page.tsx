@@ -6,17 +6,25 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { getAdminUsers, updateAdminUser, deleteAdminUser, type AdminUser } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit, Trash2, Shield, ShieldOff, Eye, EyeOff } from "lucide-react"
+import { Plus, Edit, Trash2, Shield, ShieldOff, Eye, EyeOff, Calendar as CalendarIcon, Filter, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
 import ProtectedRoute from "@/components/auth/protected-route"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useCan, PermissionButton } from "@/components/auth/permission-guard"
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import { Card, CardContent } from "@/components/ui/card"
 
 export default function AdminUsersPage() {
     const [admins, setAdmins] = useState<AdminUser[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+    const [showFilters, setShowFilters] = useState(false)
     const { toast } = useToast()
 
     // Permission checks
@@ -30,7 +38,7 @@ export default function AdminUsersPage() {
             const data = await getAdminUsers()
             setAdmins(data)
         } catch (err) {
-            console.error("[v0] Admin users fetch error:", err)
+            console.error(" Admin users fetch error:", err)
             toast({
                 title: "Error",
                 description: "Failed to load admin users data.",
@@ -101,6 +109,19 @@ export default function AdminUsersPage() {
         window.location.href = `/admin/users/${admin.id}`
     }
 
+    const clearFilters = () => {
+        setStartDate(undefined)
+        setEndDate(undefined)
+    }
+
+    const filteredAdmins = admins.filter(admin => {
+        if (!startDate && !endDate) return true
+        const requestDate = new Date(admin.created_at)
+        const start = startDate ? startOfDay(startDate) : new Date(0)
+        const end = endDate ? endOfDay(endDate) : new Date()
+        return isWithinInterval(requestDate, { start, end })
+    })
+
     const columns: Column<AdminUser>[] = [
         { header: "ID", accessor: "external_id" as const },
         { header: "First Name", accessor: "first_name" as const },
@@ -112,7 +133,7 @@ export default function AdminUsersPage() {
             header: "Role",
             accessor: "role" as const,
             cell: (value: string) => (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                <span className="px-2 py-1 bg-blue-500/10 text-blue-500 text-xs font-medium rounded border border-blue-500/20">
                     {value}
                 </span>
             ),
@@ -128,7 +149,7 @@ export default function AdminUsersPage() {
                         disabled={!canChange}
                         className="data-[state=checked]:bg-green-600"
                     />
-                    <span className={`text-xs font-medium ${value ? "text-green-700" : "text-red-700"}`}>
+                    <span className={`text-xs font-medium ${value ? "text-emerald-500" : "text-destructive"}`}>
                         {value ? (
                             <div className="flex items-center gap-1">
                                 <Eye className="h-3 w-3" />
@@ -155,7 +176,7 @@ export default function AdminUsersPage() {
                         disabled={!canChange}
                         className="data-[state=checked]:bg-green-600"
                     />
-                    <span className={`text-xs font-medium ${value ? "text-green-700" : "text-yellow-700"}`}>
+                    <span className={`text-xs font-medium ${value ? "text-emerald-500" : "text-amber-500"}`}>
                         {value ? (
                             <div className="flex items-center gap-1">
                                 <Shield className="h-3 w-3" />
@@ -180,16 +201,24 @@ export default function AdminUsersPage() {
 
     return (
         <ProtectedRoute requiredPermissions={PERMISSIONS.ADMIN_USERS_VIEW}>
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
+            <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-foreground">Admin Users</h2>
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground">Admin Users</h2>
                         <p className="text-sm text-muted-foreground mt-1">Manage system administrators</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant={showFilters ? "default" : "outline"}
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="gap-2 h-10"
+                        >
+                            <Filter className="h-4 w-4" />
+                            {showFilters ? "Hide Filters" : "Date Filters"}
+                        </Button>
                         <PermissionButton
                             permissions={PERMISSIONS.ADMIN_USERS_ADD}
-                            className="gap-2 bg-primary hover:bg-primary/90 text-white"
+                            className="gap-2 bg-primary hover:bg-primary/90 text-white h-10"
                             onClick={() => window.location.href = "/admin/users/add"}
                         >
                             <Plus className="h-4 w-4" />
@@ -198,29 +227,103 @@ export default function AdminUsersPage() {
                     </div>
                 </div>
 
+                {showFilters && (
+                    <Card className="border-primary/20 bg-primary/5 transition-all">
+                        <CardContent className="p-4 flex flex-wrap items-end gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Start Date</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-[160px] justify-start text-left font-normal h-10 border-border bg-card",
+                                                !startDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                            {startDate ? format(startDate, "MMM d, yyyy") : "Pick a date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={startDate}
+                                            onSelect={setStartDate}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">End Date</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-[160px] justify-start text-left font-normal h-10 border-border bg-card",
+                                                !endDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                            {endDate ? format(endDate, "MMM d, yyyy") : "Pick a date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={endDate}
+                                            onSelect={setEndDate}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="flex items-center gap-2 ml-auto">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearFilters}
+                                    className="text-muted-foreground hover:text-foreground h-10 px-4"
+                                >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Reset Range
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {isLoading ? (
                     <Skeleton className="h-96 rounded" />
-                ) : admins.length === 0 ? (
+                ) : filteredAdmins.length === 0 ? (
                     <EmptyState
-                        title="No admin users found"
-                        description="Add your first admin user to manage the system."
+                        title={startDate || endDate ? "No admins in range" : "No admin users found"}
+                        description={startDate || endDate ? "Try adjusting your filters." : "Add your first admin user to manage the system."}
                         action={
-                            canAdd ? (
+                            canAdd && !startDate && !endDate ? (
                                 <Link href="/admin/users/add">
                                     <Button className="gap-2 bg-primary hover:bg-primary/90 text-white">
                                         <Plus className="h-4 w-4" />
                                         Add Admin User
                                     </Button>
                                 </Link>
+                            ) : (startDate || endDate) ? (
+                                <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
                             ) : undefined
                         }
                     />
                 ) : (
                     <DataTable
-                        data={admins}
+                        data={filteredAdmins}
                         columns={columns}
                         onEdit={canChange ? handleEdit : undefined}
                         onDelete={canDelete ? handleDelete : undefined}
+                        initialSortColumn={9}
+                        initialSortDirection="desc"
                         onExport={() => {
                             // Export logic here
                         }}

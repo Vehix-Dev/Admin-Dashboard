@@ -1,4 +1,3 @@
-// /components/auth/permission-guard.tsx
 "use client"
 
 import { ReactNode } from 'react'

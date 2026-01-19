@@ -1,4 +1,3 @@
-// /contexts/auth-context.tsx
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
@@ -45,18 +44,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
     const [sidebarOpen, setSidebarOpenState] = useState(true)
     const [localPermissions, setLocalPermissions] = useState<string[]>(Object.values(PERMISSIONS))
-
-    // Inactivity tracking
     const [lastActivity, setLastActivity] = useState<number>(Date.now())
     const [showInactivityWarning, setShowInactivityWarning] = useState(false)
-    const [warningCountdown, setWarningCountdown] = useState(120) // 2 minutes in seconds
+    const [warningCountdown, setWarningCountdown] = useState(120)
 
 
-    // Initialize auth from localStorage on mount
     useEffect(() => {
         const initializeAuth = async () => {
             try {
-                // Get stored user data first (contains detailed names from login response)
                 const storedUserData = localStorage.getItem('admin_user_data')
                 const parsedStoredUser = storedUserData ? JSON.parse(storedUserData) : null
 
@@ -73,11 +68,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         if (freshUser) {
                             console.log("[Auth] Profile data retrieved:", freshUser.username)
 
-                            // Merge fresh token info with detailed stored info
                             const adaptedUser: User = {
                                 ...parsedStoredUser,
                                 ...freshUser,
-                                // Prioritize names from storage if not in token
                                 first_name: freshUser.first_name || parsedStoredUser?.first_name || freshUser.name?.split(' ')[0] || "",
                                 last_name: freshUser.last_name || parsedStoredUser?.last_name || freshUser.name?.split(' ').slice(1).join(' ') || "",
                                 is_approved: true,
@@ -86,12 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             setUser(adaptedUser)
                             localStorage.setItem('admin_user_data', JSON.stringify(adaptedUser))
 
-                            // Master user log
                             if (adaptedUser.username?.toUpperCase() === 'TUTU') {
                                 console.log("[Auth] MASTER USER TUTU ACTIVE")
                             }
 
-                            // Update permissions
                             try {
                                 const perms = await fetchLocalPermissions(adaptedUser.id)
                                 if (perms && perms.length > 0) {
@@ -108,7 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }
                 }
 
-                // FALLBACK: Old logic if API fails or no token
                 const storedUser = localStorage.getItem('admin_user_data')
                 if (storedUser && token) {
                     const userData = JSON.parse(storedUser)
@@ -126,7 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }
                 }
 
-                // Load sidebar preference
                 const savedSidebarState = localStorage.getItem('sidebar_open')
                 if (savedSidebarState !== null) {
                     setSidebarOpenState(JSON.parse(savedSidebarState))
@@ -141,7 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         initializeAuth()
     }, [])
 
-    // Save sidebar preference when it changes
     useEffect(() => {
         localStorage.setItem('sidebar_open', JSON.stringify(sidebarOpen))
     }, [sidebarOpen])
@@ -153,36 +141,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const INACTIVITY_TIMEOUT = 60 * 60 * 1000
         const WARNING_TIME = 60 * 1000
 
-        // Reset activity timer 
         const resetActivity = () => {
             setLastActivity(Date.now())
             setShowInactivityWarning(false)
             setWarningCountdown(120)
         }
 
-        // Activity event listeners
         const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click']
         events.forEach(event => {
             window.addEventListener(event, resetActivity)
         })
 
-        // Check inactivity every 10 seconds
         const checkInterval = setInterval(() => {
             const now = Date.now()
             const timeSinceActivity = now - lastActivity
 
-            // Show warning 2 minutes before logout
             if (timeSinceActivity >= INACTIVITY_TIMEOUT - WARNING_TIME && !showInactivityWarning) {
                 setShowInactivityWarning(true)
                 const remainingSeconds = Math.floor((INACTIVITY_TIMEOUT - timeSinceActivity) / 1000)
                 setWarningCountdown(remainingSeconds)
             }
 
-            // Auto-logout after 1 hour
             if (timeSinceActivity >= INACTIVITY_TIMEOUT) {
                 logout()
             }
-        }, 10000) // Check every 10 seconds
+        }, 10000)
 
         return () => {
             events.forEach(event => {
@@ -214,7 +197,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('admin_user_data', JSON.stringify(userData))
         localStorage.setItem('admin_access_token', token)
 
-        // Fetch permissions
         try {
             const perms = await fetchLocalPermissions(userData.id)
             if (perms && perms.length > 0) {
@@ -240,13 +222,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const role = user ? getUserRole(user) : null
-    // Permission Checks
     const checkHasPermission = (permission: Permission): boolean => {
         if (!user) return false
-        // Superuser or Master User TUTU always has access
         if (user.is_superuser || (user.username && user.username.toUpperCase() === 'TUTU')) return true
 
-        // Check local permissions list
         return localPermissions.includes(permission)
     }
 

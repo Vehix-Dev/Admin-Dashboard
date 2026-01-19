@@ -12,14 +12,21 @@ import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Trash2, UserPlus, Gift, TrendingUp } from "lucide-react"
+import { Trash2, UserPlus, Gift, TrendingUp, Calendar as CalendarIcon, Filter, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
 
 export default function ReferralsPage() {
     const [referrals, setReferrals] = useState<Referral[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+    const [showFilters, setShowFilters] = useState(false)
     const { toast } = useToast()
     const canManage = useCan(PERMISSIONS.REFERRALS_MANAGE)
 
@@ -29,7 +36,7 @@ export default function ReferralsPage() {
             const data = await getReferrals()
             setReferrals(data)
         } catch (err) {
-            console.error("[v0] Referrals fetch error:", err)
+            console.error(" Referrals fetch error:", err)
             toast({
                 title: "Error",
                 description: "Failed to load referrals data.",
@@ -62,12 +69,26 @@ export default function ReferralsPage() {
         }
     }
 
-    // Stats
-    const totalReferrals = referrals.length
-    const totalPaid = referrals
+    const clearFilters = () => {
+        setStartDate(undefined)
+        setEndDate(undefined)
+    }
+
+    // Filtered data based on date range
+    const filteredReferrals = referrals.filter(r => {
+        if (!startDate && !endDate) return true
+        const requestDate = new Date(r.created_at)
+        const start = startDate ? startOfDay(startDate) : new Date(0)
+        const end = endDate ? endOfDay(endDate) : new Date()
+        return isWithinInterval(requestDate, { start, end })
+    })
+
+    // Stats based on filtered data
+    const totalReferrals = filteredReferrals.length
+    const totalPaid = filteredReferrals
         .filter(r => r.status === 'PAID' || r.status === 'COMPLETED')
         .reduce((acc, curr) => acc + parseFloat(curr.reward_amount || '0'), 0)
-    const pendingCount = referrals.filter(r => r.status === 'PENDING').length
+    const pendingCount = filteredReferrals.filter(r => r.status === 'PENDING').length
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-UG', {
@@ -133,12 +154,92 @@ export default function ReferralsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">Referrals</h1>
                     <p className="text-muted-foreground mt-1">Track user referrals and rewards</p>
                 </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant={showFilters ? "default" : "outline"}
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="gap-2 h-10"
+                    >
+                        <Filter className="h-4 w-4" />
+                        {showFilters ? "Hide Filters" : "Date Filters"}
+                    </Button>
+                </div>
             </div>
+
+            {showFilters && (
+                <Card className="border-primary/20 bg-primary/5 transition-all">
+                    <CardContent className="p-4 flex flex-wrap items-end gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Start Date</label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "w-[160px] justify-start text-left font-normal h-10 border-border bg-card",
+                                            !startDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                        {startDate ? format(startDate, "MMM d, yyyy") : "Pick a date"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={startDate}
+                                        onSelect={setStartDate}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">End Date</label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "w-[160px] justify-start text-left font-normal h-10 border-border bg-card",
+                                            !endDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                        {endDate ? format(endDate, "MMM d, yyyy") : "Pick a date"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={endDate}
+                                        onSelect={setEndDate}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className="flex items-center gap-2 ml-auto">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="text-muted-foreground hover:text-foreground h-10 px-4"
+                            >
+                                <X className="h-4 w-4 mr-2" />
+                                Reset Range
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid gap-6 md:grid-cols-3">
                 <Card>
@@ -148,7 +249,7 @@ export default function ReferralsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{totalReferrals}</div>
-                        <p className="text-xs text-muted-foreground">All time referrals</p>
+                        <p className="text-xs text-muted-foreground">{startDate || endDate ? 'In selected range' : 'All time referrals'}</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -158,7 +259,7 @@ export default function ReferralsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{formatCurrency(totalPaid)}</div>
-                        <p className="text-xs text-muted-foreground">Rewards distributed</p>
+                        <p className="text-xs text-muted-foreground">{startDate || endDate ? 'In selected range' : 'Rewards distributed'}</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -168,23 +269,25 @@ export default function ReferralsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{pendingCount}</div>
-                        <p className="text-xs text-muted-foreground">Referrals awaiting payout</p>
+                        <p className="text-xs text-muted-foreground">{startDate || endDate ? 'In selected range' : 'Referrals awaiting payout'}</p>
                     </CardContent>
                 </Card>
             </div>
 
             {isLoading ? (
                 <Skeleton className="h-96 rounded" />
-            ) : referrals.length === 0 ? (
+            ) : filteredReferrals.length === 0 ? (
                 <EmptyState
-                    title="No referrals found"
-                    description="When users invite others, referrals will appear here."
+                    title={startDate || endDate ? "No referrals in range" : "No referrals found"}
+                    description={startDate || endDate ? "Try adjusting your date filters." : "When users invite others, referrals will appear here."}
                     icon={UserPlus}
                 />
             ) : (
                 <DataTable
-                    data={referrals}
+                    data={filteredReferrals}
                     columns={columns}
+                    initialSortColumn={4}
+                    initialSortDirection="desc"
                 />
             )}
         </div>

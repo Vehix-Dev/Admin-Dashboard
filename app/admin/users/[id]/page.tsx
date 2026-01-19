@@ -58,7 +58,7 @@ export default function EditAdminPage() {
                     setPermissions(Object.values(PERMISSIONS))
                 }
             } catch (err) {
-                console.error("[v0] Fetch admin error:", err)
+                console.error(" Fetch admin error:", err)
                 toast({
                     title: "Error",
                     description: "Failed to load admin user data",
@@ -153,7 +153,7 @@ export default function EditAdminPage() {
             router.push("/admin/users")
 
         } catch (err: any) {
-            console.error("[v0] Update admin error:", err)
+            console.error("Update admin error:", err)
 
             // Handle specific error messages from API
             let errorMessage = "Failed to update admin user"

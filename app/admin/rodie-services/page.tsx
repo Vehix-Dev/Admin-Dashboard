@@ -29,7 +29,7 @@ export default function RodieServicesPage() {
       const data = await getRodieServices()
       setRodieServices(data)
     } catch (err) {
-      console.error("[v0] Rodie services fetch error:", err)
+      console.error(" Rodie services fetch error:", err)
       toast({
         title: "Error",
         description: "Failed to load rodie services. Ensure backend is running.",
@@ -46,7 +46,7 @@ export default function RodieServicesPage() {
       setRodieServices(rodieServices.filter((rs) => rs.id !== id))
       toast({ title: "Success", description: "Service assignment removed" })
     } catch (err) {
-      console.error("[v0] Delete rodie service error:", err)
+      console.error(" Delete rodie service error:", err)
       toast({ title: "Error", description: "Failed to delete service assignment", variant: "destructive" })
     }
   }

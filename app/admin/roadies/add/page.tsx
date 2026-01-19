@@ -116,7 +116,7 @@ export default function AddRoadiePage() {
             router.push("/admin/roadies")
 
         } catch (err) {
-            console.error("[v0] Create roadie error:", err)
+            console.error(" Create roadie error:", err)
             toast({
                 title: "Error",
                 description: "Failed to create provider",
@@ -140,112 +140,106 @@ export default function AddRoadiePage() {
 
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-800">Add New Roadie</h1>
-                            <p className="text-gray-600 mt-2">
+                            <h1 className="text-3xl font-bold text-foreground">Add New Provider</h1>
+                            <p className="text-muted-foreground mt-2">
                                 Fill in the provider details below
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow p-6">
+                <div className="bg-card rounded-lg shadow-sm border p-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* First Name */}
                             <div className="space-y-2">
-                                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="first_name" className="text-sm font-medium text-foreground">
                                     First Name *
                                 </label>
-                                <input
+                                <Input
                                     id="first_name"
                                     name="first_name"
                                     type="text"
                                     required
                                     value={formData.first_name}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter first name"
                                 />
                             </div>
 
                             {/* Last Name */}
                             <div className="space-y-2">
-                                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="last_name" className="text-sm font-medium text-foreground">
                                     Last Name *
                                 </label>
-                                <input
+                                <Input
                                     id="last_name"
                                     name="last_name"
                                     type="text"
                                     required
                                     value={formData.last_name}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter last name"
                                 />
                             </div>
 
                             {/* Email */}
                             <div className="space-y-2">
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="email" className="text-sm font-medium text-foreground">
                                     Email *
                                 </label>
-                                <input
+                                <Input
                                     id="email"
                                     name="email"
                                     type="email"
                                     required
                                     value={formData.email}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter email address"
                                 />
                             </div>
 
                             {/* Phone */}
                             <div className="space-y-2">
-                                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="phone" className="text-sm font-medium text-foreground">
                                     Phone Number
                                 </label>
-                                <input
+                                <Input
                                     id="phone"
                                     name="phone"
                                     type="tel"
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter phone number"
                                 />
                             </div>
 
                             {/* Username */}
                             <div className="space-y-2">
-                                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="username" className="text-sm font-medium text-foreground">
                                     Username
                                 </label>
-                                <input
+                                <Input
                                     id="username"
                                     name="username"
                                     type="text"
                                     value={formData.username}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter username"
                                 />
                             </div>
 
                             {/* NIN */}
                             <div className="space-y-2">
-                                <label htmlFor="nin" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="nin" className="text-sm font-medium text-foreground">
                                     National ID (NIN)
                                 </label>
-                                <input
+                                <Input
                                     id="nin"
                                     name="nin"
                                     type="text"
                                     value={formData.nin}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Enter national ID"
                                 />
                             </div>
@@ -259,68 +253,70 @@ export default function AddRoadiePage() {
                                 type="checkbox"
                                 checked={formData.is_approved}
                                 onChange={handleChange}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                className="h-4 w-4 text-primary border-border rounded focus:ring-primary"
                             />
-                            <label htmlFor="is_approved" className="text-sm font-medium text-gray-700">
+                            <label htmlFor="is_approved" className="text-sm font-medium text-muted-foreground">
                                 Activate Roadie immediately
                             </label>
                         </div>
 
                         {/* Image Uploads Section */}
                         <div className="pt-6 border-t">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Documents & Images</h3>
+                            <h3 className="text-lg font-medium text-foreground mb-4">Documents & Images</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Profile Picture */}
-                                <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
-                                    <div className="flex items-center gap-4">
-                                        <Input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => handleFileChange(IMAGE_TYPES.PROFILE, e)}
-                                        />
-                                    </div>
+                                <div className="bg-muted/30 p-4 rounded-lg border border-dashed text-center">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">Profile Picture</label>
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleFileChange(IMAGE_TYPES.PROFILE, e)}
+                                        className="bg-background"
+                                    />
                                     {imageFiles[IMAGE_TYPES.PROFILE] && (
-                                        <p className="text-xs text-green-600 mt-1">Selected: {imageFiles[IMAGE_TYPES.PROFILE]?.name}</p>
+                                        <p className="text-xs text-emerald-500 mt-1 font-medium">Selected: {imageFiles[IMAGE_TYPES.PROFILE]?.name}</p>
                                     )}
                                 </div>
 
                                 {/* NIN Front */}
-                                <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">NIN Front</label>
+                                <div className="bg-muted/30 p-4 rounded-lg border border-dashed text-center">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">NIN Front</label>
                                     <Input
                                         type="file"
                                         accept="image/*"
                                         onChange={(e) => handleFileChange(IMAGE_TYPES.NIN_FRONT, e)}
+                                        className="bg-background"
                                     />
                                     {imageFiles[IMAGE_TYPES.NIN_FRONT] && (
-                                        <p className="text-xs text-green-600 mt-1">Selected: {imageFiles[IMAGE_TYPES.NIN_FRONT]?.name}</p>
+                                        <p className="text-xs text-emerald-500 mt-1 font-medium">Selected: {imageFiles[IMAGE_TYPES.NIN_FRONT]?.name}</p>
                                     )}
                                 </div>
 
                                 {/* NIN Back */}
-                                <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">NIN Back</label>
+                                <div className="bg-muted/30 p-4 rounded-lg border border-dashed text-center">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">NIN Back</label>
                                     <Input
                                         type="file"
                                         accept="image/*"
                                         onChange={(e) => handleFileChange(IMAGE_TYPES.NIN_BACK, e)}
+                                        className="bg-background"
                                     />
                                     {imageFiles[IMAGE_TYPES.NIN_BACK] && (
-                                        <p className="text-xs text-green-600 mt-1">Selected: {imageFiles[IMAGE_TYPES.NIN_BACK]?.name}</p>
+                                        <p className="text-xs text-emerald-500 mt-1 font-medium">Selected: {imageFiles[IMAGE_TYPES.NIN_BACK]?.name}</p>
                                     )}
                                 </div>
 
                                 {/* License */}
-                                <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Driver License</label>
+                                <div className="bg-muted/30 p-4 rounded-lg border border-dashed text-center">
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">Driver License</label>
                                     <Input
                                         type="file"
                                         accept="image/*"
                                         onChange={(e) => handleFileChange(IMAGE_TYPES.LICENSE, e)}
+                                        className="bg-background"
                                     />
                                     {imageFiles[IMAGE_TYPES.LICENSE] && (
-                                        <p className="text-xs text-green-600 mt-1">Selected: {imageFiles[IMAGE_TYPES.LICENSE]?.name}</p>
+                                        <p className="text-xs text-emerald-500 mt-1 font-medium">Selected: {imageFiles[IMAGE_TYPES.LICENSE]?.name}</p>
                                     )}
                                 </div>
                             </div>
@@ -335,7 +331,7 @@ export default function AddRoadiePage() {
                             </Link>
                             <Button
                                 type="submit"
-                                className="gap-2 bg-green-600 hover:bg-green-700"
+                                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
                                 disabled={isSubmitting}
                             >
                                 <Save className="h-4 w-4" />

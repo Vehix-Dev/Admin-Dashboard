@@ -132,7 +132,7 @@ export default function CompletedRequestsPage() {
             setRoadies(roadiesData)
             setServices(servicesData)
         } catch (err) {
-            console.error("[v0] Data fetch error:", err)
+            console.error(" Data fetch error:", err)
             toast({
                 title: "Error",
                 description: "Failed to load data.",
@@ -369,7 +369,7 @@ export default function CompletedRequestsPage() {
             cell: (value: string) => (
                 <button
                     onClick={() => handleIdClick(value)}
-                    className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1 transition-colors group"
+                    className="text-primary hover:text-primary/80 font-medium hover:underline flex items-center gap-1 transition-colors group"
                     title="View details"
                 >
                     #{value}
@@ -381,7 +381,7 @@ export default function CompletedRequestsPage() {
             header: "Rider",
             accessor: "rider_username" as const,
             cell: (value: string | null) => (
-                <span className={value ? "" : "text-gray-400 italic"}>
+                <span className={value ? "" : "text-muted-foreground italic"}>
                     {value || "Unassigned"}
                 </span>
             ),
@@ -390,7 +390,7 @@ export default function CompletedRequestsPage() {
             header: "Roadie",
             accessor: "rodie_username" as const,
             cell: (value: string | null) => (
-                <span className={value ? "" : "text-gray-400 italic"}>
+                <span className={value ? "" : "text-muted-foreground italic"}>
                     {value || "Unassigned"}
                 </span>
             ),
@@ -403,7 +403,7 @@ export default function CompletedRequestsPage() {
                 return (
                     <div className="flex flex-col">
                         <span className="font-medium">{serviceName}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                             ID: {row.service_type}
                             {row.service_type_details?.code && ` | Code: ${row.service_type_details.code}`}
                         </span>
@@ -418,7 +418,7 @@ export default function CompletedRequestsPage() {
                 return (
                     <Badge
                         variant="outline"
-                        className="capitalize font-medium border-2 border-teal-200 bg-teal-50 text-teal-700"
+                        className="capitalize font-medium border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
                     >
                         <CheckCircle className="h-3 w-3 mr-1" />
                         {getStatusLabel(value as ServiceStatus)}
@@ -452,11 +452,11 @@ export default function CompletedRequestsPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-                        <CheckCircle className="h-8 w-8 text-teal-600" />
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                        <CheckCircle className="h-8 w-8 text-emerald-500" />
                         Completed Requests
                     </h1>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                         View all successfully completed service requests
                     </p>
                 </div>
@@ -465,7 +465,7 @@ export default function CompletedRequestsPage() {
                         variant="outline"
                         size="sm"
                         onClick={handleExport}
-                        className="gap-2 border-gray-300 bg-white hover:bg-gray-50"
+                        className="gap-2"
                         disabled={filteredRequests.length === 0}
                     >
                         <FileDown className="h-4 w-4" />
@@ -482,11 +482,11 @@ export default function CompletedRequestsPage() {
             </div>
 
             {/* Search and Filters Bar */}
-            <div className="bg-white rounded-lg border shadow-sm p-4">
+            <div className="bg-card rounded-lg border shadow-sm p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="relative flex-1 max-w-xl">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="text"
                                 placeholder="Search completed requests by ID, rider, roadie, service, or location..."
@@ -497,14 +497,14 @@ export default function CompletedRequestsPage() {
                             />
                             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                                 {isSearching ? (
-                                    <div className="flex items-center gap-1 text-gray-400">
+                                    <div className="flex items-center gap-1 text-muted-foreground">
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                         <span className="text-xs">Searching...</span>
                                     </div>
                                 ) : searchInput ? (
                                     <button
                                         onClick={clearSearch}
-                                        className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                                        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted"
                                         title="Clear search"
                                     >
                                         <X className="h-4 w-4" />
@@ -530,17 +530,17 @@ export default function CompletedRequestsPage() {
                             )}
                         </Button>
 
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                                 <span className="font-medium">Total:</span>
-                                <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
+                                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
                                     {totalRequests} completed
                                 </Badge>
                             </div>
                             {(searchActive || filtersActive) && (
                                 <div className="flex items-center gap-2">
                                     <span className="font-medium">Showing:</span>
-                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
                                         {shownRequests} of {totalRequests}
                                     </Badge>
                                 </div>
@@ -554,7 +554,7 @@ export default function CompletedRequestsPage() {
                     <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Service Type Filter */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Service Type</label>
+                            <label className="text-sm font-medium text-foreground">Service Type</label>
                             <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select service type" />
@@ -572,7 +572,7 @@ export default function CompletedRequestsPage() {
 
                         {/* Date Filter */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Completed Date</label>
+                            <label className="text-sm font-medium text-foreground">Completed Date</label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -620,7 +620,7 @@ export default function CompletedRequestsPage() {
 
                 {/* Search tips */}
                 {searchActive && shownRequests === 0 && !isSearching && (
-                    <div className="mt-3 text-sm text-gray-500">
+                    <div className="mt-3 text-sm text-muted-foreground">
                         No completed requests found for "{searchQuery}". Try searching by:
                         <ul className="list-disc pl-5 mt-1 space-y-1">
                             <li>Request ID</li>
@@ -634,16 +634,16 @@ export default function CompletedRequestsPage() {
                 )}
             </div>
 
-            <div className="bg-white rounded-lg border shadow-sm min-h-[400px]">
+            <div className="bg-card rounded-lg border shadow-sm min-h-[400px]">
                 {isLoading ? (
                     <div className="p-8 flex flex-col items-center justify-center space-y-4">
-                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                        <p className="text-gray-600">Loading completed requests...</p>
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        <p className="text-muted-foreground">Loading completed requests...</p>
                     </div>
                 ) : isSearching ? (
                     <div className="p-8 flex flex-col items-center justify-center space-y-4">
-                        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                        <p className="text-gray-600">Searching for "{searchInput}"...</p>
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-muted-foreground">Searching for "{searchInput}"...</p>
                     </div>
                 ) : filteredRequests.length === 0 ? (
                     <div className="p-8">
@@ -678,13 +678,13 @@ export default function CompletedRequestsPage() {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="text-sm text-gray-600">
+                        <div className="p-4 border-b bg-muted/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="text-sm text-muted-foreground">
                                 {searchActive || filtersActive ? (
                                     <>
                                         Showing <span className="font-semibold">{shownRequests}</span> completed request{shownRequests !== 1 ? 's' : ''}
                                         <span className="mx-1">•</span>
-                                        <span className="text-blue-600">
+                                        <span className="text-primary font-medium">
                                             {searchActive && `Search: "${searchQuery}"`}
                                             {searchActive && filtersActive && ' • '}
                                             {filtersActive && 'Filtered'}

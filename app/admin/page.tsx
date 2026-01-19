@@ -438,7 +438,7 @@ export default function AdminDashboardPage() {
 
       setError(null)
     } catch (err) {
-      console.error("[v0] Dashboard fetch error:", err)
+      console.error(" Dashboard fetch error:", err)
       setError("Failed to load dashboard data")
       toast({
         title: "Error",

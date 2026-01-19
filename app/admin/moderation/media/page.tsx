@@ -43,7 +43,7 @@ export default function MediaModerationPage() {
             })
             setImages(data)
         } catch (err) {
-            console.error("[v0] Images fetch error:", err)
+            console.error(" Images fetch error:", err)
             toast({
                 title: "Error",
                 description: "Failed to load images.",

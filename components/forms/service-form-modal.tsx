@@ -56,7 +56,7 @@ export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: Ser
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Service Code</label>
+            <label className="text-sm font-medium">Service Name</label>
             <Input
               value={formData.code}
               onChange={(e) => setFormData({ ...formData, code: e.target.value })}

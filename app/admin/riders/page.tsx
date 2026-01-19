@@ -4,8 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getRiders, updateRider, deleteRider, type Rider } from "@/lib/api"
-import { getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
+import { getRiders, updateRider, deleteRider, type Rider, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,13 +28,13 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { debounce } from "lodash"
-import { format } from "date-fns"
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useCan, PermissionButton } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
+import { Card, CardContent } from "@/components/ui/card"
 
-// Extended Rider interface with thumbnail
 interface RiderWithThumbnail extends Rider {
   thumbnail?: string
   profileImage?: ThumbnailInfo
@@ -48,24 +47,19 @@ export default function RidersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingThumbnails, setIsLoadingThumbnails] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
-
-  // Filter states
   const [searchQuery, setSearchQuery] = useState("")
   const [searchInput, setSearchInput] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [fromDate, setFromDate] = useState<Date | undefined>(undefined)
-  const [toDate, setToDate] = useState<Date | undefined>(undefined)
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [showFilters, setShowFilters] = useState(false)
-
   const { toast } = useToast()
 
-  // Permission checks
   const canAdd = useCan(PERMISSIONS.RIDERS_ADD)
   const canChange = useCan(PERMISSIONS.RIDERS_CHANGE)
   const canDelete = useCan(PERMISSIONS.RIDERS_DELETE)
   const canApprove = useCan(PERMISSIONS.RIDERS_APPROVE)
 
-  // Debounced search function
   const debouncedSearch = useCallback(
     debounce((query: string) => {
       if (query !== searchQuery) {
@@ -96,8 +90,8 @@ export default function RidersPage() {
 
   const clearFilters = () => {
     setStatusFilter("all")
-    setFromDate(undefined)
-    setToDate(undefined)
+    setStartDate(undefined)
+    setEndDate(undefined)
   }
 
   const fetchRiders = async () => {
@@ -108,7 +102,6 @@ export default function RidersPage() {
       setRiders(ridersWithThumbnails)
       setFilteredRiders(ridersWithThumbnails)
 
-      // Load thumbnails for all riders
       await loadRiderThumbnails(ridersWithThumbnails)
     } catch (err) {
       console.error(" Riders fetch error:", err)
@@ -126,10 +119,7 @@ export default function RidersPage() {
     try {
       setIsLoadingThumbnails(true)
 
-      // Get all thumbnails for riders (with R prefix)
       const thumbnailsResponse = await getAllThumbnails({ prefix: 'R' })
-
-      // Group thumbnails by external_id
       const thumbnailsByRider: Record<string, ThumbnailInfo[]> = {}
       thumbnailsResponse.thumbnails.forEach(thumb => {
         if (!thumbnailsByRider[thumb.external_id]) {
@@ -138,7 +128,6 @@ export default function RidersPage() {
         thumbnailsByRider[thumb.external_id].push(thumb)
       })
 
-      // Update riders with their thumbnails
       const updatedRiders = ridersList.map(rider => {
         const riderThumbnails = thumbnailsByRider[rider.external_id] || []
         const profileImage = riderThumbnails.find(
@@ -156,7 +145,6 @@ export default function RidersPage() {
       setFilteredRiders(updatedRiders)
     } catch (err) {
       console.error("Failed to load rider thumbnails:", err)
-      // Don't show error toast - thumbnails are optional
     } finally {
       setIsLoadingThumbnails(false)
     }
@@ -166,13 +154,11 @@ export default function RidersPage() {
     fetchRiders()
   }, [])
 
-  // Apply all filters
   useEffect(() => {
     if (riders.length === 0) return
 
     let filtered = [...riders]
 
-    // Apply text search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
       filtered = filtered.filter((rider) => {
@@ -190,30 +176,22 @@ export default function RidersPage() {
       })
     }
 
-    // Apply status filter
     if (statusFilter !== "all") {
       const isApproved = statusFilter === "approved"
       filtered = filtered.filter(rider => rider.is_approved === isApproved)
     }
 
-    // Apply date range filter
-    if (fromDate || toDate) {
+    if (startDate || endDate) {
       filtered = filtered.filter(rider => {
-        const createdDate = new Date(rider.created_at)
-
-        if (fromDate && toDate) {
-          return createdDate >= fromDate && createdDate <= toDate
-        } else if (fromDate) {
-          return createdDate >= fromDate
-        } else if (toDate) {
-          return createdDate <= toDate
-        }
-        return true
+        const requestDate = new Date(rider.created_at)
+        const start = startDate ? startOfDay(startDate) : new Date(0)
+        const end = endDate ? endOfDay(endDate) : new Date()
+        return isWithinInterval(requestDate, { start, end })
       })
     }
 
     setFilteredRiders(filtered)
-  }, [searchQuery, statusFilter, fromDate, toDate, riders])
+  }, [searchQuery, statusFilter, startDate, endDate, riders])
 
   const handleDelete = async (rider: RiderWithThumbnail) => {
     if (!confirm(`Are you sure you want to delete ${rider.first_name} ${rider.last_name}?`)) return
@@ -289,21 +267,21 @@ export default function RidersPage() {
                 className="object-cover"
               />
             ) : null}
-            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
+            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-mono text-xs">
               {getInitials(row.first_name, row.last_name)}
             </AvatarFallback>
           </Avatar>
           {canChange ? (
             <button
               onClick={() => handleIdClick(row)}
-              className="text-primary hover:text-primary/80 font-medium hover:underline flex items-center gap-1 transition-colors group"
+              className="text-primary hover:text-primary/80 font-mono font-medium hover:underline flex items-center gap-1 transition-colors group text-sm"
               title="Edit rider"
             >
-              {value || "N/A"}
+              #{value || "N/A"}
               <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           ) : (
-            <span className="font-medium text-foreground">{value || "N/A"}</span>
+            <span className="font-mono font-medium text-foreground text-sm">#{value || "N/A"}</span>
           )}
         </div>
       )
@@ -313,8 +291,8 @@ export default function RidersPage() {
       accessor: "first_name" as const,
       cell: (value: string, row: RiderWithThumbnail) => (
         <div className="flex flex-col">
-          <span className="font-medium text-foreground">{row.first_name} {row.last_name}</span>
-          <span className="text-xs text-muted-foreground">@{row.username}</span>
+          <span className="font-semibold text-foreground text-sm">{row.first_name} {row.last_name}</span>
+          <span className="text-xs text-muted-foreground font-mono">@{row.username}</span>
         </div>
       )
     },
@@ -323,8 +301,8 @@ export default function RidersPage() {
       accessor: "email" as const,
       cell: (value: string, row: RiderWithThumbnail) => (
         <div className="flex flex-col">
-          <span className="font-medium text-foreground">{row.email}</span>
-          <span className="text-xs text-muted-foreground">{row.phone}</span>
+          <span className="text-sm font-medium text-foreground">{row.email}</span>
+          <span className="text-xs text-muted-foreground font-mono">{row.phone}</span>
         </div>
       )
     },
@@ -332,7 +310,7 @@ export default function RidersPage() {
       header: "NIN",
       accessor: "nin" as const,
       cell: (value: string) => (
-        <span className="font-mono text-xs bg-muted px-2 py-1 rounded border border-border/50 text-foreground">
+        <span className="font-mono text-[10px] bg-muted px-2 py-0.5 rounded border border-border/50 text-foreground tracking-tighter">
           {value || "N/A"}
         </span>
       ),
@@ -341,24 +319,18 @@ export default function RidersPage() {
       header: "Status",
       accessor: (row: RiderWithThumbnail) => row.is_approved,
       cell: (value: boolean, row: RiderWithThumbnail) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
             disabled={!canApprove}
-            className="data-[state=checked]:bg-green-600"
+            className="data-[state=checked]:bg-green-600 scale-90"
           />
           <div className="flex items-center gap-1">
             {value ? (
-              <>
-                <Check className="h-4 w-4 text-green-600" />
-                <span className="text-green-700 font-medium">Active</span>
-              </>
+              <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Active</Badge>
             ) : (
-              <>
-                <XCircle className="h-4 w-4 text-yellow-600" />
-                <span className="text-yellow-700 font-medium">Pending</span>
-              </>
+              <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20 text-[10px] font-bold uppercase">Pending</Badge>
             )}
           </div>
         </div>
@@ -367,15 +339,16 @@ export default function RidersPage() {
     {
       header: "Created",
       accessor: "created_at" as const,
-      cell: (value: string) => formatDate(value),
+      cell: (value: string) => (
+        <span className="text-xs text-muted-foreground font-mono">{formatDate(value)}</span>
+      ),
     },
   ]
 
-  // Statistics
   const totalRiders = riders.length
   const shownRiders = filteredRiders.length
   const searchActive = searchQuery.trim() !== ""
-  const filtersActive = statusFilter !== "all" || fromDate !== undefined || toDate !== undefined
+  const filtersActive = statusFilter !== "all" || startDate !== undefined || endDate !== undefined
   const activeRiders = riders.filter(r => r.is_approved).length
   const pendingRiders = riders.filter(r => !r.is_approved).length
 
@@ -383,16 +356,16 @@ export default function RidersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Customers</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Customers</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage rider customers and their status
+            Manage rider accounts and system access
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <PermissionButton
             permissions={PERMISSIONS.RIDERS_ADD}
             onClick={() => router.push("/admin/riders/add")}
-            className="gap-2 bg-primary hover:bg-primary/90 text-white"
+            className="gap-2 bg-primary hover:bg-primary/90 text-white font-mono h-10"
           >
             <Plus className="h-4 w-4" />
             Add Customer
@@ -400,64 +373,62 @@ export default function RidersPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total Customers</p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Total Customers</p>
               <p className="text-2xl font-bold mt-1 text-foreground">{totalRiders}</p>
             </div>
-            <div className="bg-primary/10 p-2 rounded-full">
+            <div className="bg-primary/10 p-2.5 rounded-xl">
               <Users className="h-5 w-5 text-primary" />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Active</p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Active</p>
               <p className="text-2xl font-bold mt-1 text-emerald-500">{activeRiders}</p>
             </div>
-            <div className="bg-emerald-500/10 p-2 rounded-full">
+            <div className="bg-emerald-500/10 p-2.5 rounded-xl">
               <Check className="h-5 w-5 text-emerald-500" />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Pending Approval</p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Pending Approval</p>
               <p className="text-2xl font-bold mt-1 text-amber-500">{pendingRiders}</p>
             </div>
-            <div className="bg-amber-500/10 p-2 rounded-full">
+            <div className="bg-amber-500/10 p-2.5 rounded-xl">
               <XCircle className="h-5 w-5 text-amber-500" />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Search and Filters Bar */}
       <div className="bg-card rounded-lg border border-border shadow-sm p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-xl">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search customers by name, email, phone, username, NIN, or status..."
+                placeholder="Search by name, email, phone, username, NIN..."
                 value={searchInput}
                 onChange={handleSearchChange}
-                className="pl-10 pr-20"
+                className="pl-10 pr-20 font-mono text-sm bg-background border-border"
                 disabled={isLoading || isLoadingThumbnails}
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                 {isSearching ? (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-xs">Searching...</span>
+                  <div className="flex items-center gap-1 text-muted-foreground animate-pulse">
+                    <Loader2 className="h-4 w-4 animate-spin font-mono" />
+                    <span className="text-[10px]">SEARCHING...</span>
                   </div>
                 ) : searchInput ? (
                   <button
@@ -472,12 +443,12 @@ export default function RidersPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
-              variant="outline"
+              variant={showFilters ? "default" : "outline"}
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="gap-2"
+              className="gap-2 font-mono h-10"
             >
               <Filter className="h-4 w-4" />
               Filters
@@ -488,167 +459,125 @@ export default function RidersPage() {
               )}
             </Button>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">Total:</span>
-                <Badge variant="outline" className="bg-muted border-border">
-                  {totalRiders}
-                </Badge>
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono bg-muted/50 px-3 py-1.5 rounded-lg border border-border">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold uppercase opacity-50">Total:</span>
+                <span className="text-foreground font-bold">{totalRiders}</span>
               </div>
               {(searchActive || filtersActive) && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Showing:</span>
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                    {shownRiders} of {totalRiders}
-                  </Badge>
-                </div>
+                <>
+                  <div className="w-px h-3 bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold uppercase opacity-50 text-primary">MATCHES:</span>
+                    <span className="text-primary font-bold">{shownRiders}</span>
+                  </div>
+                </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Filters Panel */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Status Filter */}
+          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Status</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="bg-card border-border">
+                <SelectTrigger className="bg-background border-border font-mono text-xs h-10">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="approved">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-emerald-500" />
-                      Active Only
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="pending">
-                    <div className="flex items-center gap-2">
-                      <XCircle className="h-4 w-4 text-amber-500" />
-                      Pending Only
-                    </div>
-                  </SelectItem>
+                <SelectContent className="font-mono text-xs">
+                  <SelectItem value="all">ALL STATUSES</SelectItem>
+                  <SelectItem value="approved">ACTIVE ONLY</SelectItem>
+                  <SelectItem value="pending">PENDING ONLY</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* From Date Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">From Date</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Joined From</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal bg-card border-border",
-                      !fromDate && "text-muted-foreground"
+                      "w-full justify-start text-left font-mono text-xs h-10 border-border bg-background",
+                      !startDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {fromDate ? format(fromDate, "PPP") : "Select date"}
+                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                    {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={fromDate}
-                    onSelect={setFromDate}
+                    selected={startDate}
+                    onSelect={setStartDate}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
 
-            {/* To Date Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">To Date</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Joined To</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal bg-card border-border",
-                      !toDate && "text-muted-foreground"
+                      "w-full justify-start text-left font-mono text-xs h-10 border-border bg-background",
+                      !endDate && "text-muted-foreground"
                     )}
-                    disabled={!fromDate}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {toDate ? format(toDate, "PPP") : "Select date"}
+                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                    {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={toDate}
-                    onSelect={setToDate}
+                    selected={endDate}
+                    onSelect={setEndDate}
                     initialFocus
-                    disabled={(date) => fromDate ? date < fromDate : false}
                   />
                 </PopoverContent>
               </Popover>
             </div>
 
-            {/* Filter Actions */}
-            <div className="md:col-span-3 flex justify-end gap-2 pt-2">
+            <div className="flex items-end">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={clearFilters}
                 disabled={!filtersActive}
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground h-10 w-full md:w-auto"
               >
-                Clear Filters
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(false)}
-              >
-                Close Filters
+                <X className="h-3 w-3 mr-2" />
+                Reset
               </Button>
             </div>
-          </div>
-        )}
-
-        {/* Search tips */}
-        {searchActive && shownRiders === 0 && !isSearching && (
-          <div className="mt-3 text-sm text-muted-foreground">
-            No results found for "{searchQuery}". Try searching by:
-            <ul className="list-disc pl-5 mt-1 space-y-1">
-              <li>Name (first or last)</li>
-              <li>Email address</li>
-              <li>Phone number</li>
-              <li>Username</li>
-              <li>NIN number</li>
-              <li>Status (active or pending)</li>
-            </ul>
           </div>
         )}
       </div>
 
       <div className="bg-card rounded-lg border border-border shadow-sm min-h-[400px]">
         {isLoading || isLoadingThumbnails ? (
-          <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">Loading customers...</p>
+          <div className="p-12 flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest animate-pulse">Synchronizing Data...</p>
           </div>
         ) : isSearching ? (
-          <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Searching for "{searchInput}"...</p>
+          <div className="p-12 flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest animate-pulse">Indexing Results...</p>
           </div>
         ) : filteredRiders.length === 0 ? (
-          <div className="p-8">
+          <div className="p-12 text-center">
             {searchActive || filtersActive ? (
               <EmptyState
-                title="No matching customers found"
-                description={
-                  searchActive
-                    ? `No customers found matching "${searchQuery}"`
-                    : "No customers match the current filters"
-                }
+                title="No Records Found"
+                description="The current filter parameters yielded no matches in our database."
                 action={
                   <Button
                     variant="outline"
@@ -656,24 +585,24 @@ export default function RidersPage() {
                       clearSearch()
                       clearFilters()
                     }}
-                    className="gap-2"
+                    className="gap-2 font-mono"
                   >
-                    Clear Search & Filters
+                    Restore All Records
                   </Button>
                 }
               />
             ) : (
               <EmptyState
-                title="No customers found"
-                description="No customers have been added yet. Add your first customer to get started."
+                title="Database Empty"
+                description="No customer records were found in the system."
                 action={
                   canAdd ? (
                     <Button
                       onClick={() => router.push("/admin/riders/add")}
-                      className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                      className="gap-2 bg-primary text-white font-mono"
                     >
                       <Plus className="h-4 w-4" />
-                      Add Customer
+                      Add First Customer
                     </Button>
                   ) : undefined
                 }
@@ -681,48 +610,14 @@ export default function RidersPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="p-4 border-b border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-sm text-muted-foreground">
-                {searchActive || filtersActive ? (
-                  <>
-                    Showing <span className="font-semibold text-foreground">{shownRiders}</span> customer{shownRiders !== 1 ? 's' : ''}
-                    <span className="mx-1">•</span>
-                    <span className="text-primary">
-                      {searchActive && `Search: "${searchQuery}"`}
-                      {searchActive && filtersActive && ' • '}
-                      {filtersActive && 'Filtered'}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Showing all <span className="font-semibold text-foreground">{shownRiders}</span> customer{shownRiders !== 1 ? 's' : ''}
-                  </>
-                )}
-              </div>
-              <div className="flex gap-2">
-                {(searchActive || filtersActive) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      clearSearch()
-                      clearFilters()
-                    }}
-                    className="text-xs h-7"
-                  >
-                    Clear All
-                  </Button>
-                )}
-              </div>
-            </div>
-            <DataTable
-              data={filteredRiders}
-              columns={columns}
-              onEdit={canChange ? handleEdit : undefined}
-              onDelete={canDelete ? handleDelete : undefined}
-            />
-          </div>
+          <DataTable
+            data={filteredRiders}
+            columns={columns}
+            onEdit={canChange ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            initialSortColumn={5}
+            initialSortDirection="desc"
+          />
         )}
       </div>
     </div>

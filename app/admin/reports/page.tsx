@@ -19,7 +19,19 @@ import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Download, FileDown, TrendingUp, DollarSign, Users, BarChart2, Activity, Calendar } from "lucide-react"
+import {
+    Download,
+    FileDown,
+    TrendingUp,
+    DollarSign,
+    Users,
+    BarChart2,
+    Activity,
+    Calendar as CalendarIcon,
+    Filter,
+    X,
+    CalendarCheck2
+} from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
@@ -37,6 +49,10 @@ import {
     AreaChart,
     Area
 } from "recharts"
+import { format, subDays, isWithinInterval, startOfDay, endOfDay } from "date-fns"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
 
 interface ReportData {
     config: {
@@ -46,7 +62,7 @@ interface ReportData {
     revenue: {
         totalWalletBalance: number
         totalServiceFees: number
-        potentialRevenue: number // fees from non-cancelled requests
+        potentialRevenue: number
     }
     users: {
         riders: number
@@ -69,6 +85,10 @@ interface ReportData {
 export default function ReportsPage() {
     const [data, setData] = useState<ReportData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
+    const [endDate, setEndDate] = useState<Date | undefined>(new Date())
+    const [showFilters, setShowFilters] = useState(false)
+
     const { toast } = useToast()
     const canView = useCan(PERMISSIONS.REPORTS_VIEW)
 
@@ -84,28 +104,29 @@ export default function ReportsPage() {
                 getPlatformConfig()
             ])
 
-            // 1. Config & Revenue
+            // Filter requests by date range if selected
+            const filteredRequests = requests.filter(r => {
+                if (!startDate && !endDate) return true
+                const requestDate = new Date(r.created_at)
+                const start = startDate ? startOfDay(startDate) : new Date(0)
+                const end = endDate ? endOfDay(endDate) : new Date()
+                return isWithinInterval(requestDate, { start, end })
+            })
+
             const serviceFee = parseFloat(config.service_fee || "0")
             const totalWalletBalance = wallets.reduce((acc, curr) => acc + parseFloat(curr.balance), 0)
-
-            // Calculate Fees: Fee * Completed Requests
-            const completedRequests = requests.filter(r => r.status === 'COMPLETED').length
+            const completedRequests = filteredRequests.filter(r => r.status === 'COMPLETED').length
             const totalServiceFees = completedRequests * serviceFee
-
-            // Potential Revenue (Completed + Active)
-            const activeRequests = requests.filter(r => ['ACCEPTED', 'EN_ROUTE', 'STARTED'].includes(r.status)).length
+            const activeRequests = filteredRequests.filter(r => ['ACCEPTED', 'EN_ROUTE', 'STARTED'].includes(r.status)).length
             const potentialRevenue = (completedRequests + activeRequests) * serviceFee
-
-            // 2. Service Stats
-            const totalRequests = requests.length
-            const cancelledRequests = requests.filter(r => r.status === 'CANCELLED').length
+            const totalRequests = filteredRequests.length
+            const cancelledRequests = filteredRequests.filter(r => r.status === 'CANCELLED').length
             const completionRate = totalRequests > 0
                 ? ((completedRequests / totalRequests) * 100).toFixed(1)
                 : "0.0"
 
-            // Breakdown by Type
             const serviceCounts: Record<string, number> = {}
-            requests.forEach(r => {
+            filteredRequests.forEach(r => {
                 const name = r.service_type_name || `Service ${r.service_type}`
                 serviceCounts[name] = (serviceCounts[name] || 0) + 1
             })
@@ -113,26 +134,28 @@ export default function ReportsPage() {
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value)
 
-            // Breakdown by Status
             const statusCounts: Record<string, number> = {}
-            requests.forEach(r => {
+            filteredRequests.forEach(r => {
                 statusCounts[r.status] = (statusCounts[r.status] || 0) + 1
             })
             const byStatus = Object.entries(statusCounts)
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value)
 
-            // Daily Trend (Last 7 days)
             const dailyStats: Record<string, { requests: number, completions: number }> = {}
-            // Initialize last 7 days with 0
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date()
-                d.setDate(d.getDate() - i)
-                const dateStr = d.toISOString().split('T')[0] // YYYY-MM-DD
+
+            // Calculate daily trend for the selected range or last 7 days
+            const startRange = startDate ? startOfDay(startDate) : subDays(new Date(), 6)
+            const endRange = endDate ? endOfDay(endDate) : new Date()
+
+            let current = new Date(startRange)
+            while (current <= endRange) {
+                const dateStr = current.toISOString().split('T')[0]
                 dailyStats[dateStr] = { requests: 0, completions: 0 }
+                current.setDate(current.getDate() + 1)
             }
 
-            requests.forEach(r => {
+            filteredRequests.forEach(r => {
                 const dateStr = r.created_at.split('T')[0]
                 if (dailyStats[dateStr]) {
                     dailyStats[dateStr].requests++
@@ -144,13 +167,12 @@ export default function ReportsPage() {
 
             const dailyTrend = Object.entries(dailyStats)
                 .map(([date, stats]) => ({
-                    date: new Date(date).toLocaleDateString(undefined, { weekday: 'short' }), // Mon, Tue
+                    date: new Date(date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }),
                     fullDate: date,
                     requests: stats.requests,
                     completions: stats.completions
                 }))
 
-            // 3. User Stats
             const approvedRiders = riders.filter(r => r.is_approved).length
             const approvedRoadies = roadies.filter(r => r.is_approved).length
 
@@ -183,7 +205,7 @@ export default function ReportsPage() {
             })
 
         } catch (err) {
-            console.error("[v0] Reports fetch error:", err)
+            console.error(" Reports fetch error:", err)
             toast({
                 title: "Error",
                 description: "Failed to generate robust report data.",
@@ -196,7 +218,12 @@ export default function ReportsPage() {
 
     useEffect(() => {
         fetchReportData()
-    }, [])
+    }, [startDate, endDate])
+
+    const clearFilters = () => {
+        setStartDate(subDays(new Date(), 30))
+        setEndDate(new Date())
+    }
 
     const handleExport = (type: 'financial' | 'usage') => {
         if (!data) return
@@ -241,10 +268,10 @@ export default function ReportsPage() {
 
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
     const STATUS_COLORS: Record<string, string> = {
-        'COMPLETED': '#10b981', // green
-        'CANCELLED': '#ef4444', // red
-        'REQUESTED': '#3b82f6', // blue
-        'ACCEPTED': '#f59e0b', // orange
+        'COMPLETED': '#10b981',
+        'CANCELLED': '#ef4444',
+        'REQUESTED': '#3b82f6',
+        'ACCEPTED': '#f59e0b',
     }
 
     if (isLoading) {
@@ -272,15 +299,93 @@ export default function ReportsPage() {
                     <h1 className="text-3xl font-bold text-foreground">Reports Center</h1>
                     <p className="text-muted-foreground mt-1">Detailed system analytics, financials, and operational metrics</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button onClick={() => handleExport('usage')} variant="outline" size="sm" className="border-border bg-card hover:bg-muted">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        variant={showFilters ? "default" : "outline"}
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="gap-2 h-9"
+                    >
+                        <Filter className="h-4 w-4" />
+                        {showFilters ? "Hide Filters" : "Date Filters"}
+                    </Button>
+                    <Button onClick={() => handleExport('usage')} variant="outline" size="sm" className="h-9 border-border bg-card hover:bg-muted">
                         <FileDown className="h-4 w-4 mr-2" /> Export Usage
                     </Button>
-                    <Button onClick={() => handleExport('financial')} className="bg-primary hover:bg-primary/90" size="sm">
+                    <Button onClick={() => handleExport('financial')} className="h-9 bg-primary hover:bg-primary/90" size="sm">
                         <Download className="h-4 w-4 mr-2" /> Export Financials
                     </Button>
                 </div>
             </div>
+
+            {showFilters && (
+                <Card className="border-primary/20 bg-primary/5 transition-all animate-in fade-in slide-in-from-top-2">
+                    <CardContent className="p-4 flex flex-wrap items-end gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Start Date</label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "w-[160px] justify-start text-left font-normal h-10 border-border bg-card",
+                                            !startDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                        {startDate ? format(startDate, "MMM d, yyyy") : "Pick a date"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={startDate}
+                                        onSelect={setStartDate}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">End Date</label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "w-[160px] justify-start text-left font-normal h-10 border-border bg-card",
+                                            !endDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                        {endDate ? format(endDate, "MMM d, yyyy") : "Pick a date"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={endDate}
+                                        onSelect={setEndDate}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className="flex items-center gap-2 ml-auto">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="text-muted-foreground hover:text-foreground h-10 px-4"
+                            >
+                                <X className="h-4 w-4 mr-2" />
+                                Reset Range
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Top Level Financials */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -342,12 +447,11 @@ export default function ReportsPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-7">
-                {/* Main Trend Chart */}
                 <Card className="lg:col-span-4 shadow-sm bg-card border-border">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-foreground">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            Request Trends (Last 7 Days)
+                            <CalendarCheck2 className="h-4 w-4 text-muted-foreground" />
+                            Request Trends
                         </CardTitle>
                         <CardDescription>Daily volume and completion tracking</CardDescription>
                     </CardHeader>
@@ -385,7 +489,6 @@ export default function ReportsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Status Breakdown */}
                 <Card className="lg:col-span-3 shadow-sm bg-card border-border">
                     <CardHeader>
                         <CardTitle className="text-foreground">Request Status</CardTitle>
@@ -418,7 +521,6 @@ export default function ReportsPage() {
                 </Card>
             </div>
 
-            {/* Service Popularity Bar Chart */}
             <Card className="shadow-sm bg-card border-border">
                 <CardHeader>
                     <CardTitle className="text-foreground">Service Popularity</CardTitle>

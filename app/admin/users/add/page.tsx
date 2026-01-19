@@ -123,7 +123,7 @@ export default function AddAdminPage() {
             router.push("/admin/users")
 
         } catch (err: any) {
-            console.error("[v0] Create admin error:", err)
+            console.error(" Create admin error:", err)
 
             // Handle specific error messages from API
             let errorMessage = "Failed to create admin user"

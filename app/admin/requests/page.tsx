@@ -41,7 +41,7 @@ import {
 } from "lucide-react"
 import { RequestFormModal } from "@/components/forms/request-form-modal"
 import { debounce } from "lodash"
-import { format } from "date-fns"
+import { format, startOfDay, endOfDay, isWithinInterval } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useCan, PermissionButton } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
@@ -139,7 +139,8 @@ export default function RequestsPage() {
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined)
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [showFilters, setShowFilters] = useState(false)
 
   const { toast } = useToast()
@@ -182,7 +183,8 @@ export default function RequestsPage() {
   const clearFilters = () => {
     setStatusFilter("all")
     setServiceTypeFilter("all")
-    setDateFilter(undefined)
+    setStartDate(undefined)
+    setEndDate(undefined)
   }
 
   const fetchAllData = async () => {
@@ -207,7 +209,7 @@ export default function RequestsPage() {
       setRoadies(roadiesData)
       setServices(servicesData)
     } catch (err) {
-      console.error("[v0] Data fetch error:", err)
+      console.error("Data fetch error:", err)
       toast({
         title: "Error",
         description: "Failed to load data.",
@@ -256,17 +258,18 @@ export default function RequestsPage() {
       filtered = filtered.filter(request => request.service_type.toString() === serviceTypeFilter)
     }
 
-    // Apply date filter
-    if (dateFilter) {
-      const filterDate = format(dateFilter, 'yyyy-MM-dd')
+    // Apply date range filter
+    if (startDate || endDate) {
       filtered = filtered.filter(request => {
         const requestDate = new Date(request.created_at)
-        return format(requestDate, 'yyyy-MM-dd') === filterDate
+        const start = startDate ? startOfDay(startDate) : new Date(0)
+        const end = endDate ? endOfDay(endDate) : new Date()
+        return isWithinInterval(requestDate, { start, end })
       })
     }
 
     setFilteredRequests(filtered)
-  }, [searchQuery, statusFilter, serviceTypeFilter, dateFilter, requests])
+  }, [searchQuery, statusFilter, serviceTypeFilter, startDate, endDate, requests])
 
   const handleCreate = async (data: Partial<ServiceRequest>) => {
     try {
@@ -557,13 +560,13 @@ export default function RequestsPage() {
   const totalRequests = requests.length
   const shownRequests = filteredRequests.length
   const searchActive = searchQuery.trim() !== ""
-  const filtersActive = statusFilter !== "all" || serviceTypeFilter !== "all" || dateFilter !== undefined
+  const filtersActive = statusFilter !== "all" || serviceTypeFilter !== "all" || startDate !== undefined || endDate !== undefined
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Service Requests</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Service Requests</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage all service requests from riders
           </p>
@@ -573,7 +576,7 @@ export default function RequestsPage() {
             variant="outline"
             size="sm"
             onClick={handleExport}
-            className="gap-2 border-border bg-card hover:bg-muted"
+            className="gap-2 border-border bg-card hover:bg-muted font-mono"
             disabled={filteredRequests.length === 0}
           >
             <FileDown className="h-4 w-4" />
@@ -582,7 +585,7 @@ export default function RequestsPage() {
           <PermissionButton
             permissions={PERMISSIONS.REQUESTS_ADD}
             onClick={() => setIsFormOpen(true)}
-            className="gap-2 bg-primary hover:bg-primary/90 text-white"
+            className="gap-2 bg-primary hover:bg-primary/90 text-white font-mono"
           >
             <Plus className="h-4 w-4" />
             New Request
@@ -593,7 +596,7 @@ export default function RequestsPage() {
       {/* Search and Filters Bar */}
       <div className="bg-card rounded-lg border border-border shadow-sm p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-xl">
+          <div className="relative flex-1 max-xl">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -601,13 +604,13 @@ export default function RequestsPage() {
                 placeholder="Search requests by ID, rider, roadie, service, status, or location..."
                 value={searchInput}
                 onChange={handleSearchChange}
-                className="pl-10 pr-20 bg-background"
+                className="pl-10 pr-20 bg-background font-mono text-sm"
                 disabled={isLoading}
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                 {isSearching ? (
                   <div className="flex items-center gap-1 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin font-mono" />
                     <span className="text-xs">Searching...</span>
                   </div>
                 ) : searchInput ? (
@@ -625,10 +628,10 @@ export default function RequestsPage() {
 
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant={showFilters ? "default" : "outline"}
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="gap-2"
+              className="gap-2 font-mono"
             >
               <Filter className="h-4 w-4" />
               Filters
@@ -639,7 +642,7 @@ export default function RequestsPage() {
               )}
             </Button>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground font-mono">
               <div className="flex items-center gap-2">
                 <span className="font-medium">Total:</span>
                 <Badge variant="outline" className="bg-muted">
@@ -660,12 +663,12 @@ export default function RequestsPage() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
             {/* Status Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Status</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="font-mono text-xs">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -681,9 +684,9 @@ export default function RequestsPage() {
 
             {/* Service Type Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Service Type</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Service Type</label>
               <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="font-mono text-xs">
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -697,27 +700,54 @@ export default function RequestsPage() {
               </Select>
             </div>
 
-            {/* Date Filter */}
+            {/* Start Date Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Created Date</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">From</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dateFilter && "text-muted-foreground"
+                      "w-full justify-start text-left font-mono text-xs h-10",
+                      !startDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFilter ? format(dateFilter, "PPP") : "Select date"}
+                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                    {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={dateFilter}
-                    onSelect={setDateFilter}
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* End Date Filter */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">To</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-mono text-xs h-10",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                    {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
                     initialFocus
                   />
                 </PopoverContent>
@@ -725,38 +755,30 @@ export default function RequestsPage() {
             </div>
 
             {/* Filter Actions */}
-            <div className="md:col-span-3 flex justify-end gap-2 pt-2">
+            <div className="md:col-span-4 flex justify-end gap-2 pt-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                disabled={!filtersActive}
+                className="text-muted-foreground hover:text-foreground h-9 font-mono text-xs px-4"
               >
-                Clear Filters
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(false)}
-              >
-                Close Filters
+                <X className="h-4 w-4 mr-2" />
+                Reset All Filters
               </Button>
             </div>
           </div>
         )}
 
-        {/* Search tips - FIXED: No more object rendering error */}
+        {/* Search tips */}
         {searchActive && shownRequests === 0 && !isSearching && (
-          <div className="mt-3 text-sm text-muted-foreground">
+          <div className="mt-3 text-sm text-muted-foreground font-mono">
             No results found for "{searchQuery}". Try searching by:
-            <ul className="list-disc pl-5 mt-1 space-y-1">
+            <ul className="list-disc pl-5 mt-1 space-y-1 text-xs">
               <li>Request ID</li>
               <li>Rider username</li>
               <li>Roadie username</li>
               <li>Service name (e.g., BATTERY)</li>
-              <li>Service code</li>
               <li>Status (REQUESTED, ACCEPTED, etc.)</li>
-              <li>Location coordinates</li>
             </ul>
           </div>
         )}
@@ -766,101 +788,58 @@ export default function RequestsPage() {
         {isLoading ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">Loading service requests...</p>
+            <p className="text-muted-foreground font-mono">Loading service requests...</p>
           </div>
         ) : isSearching ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Searching for "{searchInput}"...</p>
+            <p className="text-muted-foreground font-mono">Searching for "{searchInput}"...</p>
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="p-8">
-            {searchActive || filtersActive ? (
-              <EmptyState
-                title="No matching requests found"
-                description={
-                  searchActive
-                    ? `No service requests found matching "${searchQuery}"`
-                    : "No service requests match the current filters"
-                }
-                action={
-                  canAdd ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        clearSearch()
-                        clearFilters()
-                      }}
-                      className="gap-2"
-                    >
-                      Clear Search & Filters
-                    </Button>
-                  ) : undefined
-                }
-              />
-            ) : (
-              <EmptyState
-                title="No service requests found"
-                description="No service requests have been created yet. Create your first request to get started."
-                action={
+            <EmptyState
+              title={searchActive || filtersActive ? "No matching requests found" : "No service requests found"}
+              description={
+                searchActive || filtersActive
+                  ? "Try adjusting your filters or search terms."
+                  : "No service requests have been created yet."
+              }
+              action={
+                (searchActive || filtersActive) ? (
                   <Button
-                    onClick={() => setIsFormOpen(true)}
-                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Request
-                  </Button>
-                }
-              />
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-sm text-gray-600">
-                {searchActive || filtersActive ? (
-                  <>
-                    Showing <span className="font-semibold">{shownRequests}</span> request{shownRequests !== 1 ? 's' : ''}
-                    <span className="mx-1">•</span>
-                    <span className="text-blue-600">
-                      {searchActive && `Search: "${searchQuery}"`}
-                      {searchActive && filtersActive && ' • '}
-                      {filtersActive && 'Filtered'}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Showing all <span className="font-semibold">{shownRequests}</span> request{shownRequests !== 1 ? 's' : ''}
-                  </>
-                )}
-              </div>
-              <div className="flex gap-2">
-                {(searchActive || filtersActive) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                    variant="outline"
                     onClick={() => {
                       clearSearch()
                       clearFilters()
                     }}
-                    className="text-xs h-7"
+                    className="gap-2 font-mono"
                   >
                     Clear All
                   </Button>
-                )}
-              </div>
-            </div>
-            <DataTable
-              data={filteredRequests}
-              columns={columns}
-              onEdit={canChange ? handleEdit : undefined}
-              onDelete={canDelete ? handleDelete : undefined}
+                ) : (
+                  <Button
+                    onClick={() => setIsFormOpen(true)}
+                    className="gap-2 bg-primary text-white font-mono"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Request
+                  </Button>
+                )
+              }
             />
           </div>
+        ) : (
+          <DataTable
+            data={filteredRequests}
+            columns={columns}
+            onEdit={canChange ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            initialSortColumn={6}
+            initialSortDirection="desc"
+          />
         )}
       </div>
 
-      {/* Create Modal */}
       <RequestFormModal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}

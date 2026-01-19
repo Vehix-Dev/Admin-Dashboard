@@ -4,8 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getRoadies, updateRoadie, deleteRoadie, type Roadie, getCombinedRealtimeLocations, type RodieLocation } from "@/lib/api"
-import { getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES, getStatusLabelForImage, getImageTypeLabel, getStatusColorForImage } from "@/lib/api"
+import { getRoadies, updateRoadie, deleteRoadie, type Roadie, getCombinedRealtimeLocations, type RodieLocation, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,11 +26,12 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { debounce } from "lodash"
-import { format } from "date-fns"
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useCan, PermissionButton } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
+import { Card, CardContent } from "@/components/ui/card"
 
 // Extended Roadie interface with thumbnail
 interface RoadieWithThumbnail extends Roadie {
@@ -52,8 +52,8 @@ export default function RoadiesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchInput, setSearchInput] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [fromDate, setFromDate] = useState<Date | undefined>(undefined)
-  const [toDate, setToDate] = useState<Date | undefined>(undefined)
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [showFilters, setShowFilters] = useState(false)
 
   const { toast } = useToast()
@@ -95,8 +95,8 @@ export default function RoadiesPage() {
 
   const clearFilters = () => {
     setStatusFilter("all")
-    setFromDate(undefined)
-    setToDate(undefined)
+    setStartDate(undefined)
+    setEndDate(undefined)
   }
 
   const fetchRoadies = async () => {
@@ -119,7 +119,7 @@ export default function RoadiesPage() {
       // Load thumbnails for all roadies
       await loadRoadieThumbnails(roadiesWithThumbnails)
     } catch (err) {
-      console.error("[v0] Roadies fetch error:", err)
+      console.error(" Roadies fetch error:", err)
       toast({
         title: "Error",
         description: "Failed to load roadies data.",
@@ -205,23 +205,17 @@ export default function RoadiesPage() {
     }
 
     // Apply date range filter
-    if (fromDate || toDate) {
+    if (startDate || endDate) {
       filtered = filtered.filter(roadie => {
-        const createdDate = new Date(roadie.created_at)
-
-        if (fromDate && toDate) {
-          return createdDate >= fromDate && createdDate <= toDate
-        } else if (fromDate) {
-          return createdDate >= fromDate
-        } else if (toDate) {
-          return createdDate <= toDate
-        }
-        return true
+        const requestDate = new Date(roadie.created_at)
+        const start = startDate ? startOfDay(startDate) : new Date(0)
+        const end = endDate ? endOfDay(endDate) : new Date()
+        return isWithinInterval(requestDate, { start, end })
       })
     }
 
     setFilteredRoadies(filtered)
-  }, [searchQuery, statusFilter, fromDate, toDate, roadies])
+  }, [searchQuery, statusFilter, startDate, endDate, roadies])
 
   const handleDelete = async (roadie: RoadieWithThumbnail) => {
     if (!confirm(`Are you sure you want to delete ${roadie.first_name} ${roadie.last_name}?`)) return
@@ -305,21 +299,21 @@ export default function RoadiesPage() {
                 className="object-cover"
               />
             ) : null}
-            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary">
+            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-mono text-xs">
               {getInitials(row.first_name, row.last_name)}
             </AvatarFallback>
           </Avatar>
           {canChange ? (
             <button
               onClick={() => handleIdClick(row)}
-              className="text-primary hover:text-primary/80 font-medium hover:underline flex items-center gap-1 transition-colors group"
+              className="text-primary hover:text-primary/80 font-mono font-medium hover:underline flex items-center gap-1 transition-colors group text-sm"
               title="Edit roadie"
             >
-              {value || "N/A"}
+              #{value || "N/A"}
               <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           ) : (
-            <span className="font-medium text-foreground">{value || "N/A"}</span>
+            <span className="font-mono font-medium text-foreground text-sm">#{value || "N/A"}</span>
           )}
         </div>
       )
@@ -329,8 +323,8 @@ export default function RoadiesPage() {
       accessor: "first_name" as const,
       cell: (value: string, row: RoadieWithThumbnail) => (
         <div className="flex flex-col">
-          <span className="font-medium text-foreground">{row.first_name} {row.last_name}</span>
-          <span className="text-xs text-muted-foreground">@{row.username}</span>
+          <span className="font-semibold text-foreground text-sm">{row.first_name} {row.last_name}</span>
+          <span className="text-xs text-muted-foreground font-mono">@{row.username}</span>
         </div>
       )
     },
@@ -339,8 +333,8 @@ export default function RoadiesPage() {
       accessor: "email" as const,
       cell: (value: string, row: RoadieWithThumbnail) => (
         <div className="flex flex-col">
-          <span className="font-medium text-foreground">{row.email}</span>
-          <span className="text-xs text-muted-foreground">{row.phone}</span>
+          <span className="text-sm font-medium text-foreground">{row.email}</span>
+          <span className="text-xs text-muted-foreground font-mono">{row.phone}</span>
         </div>
       )
     },
@@ -352,7 +346,7 @@ export default function RoadiesPage() {
         return (
           <span className={cn(
             "font-mono text-sm font-semibold",
-            balance < 0 ? "text-red-600" : "text-green-600"
+            balance < 0 ? "text-destructive" : "text-emerald-500"
           )}>
             {formatCurrency(value)}
           </span>
@@ -365,7 +359,7 @@ export default function RoadiesPage() {
       cell: (value: any, row: RoadieWithThumbnail) => {
         const isOnline = onlineRoadies.has(row.id)
         return (
-          <Badge variant={isOnline ? "default" : "outline"} className={isOnline ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "text-muted-foreground border-border"}>
+          <Badge variant={isOnline ? "default" : "outline"} className={isOnline ? "bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase" : "text-muted-foreground border-border text-[10px] font-bold uppercase"}>
             {isOnline ? "Online" : "Offline"}
           </Badge>
         )
@@ -375,24 +369,18 @@ export default function RoadiesPage() {
       header: "Status",
       accessor: (row: RoadieWithThumbnail) => row.is_approved,
       cell: (value: boolean, row: RoadieWithThumbnail) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
             disabled={!canApprove}
-            className="data-[state=checked]:bg-green-600"
+            className="data-[state=checked]:bg-green-600 scale-90"
           />
           <div className="flex items-center gap-1">
             {value ? (
-              <>
-                <Check className="h-4 w-4 text-green-600" />
-                <span className="text-green-700 font-medium">Active</span>
-              </>
+              <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Active</Badge>
             ) : (
-              <>
-                <XCircle className="h-4 w-4 text-yellow-600" />
-                <span className="text-yellow-700 font-medium">Pending</span>
-              </>
+              <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20 text-[10px] font-bold uppercase">Pending</Badge>
             )}
           </div>
         </div>
@@ -401,7 +389,9 @@ export default function RoadiesPage() {
     {
       header: "Created",
       accessor: "created_at" as const,
-      cell: (value: string) => formatDate(value),
+      cell: (value: string) => (
+        <span className="text-xs text-muted-foreground font-mono">{formatDate(value)}</span>
+      ),
     },
   ]
 
@@ -409,7 +399,7 @@ export default function RoadiesPage() {
   const totalRoadies = roadies.length
   const shownRoadies = filteredRoadies.length
   const searchActive = searchQuery.trim() !== ""
-  const filtersActive = statusFilter !== "all" || fromDate !== undefined || toDate !== undefined
+  const filtersActive = statusFilter !== "all" || startDate !== undefined || endDate !== undefined
   const activeRoadies = roadies.filter(r => r.is_approved).length
   const pendingRoadies = roadies.filter(r => !r.is_approved).length
 
@@ -417,16 +407,16 @@ export default function RoadiesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Roadies</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage roadie providers and their status
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Roadies</h1>
+          <p className="text-sm text-muted-foreground mt-1 text-mono">
+            Manage roadside assistance providers and their status
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <PermissionButton
             permissions={PERMISSIONS.ROADIES_ADD}
             onClick={() => router.push("/admin/roadies/add")}
-            className="gap-2 bg-primary hover:bg-primary/90 text-white"
+            className="gap-2 bg-primary hover:bg-primary/90 text-white font-mono h-10"
           >
             <Plus className="h-4 w-4" />
             Add Roadie
@@ -435,63 +425,63 @@ export default function RoadiesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total Roadies</p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Total Roadies</p>
               <p className="text-2xl font-bold mt-1 text-foreground">{totalRoadies}</p>
             </div>
-            <div className="bg-primary/10 p-2 rounded-full">
+            <div className="bg-primary/10 p-2.5 rounded-xl">
               <Users className="h-5 w-5 text-primary" />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Active</p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Active</p>
               <p className="text-2xl font-bold mt-1 text-emerald-500">{activeRoadies}</p>
             </div>
-            <div className="bg-emerald-500/10 p-2 rounded-full">
+            <div className="bg-emerald-500/10 p-2.5 rounded-xl">
               <Check className="h-5 w-5 text-emerald-500" />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Pending Approval</p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Pending Approval</p>
               <p className="text-2xl font-bold mt-1 text-amber-500">{pendingRoadies}</p>
             </div>
-            <div className="bg-amber-500/10 p-2 rounded-full">
+            <div className="bg-amber-500/10 p-2.5 rounded-xl">
               <XCircle className="h-5 w-5 text-amber-500" />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Filters Bar */}
       <div className="bg-card rounded-lg border border-border shadow-sm p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-xl">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search roadies by name, email, phone, username, NIN, or status..."
+                placeholder="Search by name, email, phone, username, NIN..."
                 value={searchInput}
                 onChange={handleSearchChange}
-                className="pl-10 pr-20"
+                className="pl-10 pr-20 font-mono text-sm bg-background border-border"
                 disabled={isLoading || isLoadingThumbnails}
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                 {isSearching ? (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-xs">Searching...</span>
+                  <div className="flex items-center gap-1 text-muted-foreground animate-pulse">
+                    <Loader2 className="h-4 w-4 animate-spin font-mono" />
+                    <span className="text-[10px]">SEARCHING...</span>
                   </div>
                 ) : searchInput ? (
                   <button
@@ -506,12 +496,12 @@ export default function RoadiesPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
-              variant="outline"
+              variant={showFilters ? "default" : "outline"}
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="gap-2"
+              className="gap-2 font-mono h-10"
             >
               <Filter className="h-4 w-4" />
               Filters
@@ -522,20 +512,19 @@ export default function RoadiesPage() {
               )}
             </Button>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">Total:</span>
-                <Badge variant="outline" className="bg-muted border-border">
-                  {totalRoadies}
-                </Badge>
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono bg-muted/50 px-3 py-1.5 rounded-lg border border-border">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold uppercase opacity-50">Total:</span>
+                <span className="text-foreground font-bold">{totalRoadies}</span>
               </div>
               {(searchActive || filtersActive) && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Showing:</span>
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                    {shownRoadies} of {totalRoadies}
-                  </Badge>
-                </div>
+                <>
+                  <div className="w-px h-3 bg-border" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold uppercase opacity-50 text-primary">MATCHES:</span>
+                    <span className="text-primary font-bold">{shownRoadies}</span>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -543,146 +532,109 @@ export default function RoadiesPage() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
             {/* Status Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Status</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="bg-card border-border">
+                <SelectTrigger className="bg-background border-border font-mono text-xs h-10">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="approved">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-emerald-500" />
-                      Active Only
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="pending">
-                    <div className="flex items-center gap-2">
-                      <XCircle className="h-4 w-4 text-amber-500" />
-                      Pending Only
-                    </div>
-                  </SelectItem>
+                <SelectContent className="font-mono text-xs">
+                  <SelectItem value="all">ALL STATUSES</SelectItem>
+                  <SelectItem value="approved">ACTIVE ONLY</SelectItem>
+                  <SelectItem value="pending">PENDING ONLY</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* From Date Filter */}
+            {/* Joined Date Range Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">From Date</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Joined From</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal bg-card border-border",
-                      !fromDate && "text-muted-foreground"
+                      "w-full justify-start text-left font-mono text-xs h-10 border-border bg-background",
+                      !startDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {fromDate ? format(fromDate, "PPP") : "Select date"}
+                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                    {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={fromDate}
-                    onSelect={setFromDate}
+                    selected={startDate}
+                    onSelect={setStartDate}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
 
-            {/* To Date Filter */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">To Date</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Joined To</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal bg-card border-border",
-                      !toDate && "text-muted-foreground"
+                      "w-full justify-start text-left font-mono text-xs h-10 border-border bg-background",
+                      !endDate && "text-muted-foreground"
                     )}
-                    disabled={!fromDate}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {toDate ? format(toDate, "PPP") : "Select date"}
+                    <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                    {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={toDate}
-                    onSelect={setToDate}
+                    selected={endDate}
+                    onSelect={setEndDate}
                     initialFocus
-                    disabled={(date) => fromDate ? date < fromDate : false}
                   />
                 </PopoverContent>
               </Popover>
             </div>
 
             {/* Filter Actions */}
-            <div className="md:col-span-3 flex justify-end gap-2 pt-2">
+            <div className="flex items-end">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={clearFilters}
                 disabled={!filtersActive}
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground h-10 w-full md:w-auto"
               >
-                Clear Filters
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(false)}
-              >
-                Close Filters
+                <X className="h-3 w-3 mr-2" />
+                Reset
               </Button>
             </div>
-          </div>
-        )}
-
-        {/* Search tips */}
-        {searchActive && shownRoadies === 0 && !isSearching && (
-          <div className="mt-3 text-sm text-muted-foreground">
-            No results found for "{searchQuery}". Try searching by:
-            <ul className="list-disc pl-5 mt-1 space-y-1">
-              <li>Name (first or last)</li>
-              <li>Email address</li>
-              <li>Phone number</li>
-              <li>Username</li>
-              <li>NIN number</li>
-              <li>Status (active or pending)</li>
-            </ul>
           </div>
         )}
       </div>
 
       <div className="bg-card rounded-lg border border-border shadow-sm min-h-[400px]">
         {isLoading || isLoadingThumbnails ? (
-          <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">Loading roadies...</p>
+          <div className="p-12 flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest animate-pulse">Synchronizing Data...</p>
           </div>
         ) : isSearching ? (
-          <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Searching for "{searchInput}"...</p>
+          <div className="p-12 flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest animate-pulse">Indexing Results...</p>
           </div>
         ) : filteredRoadies.length === 0 ? (
-          <div className="p-8">
+          <div className="p-12 text-center">
             {searchActive || filtersActive ? (
               <EmptyState
-                title="No matching roadies found"
-                description={
-                  searchActive
-                    ? `No roadies found matching "${searchQuery}"`
-                    : "No roadies match the current filters"
-                }
+                title="No Records Found"
+                description="The current filter parameters yielded no matches in our database."
                 action={
                   <Button
                     variant="outline"
@@ -690,24 +642,24 @@ export default function RoadiesPage() {
                       clearSearch()
                       clearFilters()
                     }}
-                    className="gap-2"
+                    className="gap-2 font-mono"
                   >
-                    Clear Search & Filters
+                    Restore All Records
                   </Button>
                 }
               />
             ) : (
               <EmptyState
-                title="No roadies found"
-                description="No roadies have been added yet. Add your first roadie to get started."
+                title="Database Empty"
+                description="No roadie records were found in the system."
                 action={
                   canAdd ? (
                     <Button
                       onClick={() => router.push("/admin/roadies/add")}
-                      className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                      className="gap-2 bg-primary text-white font-mono"
                     >
                       <Plus className="h-4 w-4" />
-                      Add Roadie
+                      Add First Roadie
                     </Button>
                   ) : undefined
                 }
@@ -715,48 +667,14 @@ export default function RoadiesPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="p-4 border-b border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-sm text-muted-foreground">
-                {searchActive || filtersActive ? (
-                  <>
-                    Showing <span className="font-semibold text-foreground">{shownRoadies}</span> roadie{shownRoadies !== 1 ? 's' : ''}
-                    <span className="mx-1">•</span>
-                    <span className="text-primary">
-                      {searchActive && `Search: "${searchQuery}"`}
-                      {searchActive && filtersActive && ' • '}
-                      {filtersActive && 'Filtered'}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Showing all <span className="font-semibold text-foreground">{shownRoadies}</span> roadie{shownRoadies !== 1 ? 's' : ''}
-                  </>
-                )}
-              </div>
-              <div className="flex gap-2">
-                {(searchActive || filtersActive) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      clearSearch()
-                      clearFilters()
-                    }}
-                    className="text-xs h-7"
-                  >
-                    Clear All
-                  </Button>
-                )}
-              </div>
-            </div>
-            <DataTable
-              data={filteredRoadies}
-              columns={columns}
-              onEdit={canChange ? handleEdit : undefined}
-              onDelete={canDelete ? handleDelete : undefined}
-            />
-          </div>
+          <DataTable
+            data={filteredRoadies}
+            columns={columns}
+            onEdit={canChange ? handleEdit : undefined}
+            onDelete={canDelete ? handleDelete : undefined}
+            initialSortColumn={6}
+            initialSortDirection="desc"
+          />
         )}
       </div>
     </div>

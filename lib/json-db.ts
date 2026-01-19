@@ -1,15 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 
-// Data directory path
 const DATA_DIR = path.join(process.cwd(), 'data');
 
-// Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// File paths for each data store
 const FILES = {
     inquiries: path.join(DATA_DIR, 'inquiries.json'),
     settings: path.join(DATA_DIR, 'settings.json'),
@@ -17,7 +14,6 @@ const FILES = {
     userPermissions: path.join(DATA_DIR, 'user_permissions.json'),
 };
 
-// Type definitions
 export interface Inquiry {
     id: number;
     name: string;
@@ -36,16 +32,16 @@ export interface LandingSection {
     image_url: string | null;
     video_url: string | null;
     order_index: number;
-    style_config: string; // JSON string
+    style_config: string;
 }
 
 export interface UserPermission {
     user_id: string;
-    permissions: string; // JSON string
+    permissions: string;
     updated_at: string;
 }
 
-// Helper functions for reading/writing JSON files
+
 function readJSON<T>(filePath: string, defaultValue: T): T {
     try {
         if (!fs.existsSync(filePath)) {
@@ -68,9 +64,8 @@ function writeJSON<T>(filePath: string, data: T): void {
     }
 }
 
-// Initialize default data
+
 function initializeDefaults() {
-    // Initialize settings with defaults
     const settings = readJSON<Record<string, string>>(FILES.settings, {});
     if (Object.keys(settings).length === 0) {
         settings['hero_title'] = 'Get Back on Road Fast';
@@ -79,20 +74,15 @@ function initializeDefaults() {
         writeJSON(FILES.settings, settings);
     }
 
-    // Initialize other collections as empty arrays/objects if they don't exist
     readJSON<Inquiry[]>(FILES.inquiries, []);
     readJSON<LandingSection[]>(FILES.landingSections, []);
     readJSON<Record<string, UserPermission>>(FILES.userPermissions, {});
 }
 
-// Run initialization
 initializeDefaults();
-
-// ==================== INQUIRIES ====================
 
 export function getInquiries(): Inquiry[] {
     const inquiries = readJSON<Inquiry[]>(FILES.inquiries, []);
-    // Sort by created_at DESC
     return inquiries.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
@@ -117,14 +107,12 @@ export function deleteInquiry(id: number): boolean {
     const filtered = inquiries.filter(i => i.id !== id);
 
     if (filtered.length === inquiries.length) {
-        return false; // Not found
+        return false;
     }
 
     writeJSON(FILES.inquiries, filtered);
     return true;
 }
-
-// ==================== SETTINGS ====================
 
 export function getSettings(): Record<string, string> {
     return readJSON<Record<string, string>>(FILES.settings, {});
@@ -142,11 +130,8 @@ export function saveSettings(newSettings: Record<string, string>): void {
     writeJSON(FILES.settings, settings);
 }
 
-// ==================== LANDING SECTIONS ====================
-
 export function getLandingSections(): LandingSection[] {
     const sections = readJSON<LandingSection[]>(FILES.landingSections, []);
-    // Sort by order_index ASC
     return sections.sort((a, b) => a.order_index - b.order_index);
 }
 
@@ -169,7 +154,7 @@ export function updateLandingSection(id: number, updates: Partial<Omit<LandingSe
     const index = sections.findIndex(s => s.id === id);
 
     if (index === -1) {
-        return false; // Not found
+        return false;
     }
 
     sections[index] = { ...sections[index], ...updates };
@@ -182,14 +167,12 @@ export function deleteLandingSection(id: number): boolean {
     const filtered = sections.filter(s => s.id !== id);
 
     if (filtered.length === sections.length) {
-        return false; // Not found
+        return false;
     }
 
     writeJSON(FILES.landingSections, filtered);
     return true;
 }
-
-// ==================== USER PERMISSIONS ====================
 
 export function getUserPermissions(userId: string): string[] | null {
     const permissions = readJSON<Record<string, UserPermission>>(FILES.userPermissions, {});
@@ -217,7 +200,6 @@ export function saveUserPermissions(userId: string, perms: string[]): void {
     writeJSON(FILES.userPermissions, permissions);
 }
 
-// Default export for compatibility
 const db = {
     getInquiries,
     addInquiry,

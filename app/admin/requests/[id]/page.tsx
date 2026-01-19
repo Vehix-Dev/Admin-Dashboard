@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 export default function RequestDetailPage() {
   const params = useParams()
@@ -75,7 +76,7 @@ export default function RequestDetailPage() {
           service_type: requestData.service_type,
         })
       } catch (err) {
-        console.error("[v0] Request detail fetch error:", err)
+        console.error(" Request detail fetch error:", err)
         toast({
           title: "Error",
           description: "Failed to load service request details.",
@@ -138,18 +139,19 @@ export default function RequestDetailPage() {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusBadgeStyles = (status: string) => {
+    const s = status.toLowerCase()
+    switch (s) {
       case "pending":
-        return "secondary"
+        return "border-amber-500/20 bg-amber-500/10 text-amber-500"
       case "accepted":
-        return "default"
+        return "border-orange-500/20 bg-orange-500/10 text-orange-500"
       case "completed":
-        return "secondary"
+        return "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
       case "cancelled":
-        return "destructive"
+        return "border-destructive/20 bg-destructive/10 text-destructive"
       default:
-        return "outline"
+        return ""
     }
   }
 
@@ -232,8 +234,8 @@ export default function RequestDetailPage() {
                   setIsEditing(false)
                   setFormData({
                     status: request.status,
-                    rider_lat: getNumericValue(request.rider_lat),
-                    rider_lng: getNumericValue(request.rider_lng),
+                    rider_lat: request.rider_lat ? request.rider_lat.toString() : "0",
+                    rider_lng: request.rider_lng ? request.rider_lng.toString() : "0",
                     rider: request.rider,
                     rodie: request.rodie,
                     service_type: request.service_type,
@@ -247,7 +249,7 @@ export default function RequestDetailPage() {
               </Button>
               <Button
                 onClick={handleSave}
-                className="gap-2 bg-green-600 hover:bg-green-700"
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
                 disabled={isSaving}
               >
                 <Save className="h-4 w-4" />
@@ -309,7 +311,9 @@ export default function RequestDetailPage() {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <Badge variant={getStatusColor(request.status) as any}>{request.status}</Badge>
+                    <Badge variant="outline" className={cn("capitalize font-medium", getStatusBadgeStyles(request.status))}>
+                      {request.status}
+                    </Badge>
                   )}
                 </div>
 

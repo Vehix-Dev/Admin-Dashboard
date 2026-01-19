@@ -166,10 +166,10 @@ export default function EditRoadiePage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'text-green-600 bg-green-50 border-green-200'
-      case 'CANCELLED': return 'text-red-600 bg-red-50 border-red-200'
-      case 'ACCEPTED': return 'text-blue-600 bg-blue-50 border-blue-200'
-      default: return 'text-gray-600 bg-gray-50 border-gray-200'
+      case 'COMPLETED': return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+      case 'CANCELLED': return 'border-destructive/20 bg-destructive/10 text-destructive'
+      case 'ACCEPTED': return 'border-blue-500/20 bg-blue-500/10 text-blue-500'
+      default: return 'border-border bg-muted/30 text-muted-foreground'
     }
   }
 
@@ -463,10 +463,10 @@ export default function EditRoadiePage() {
 
   const getImageStatusColor = (status: string) => {
     switch (status) {
-      case 'APPROVED': return 'bg-green-100 text-green-800 border-green-200'
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'REJECTED': return 'bg-red-100 text-red-800 border-red-200'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'APPROVED': return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
+      case 'PENDING': return 'border-amber-500/20 bg-amber-500/10 text-amber-500'
+      case 'REJECTED': return 'border-destructive/20 bg-destructive/10 text-destructive'
+      default: return 'bg-muted text-muted-foreground'
     }
   }
 
@@ -486,19 +486,19 @@ export default function EditRoadiePage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Link href="/admin/roadies">
-            <Button variant="ghost" className="gap-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100">
+            <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
               Back to Roadies
             </Button>
           </Link>
           <div className="flex items-center gap-2">
             {roadie?.is_approved ? (
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+              <Badge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Active
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-yellow-600 border-yellow-200">
+              <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-500">
                 <XCircle className="h-3 w-3 mr-1" />
                 Pending Approval
               </Badge>
@@ -510,8 +510,8 @@ export default function EditRoadiePage() {
           {/* Left Column - Main Content with Tabs */}
           <div className="lg:col-span-2 space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Edit Roadie</h1>
-              <p className="text-gray-600 mt-1">Roadie ID: {roadie?.external_id}</p>
+              <h1 className="text-2xl font-bold text-foreground">Edit Provider</h1>
+              <p className="text-muted-foreground mt-1">Provider ID: {roadie?.external_id}</p>
             </div>
 
             <Tabs defaultValue="profile" className="space-y-6">
@@ -534,7 +534,7 @@ export default function EditRoadiePage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">First Name</label>
+                          <label className="text-sm font-medium text-foreground">First Name</label>
                           <Input
                             value={formData.first_name}
                             onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
@@ -543,7 +543,7 @@ export default function EditRoadiePage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Last Name</label>
+                          <label className="text-sm font-medium text-foreground">Last Name</label>
                           <Input
                             value={formData.last_name}
                             onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
@@ -555,7 +555,7 @@ export default function EditRoadiePage() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Email</label>
+                          <label className="text-sm font-medium text-foreground">Email</label>
                           <Input
                             type="email"
                             value={formData.email}
@@ -566,7 +566,7 @@ export default function EditRoadiePage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Phone</label>
+                          <label className="text-sm font-medium text-foreground">Phone</label>
                           <Input
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -577,7 +577,7 @@ export default function EditRoadiePage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Username</label>
+                        <label className="text-sm font-medium text-foreground">Username</label>
                         <Input
                           value={formData.username}
                           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -587,50 +587,50 @@ export default function EditRoadiePage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">
+                        <label className="text-sm font-medium text-foreground">
                           NIN (National Identification Number)
-                          <span className="text-xs text-gray-500 ml-1">Required</span>
+                          <span className="text-xs text-muted-foreground ml-1">Required</span>
                         </label>
                         <Input
                           value={formData.nin}
                           onChange={(e) => setFormData({ ...formData, nin: e.target.value })}
                           placeholder="e.g., AB1234567890C"
-                          className="font-mono"
+                          className="font-mono bg-background"
                           required
                           disabled={!canChange}
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           National Identification Number - this should be a valid government-issued ID
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded border border-gray-200">
+                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded border">
                         <input
                           type="checkbox"
                           id="is_approved"
                           checked={formData.is_approved}
                           onChange={(e) => setFormData({ ...formData, is_approved: e.target.checked })}
-                          className="rounded"
+                          className="rounded text-primary focus:ring-primary border-border"
                           disabled={!canApprove}
                         />
-                        <label htmlFor="is_approved" className="text-sm font-medium text-gray-700">
+                        <label htmlFor="is_approved" className="text-sm font-medium text-foreground">
                           Approved
                         </label>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {formData.is_approved ? "Roadie is active and can accept jobs" : "Roadie is pending approval"}
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {formData.is_approved ? "Provider is active and can accept jobs" : "Provider is pending approval"}
                         </span>
                       </div>
 
-                      <div className="flex gap-2 justify-end pt-4 border-t border-gray-200">
+                      <div className="flex gap-2 justify-end pt-4 border-t">
                         <Link href="/admin/roadies">
-                          <Button type="button" variant="outline" className="border-gray-300 bg-transparent hover:bg-gray-50">
+                          <Button type="button" variant="outline">
                             Cancel
                           </Button>
                         </Link>
                         <PermissionButton
                           type="submit"
                           disabled={isSubmitting}
-                          className="gap-2 bg-blue-600 hover:bg-blue-700"
+                          className="gap-2 bg-primary hover:bg-primary/90"
                           permissions={PERMISSIONS.ROADIES_CHANGE}
                         >
                           {isSubmitting ? (
@@ -679,7 +679,7 @@ export default function EditRoadiePage() {
                         <PermissionButton
                           onClick={handleAddService}
                           disabled={!selectedServiceToAdd || addingService}
-                          className="bg-blue-600 hover:bg-blue-700"
+                          className="bg-primary hover:bg-primary/90"
                           permissions={PERMISSIONS.ROADIES_CHANGE}
                         >
                           {addingService ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
@@ -694,15 +694,15 @@ export default function EditRoadiePage() {
                           </div>
                         ) : (
                           roadieAssignments.map((assignment) => (
-                            <div key={assignment.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                            <div key={assignment.id} className="p-3 flex items-center justify-between hover:bg-muted/50">
                               <div className="flex items-center gap-3">
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                                   Service
                                 </Badge>
-                                <span className="font-medium text-gray-900">{assignment.service_display}</span>
+                                <span className="font-medium text-foreground">{assignment.service_display}</span>
                               </div>
                               {canChange && (
-                                <Button variant="ghost" size="sm" onClick={() => handleRemoveService(assignment.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                                <Button variant="ghost" size="sm" onClick={() => handleRemoveService(assignment.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               )}
@@ -718,7 +718,7 @@ export default function EditRoadiePage() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Wrench className="h-5 w-5 text-blue-600" />
+                        <Wrench className="h-5 w-5 text-primary" />
                         Service Breakdown
                       </CardTitle>
                     </CardHeader>
@@ -727,14 +727,14 @@ export default function EditRoadiePage() {
                         {roadie.summary.service_breakdown.map((service, idx) => (
                           <div key={idx} className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                              <div className="w-2 h-2 rounded-full bg-primary"></div>
                               <span className="text-sm font-medium">{service.service_type__name}</span>
                             </div>
                             <Badge variant="secondary">{service.count} jobs</Badge>
                           </div>
                         ))}
                         {roadie.summary.service_breakdown.length === 0 && (
-                          <p className="text-sm text-gray-500 text-center py-4">No service data yet.</p>
+                          <p className="text-sm text-muted-foreground text-center py-4">No service data yet.</p>
                         )}
                       </div>
                     </CardContent>
@@ -748,34 +748,34 @@ export default function EditRoadiePage() {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5 text-purple-600" />
+                          <TrendingUp className="h-5 w-5 text-primary" />
                           Performance Stats
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-gray-500">Total Jobs</p>
-                            <p className="text-xl font-bold">{roadie.summary.stats.total_assignments}</p>
+                          <div className="p-3 bg-muted/30 rounded-lg border">
+                            <p className="text-xs text-muted-foreground">Total Jobs</p>
+                            <p className="text-xl font-bold text-foreground">{roadie.summary.stats.total_assignments}</p>
                           </div>
-                          <div className="p-3 bg-green-50 rounded-lg">
-                            <p className="text-xs text-green-600">Completion Rate</p>
-                            <p className="text-xl font-bold text-green-700">{roadie.summary.stats.completion_rate}%</p>
+                          <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                            <p className="text-xs text-emerald-500">Completion Rate</p>
+                            <p className="text-xl font-bold text-emerald-600">{roadie.summary.stats.completion_rate}%</p>
                           </div>
-                          <div className="p-3 bg-blue-50 rounded-lg">
-                            <p className="text-xs text-blue-600">Riders Served</p>
-                            <p className="text-xl font-bold text-blue-700">{roadie.summary.stats.unique_riders_served}</p>
+                          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                            <p className="text-xs text-primary">Riders Served</p>
+                            <p className="text-xl font-bold text-primary">{roadie.summary.stats.unique_riders_served}</p>
                           </div>
-                          <div className="p-3 bg-yellow-50 rounded-lg">
-                            <p className="text-xs text-yellow-600">Rating</p>
-                            <p className="text-xl font-bold text-yellow-700">{roadie.summary.rating} ★</p>
+                          <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                            <p className="text-xs text-amber-500">Rating</p>
+                            <p className="text-xl font-bold text-amber-600">{roadie.summary.rating} ★</p>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
 
                     {roadie?.wallet && (
-                      <Card className="border-t-4 border-t-purple-600">
+                      <Card className="border-t-4 border-t-primary">
                         <CardHeader>
                           <CardTitle className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -789,13 +789,13 @@ export default function EditRoadiePage() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-4">
-                            <h4 className="text-sm font-medium text-gray-500">Recent Transactions</h4>
+                            <h4 className="text-sm font-medium text-muted-foreground">Recent Transactions</h4>
                             <div className="space-y-2">
                               {roadie.wallet.transactions.slice(0, 5).map((tx) => (
-                                <div key={tx.id} className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
+                                <div key={tx.id} className="flex justify-between items-center p-2 bg-muted/30 rounded text-sm border">
                                   <div>
-                                    <p className="font-medium text-gray-900">{tx.reason}</p>
-                                    <p className="text-xs text-gray-500">{new Date(tx.created_at).toLocaleDateString()}</p>
+                                    <p className="font-medium text-foreground">{tx.reason}</p>
+                                    <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
                                   </div>
                                   <span className={parseFloat(tx.amount) < 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
                                     {formatCurrency(tx.amount)}
@@ -803,7 +803,7 @@ export default function EditRoadiePage() {
                                 </div>
                               ))}
                               {roadie.wallet.transactions.length === 0 && (
-                                <p className="text-sm text-gray-500 text-center py-2">No transactions found.</p>
+                                <p className="text-sm text-muted-foreground text-center py-2">No transactions found.</p>
                               )}
                             </div>
                           </div>
@@ -814,7 +814,7 @@ export default function EditRoadiePage() {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <Clock className="h-5 w-5 text-gray-600" />
+                          <Clock className="h-5 w-5 text-muted-foreground" />
                           Recent Activity
                         </CardTitle>
                       </CardHeader>
@@ -823,9 +823,9 @@ export default function EditRoadiePage() {
                           {roadie.summary.recent_assignments.map((assignment) => (
                             <div key={assignment.id} className="py-3 flex justify-between items-center first:pt-0 last:pb-0">
                               <div>
-                                <p className="font-medium text-gray-900">{assignment.service_type__name}</p>
-                                <p className="text-xs text-gray-500">
-                                  Rider: <span className="font-semibold">{assignment.rider__username || 'Unknown'}</span> • {new Date(assignment.created_at).toLocaleString()}
+                                <p className="font-medium text-foreground">{assignment.service_type__name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Rider: <span className="font-semibold text-foreground">{assignment.rider__username || 'Unknown'}</span> • {new Date(assignment.created_at).toLocaleString()}
                                 </p>
                               </div>
                               <Badge variant="outline" className={getStatusColor(assignment.status)}>
@@ -834,7 +834,7 @@ export default function EditRoadiePage() {
                             </div>
                           ))}
                           {roadie.summary.recent_assignments.length === 0 && (
-                            <p className="text-sm text-gray-500 text-center py-4">No recent activity.</p>
+                            <p className="text-sm text-muted-foreground text-center py-4">No recent activity.</p>
                           )}
                         </div>
                       </CardContent>
@@ -856,9 +856,9 @@ export default function EditRoadiePage() {
                       <div className="flex gap-2">
                         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
                           <DialogTrigger asChild>
-                            <Button className="gap-2 bg-green-600 hover:bg-green-700">
+                            <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
                               <Upload className="h-4 w-4" />
-                              Upload Images
+                              Upload Documents
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="sm:max-w-md">
@@ -898,18 +898,18 @@ export default function EditRoadiePage() {
                                 />
                               </div>
 
-                              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded border border-gray-200">
+                              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded border">
                                 <input
                                   type="checkbox"
                                   id="autoApprove"
                                   checked={uploadForm.autoApprove}
                                   onChange={(e) => setUploadForm({ ...uploadForm, autoApprove: e.target.checked })}
-                                  className="rounded"
+                                  className="rounded text-primary focus:ring-primary border-border"
                                 />
-                                <label htmlFor="autoApprove" className="text-sm font-medium text-gray-700">
+                                <label htmlFor="autoApprove" className="text-sm font-medium text-foreground">
                                   Auto Approve
                                 </label>
-                                <span className="text-xs text-gray-500 ml-2">
+                                <span className="text-xs text-muted-foreground ml-2">
                                   Automatically approve uploaded images
                                 </span>
                               </div>
@@ -923,7 +923,7 @@ export default function EditRoadiePage() {
                                   className="cursor-pointer"
                                   required
                                 />
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-muted-foreground">
                                   Supported formats: JPG, PNG, JPEG (Max: 5MB)
                                 </p>
                               </div>
@@ -942,7 +942,7 @@ export default function EditRoadiePage() {
                                     }
                                   }}
                                 />
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-muted-foreground">
                                   Select multiple images to upload at once
                                 </p>
                               </div>
@@ -1011,12 +1011,12 @@ export default function EditRoadiePage() {
                         ))}
                       </div>
                     ) : roadieImages.length === 0 ? (
-                      <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                        <div className="bg-gray-50 rounded-full h-12 w-12 flex items-center justify-center mx-auto mb-3">
-                          <ImageIcon className="h-6 w-6 text-gray-400" />
+                      <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/20">
+                        <div className="bg-muted rounded-full h-12 w-12 flex items-center justify-center mx-auto mb-3">
+                          <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900">No images uploaded</h3>
-                        <p className="text-gray-500 mt-1">Upload images to get started</p>
+                        <h3 className="text-lg font-medium text-foreground">No images uploaded</h3>
+                        <p className="text-muted-foreground mt-1">Upload images to get started</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -1030,16 +1030,16 @@ export default function EditRoadiePage() {
                             >
                               {selectedImages.length === roadieImages.length ? "Deselect All" : "Select All"}
                             </Button>
-                            <span className="text-sm text-gray-500 flex items-center">
+                            <span className="text-sm text-muted-foreground flex items-center">
                               {selectedImages.length} selected
                             </span>
                           </div>
-                          <div className="flex gap-2 text-sm text-gray-500">
+                          <div className="flex gap-2 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3 text-green-500" /> {getApprovedImageCountByType(IMAGE_TYPES.PROFILE)}/{getImageCountByType(IMAGE_TYPES.PROFILE)} Profile
+                              <CheckCircle className="h-3 w-3 text-emerald-500" /> {getApprovedImageCountByType(IMAGE_TYPES.PROFILE)}/{getImageCountByType(IMAGE_TYPES.PROFILE)} Profile
                             </span>
                             <span className="flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3 text-green-500" /> {getApprovedImageCountByType(IMAGE_TYPES.LICENSE)}/{getImageCountByType(IMAGE_TYPES.LICENSE)} License
+                              <CheckCircle className="h-3 w-3 text-emerald-500" /> {getApprovedImageCountByType(IMAGE_TYPES.LICENSE)}/{getImageCountByType(IMAGE_TYPES.LICENSE)} License
                             </span>
                           </div>
                         </div>
@@ -1050,7 +1050,7 @@ export default function EditRoadiePage() {
                               key={image.id}
                               className={cn(
                                 "group relative border rounded-lg overflow-hidden transition-all",
-                                selectedImages.includes(image.id) ? "ring-2 ring-blue-500 border-transparent shadow-md" : "hover:border-gray-300"
+                                selectedImages.includes(image.id) ? "ring-2 ring-primary border-transparent shadow-md" : "border-border hover:border-muted-foreground/30"
                               )}
                             >
                               <div className="absolute top-2 left-2 z-10 flex gap-2">
@@ -1058,12 +1058,12 @@ export default function EditRoadiePage() {
                                   type="checkbox"
                                   checked={selectedImages.includes(image.id)}
                                   onChange={() => handleSelectImage(image.id)}
-                                  className="h-4 w-4 rounded border-gray-300"
+                                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                                 />
                               </div>
 
                               <div
-                                className="aspect-video bg-gray-100 cursor-pointer relative"
+                                className="aspect-video bg-muted cursor-pointer relative"
                                 onClick={() => {
                                   setSelectedImage(image)
                                   setImageDialogOpen(true)
@@ -1079,7 +1079,7 @@ export default function EditRoadiePage() {
                                 </div>
                               </div>
 
-                              <div className="p-3 bg-white">
+                              <div className="p-3 bg-card">
                                 <div className="flex items-center justify-between mb-2">
                                   <Badge variant="secondary" className="text-xs">
                                     {getImageTypeLabel(image.image_type as any)}
@@ -1090,7 +1090,7 @@ export default function EditRoadiePage() {
                                 </div>
 
                                 {image.description && (
-                                  <p className="text-xs text-gray-500 mb-2 truncate">
+                                  <p className="text-xs text-muted-foreground mb-2 truncate">
                                     {image.description}
                                   </p>
                                 )}
@@ -1142,7 +1142,7 @@ export default function EditRoadiePage() {
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
-                          <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                          <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
                             <img
                               src={selectedImage.original_url || selectedImage.thumbnail_url || ''}
                               alt={getImageTypeLabel(selectedImage.image_type as any)}
@@ -1151,21 +1151,488 @@ export default function EditRoadiePage() {
                           </div>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <div className="font-medium text-gray-500">Status</div>
+                              <div className="font-medium text-muted-foreground">Status</div>
                               <Badge className={getImageStatusColor(selectedImage.status)}>
                                 {getStatusLabelForImage(selectedImage.status)}
                               </Badge>
                             </div>
                             <div>
-                              <div className="font-medium text-gray-500">Uploaded</div>
+                              <div className="font-medium text-muted-foreground">Uploaded</div>
                               <div>{new Date(selectedImage.created_at).toLocaleDateString()}</div>
                             </div>
                             <div>
-                              <div className="font-medium text-gray-500">File Size</div>
+                              <div className="font-medium text-muted-foreground">File Size</div>
                               <div>{(selectedImage.file_size / 1024 / 1024).toFixed(2)} MB</div>
                             </div>
                             <div>
-                              <div className="font-medium text-gray-500">Dimensions</div>
+                              <div className="font-medium text-muted-foreground">Dimensions</div>
+                              <div>{selectedImage.width} × {selectedImage.height}</div>
+                            </div>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => window.open(selectedImage.original_url, '_blank')}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download Original
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                if (selectedImage.status === 'APPROVED') {
+                                  handleImageStatusUpdate(selectedImage.id, 'REJECTED')
+                                } else {
+                                  handleImageStatusUpdate(selectedImage.id, 'APPROVED')
+                                }
+                                setImageDialogOpen(false)
+                              }}
+                            >
+                              {selectedImage.status === 'APPROVED' ? (
+                                <>
+                                  <X className="h-4 w-4 mr-2" />
+                                  Reject Image
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Approve Image
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </TabsContent>
+
+              <TabsContent value="performance" className="space-y-6">
+                {roadie?.summary && (
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5 text-primary" />
+                          Performance Stats
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="p-3 bg-muted/30 rounded-lg border">
+                            <p className="text-xs text-muted-foreground">Total Jobs</p>
+                            <p className="text-xl font-bold text-foreground">{roadie.summary.stats.total_assignments}</p>
+                          </div>
+                          <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                            <p className="text-xs text-emerald-500">Completion Rate</p>
+                            <p className="text-xl font-bold text-emerald-600">{roadie.summary.stats.completion_rate}%</p>
+                          </div>
+                          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                            <p className="text-xs text-primary">Riders Served</p>
+                            <p className="text-xl font-bold text-primary">{roadie.summary.stats.unique_riders_served}</p>
+                          </div>
+                          <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                            <p className="text-xs text-amber-500">Rating</p>
+                            <p className="text-xl font-bold text-amber-600">{roadie.summary.rating} ★</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {roadie?.wallet && (
+                      <Card className="border-t-4 border-t-primary">
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Wallet className="h-5 w-5 text-purple-600" />
+                              Wallet Details
+                            </div>
+                            <Badge className={parseFloat(roadie.wallet.balance) < 0 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}>
+                              Balance: {formatCurrency(roadie.wallet.balance)}
+                            </Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <h4 className="text-sm font-medium text-muted-foreground">Recent Transactions</h4>
+                            <div className="space-y-2">
+                              {roadie.wallet.transactions.slice(0, 5).map((tx) => (
+                                <div key={tx.id} className="flex justify-between items-center p-2 bg-muted/30 rounded text-sm border">
+                                  <div>
+                                    <p className="font-medium text-foreground">{tx.reason}</p>
+                                    <p className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
+                                  </div>
+                                  <span className={parseFloat(tx.amount) < 0 ? "text-red-600 font-medium" : "text-green-600 font-medium"}>
+                                    {formatCurrency(tx.amount)}
+                                  </span>
+                                </div>
+                              ))}
+                              {roadie.wallet.transactions.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center py-2">No transactions found.</p>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-muted-foreground" />
+                          Recent Activity
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-0 divide-y">
+                          {roadie.summary.recent_assignments.map((assignment) => (
+                            <div key={assignment.id} className="py-3 flex justify-between items-center first:pt-0 last:pb-0">
+                              <div>
+                                <p className="font-medium text-foreground">{assignment.service_type__name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Rider: <span className="font-semibold text-foreground">{assignment.rider__username || 'Unknown'}</span> • {new Date(assignment.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                              <Badge variant="outline" className={getStatusColor(assignment.status)}>
+                                {assignment.status}
+                              </Badge>
+                            </div>
+                          ))}
+                          {roadie.summary.recent_assignments.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-4">No recent activity.</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </TabsContent>
+
+              <TabsContent value="documents" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Roadie Images</CardTitle>
+                        <CardDescription>
+                          Manage roadie's uploaded images and documents
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                              <Upload className="h-4 w-4" />
+                              Upload Documents
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Upload Images</DialogTitle>
+                              <DialogDescription>
+                                Upload images for {roadie?.first_name} {roadie?.last_name} ({roadie?.external_id})
+                              </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleImageUpload} className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="imageType">Image Type</Label>
+                                <Select
+                                  value={uploadForm.imageType}
+                                  onValueChange={(value) => setUploadForm({ ...uploadForm, imageType: value as any })}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select image type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Object.values(IMAGE_TYPES).map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        {getImageTypeLabel(type)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="description">Description (Optional)</Label>
+                                <Input
+                                  id="description"
+                                  value={uploadForm.description}
+                                  onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                                  placeholder="Brief description of the image"
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded border">
+                                <input
+                                  type="checkbox"
+                                  id="autoApprove"
+                                  checked={uploadForm.autoApprove}
+                                  onChange={(e) => setUploadForm({ ...uploadForm, autoApprove: e.target.checked })}
+                                  className="rounded text-primary focus:ring-primary border-border"
+                                />
+                                <label htmlFor="autoApprove" className="text-sm font-medium text-foreground">
+                                  Auto Approve
+                                </label>
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  Automatically approve uploaded images
+                                </span>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="image">Image File</Label>
+                                <Input
+                                  id="image"
+                                  type="file"
+                                  accept="image/*"
+                                  className="cursor-pointer"
+                                  required
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  Supported formats: JPG, PNG, JPEG (Max: 5MB)
+                                </p>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="bulkUpload">Bulk Upload (Optional)</Label>
+                                <Input
+                                  id="bulkUpload"
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  className="cursor-pointer"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                      handleBulkUpload(e.target.files)
+                                    }
+                                  }}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  Select multiple images to upload at once
+                                </p>
+                              </div>
+
+                              {isUploading && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span>Uploading...</span>
+                                    <span>{uploadProgress}%</span>
+                                  </div>
+                                  <Progress value={uploadProgress} className="h-2" />
+                                </div>
+                              )}
+
+                              <DialogFooter>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setUploadDialogOpen(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button type="submit" disabled={isUploading}>
+                                  {isUploading ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Uploading...
+                                    </>
+                                  ) : (
+                                    "Upload"
+                                  )}
+                                </Button>
+                              </DialogFooter>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+
+                        {selectedImages.length > 0 && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              className="gap-2"
+                              onClick={() => handleBulkStatusUpdate('APPROVED')}
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              Approve Selected
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="gap-2"
+                              onClick={() => handleBulkStatusUpdate('REJECTED')}
+                            >
+                              <XCircle className="h-4 w-4 text-red-600" />
+                              Reject Selected
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingImages ? (
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[1, 2, 3, 4].map((i) => (
+                          <Skeleton key={i} className="h-40 rounded-lg" />
+                        ))}
+                      </div>
+                    ) : roadieImages.length === 0 ? (
+                      <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/20">
+                        <div className="bg-muted rounded-full h-12 w-12 flex items-center justify-center mx-auto mb-3">
+                          <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+                        </div>
+                        <h3 className="text-lg font-medium text-foreground">No images uploaded</h3>
+                        <p className="text-muted-foreground mt-1">Upload images to get started</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={selectAllImages}
+                              className="text-xs"
+                            >
+                              {selectedImages.length === roadieImages.length ? "Deselect All" : "Select All"}
+                            </Button>
+                            <span className="text-sm text-muted-foreground flex items-center">
+                              {selectedImages.length} selected
+                            </span>
+                          </div>
+                          <div className="flex gap-2 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3 text-emerald-500" /> {getApprovedImageCountByType(IMAGE_TYPES.PROFILE)}/{getImageCountByType(IMAGE_TYPES.PROFILE)} Profile
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3 text-emerald-500" /> {getApprovedImageCountByType(IMAGE_TYPES.LICENSE)}/{getImageCountByType(IMAGE_TYPES.LICENSE)} License
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {roadieImages.map((image) => (
+                            <div
+                              key={image.id}
+                              className={cn(
+                                "group relative border rounded-lg overflow-hidden transition-all",
+                                selectedImages.includes(image.id) ? "ring-2 ring-primary border-transparent shadow-md" : "border-border hover:border-muted-foreground/30"
+                              )}
+                            >
+                              <div className="absolute top-2 left-2 z-10 flex gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedImages.includes(image.id)}
+                                  onChange={() => handleSelectImage(image.id)}
+                                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                                />
+                              </div>
+
+                              <div
+                                className="aspect-video bg-muted cursor-pointer relative"
+                                onClick={() => {
+                                  setSelectedImage(image)
+                                  setImageDialogOpen(true)
+                                }}
+                              >
+                                <img
+                                  src={image.thumbnail_url || image.original_url}
+                                  alt={image.image_type}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                  <Eye className="h-8 w-8 text-white drop-shadow-lg" />
+                                </div>
+                              </div>
+
+                              <div className="p-3 bg-card">
+                                <div className="flex items-center justify-between mb-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {getImageTypeLabel(image.image_type as any)}
+                                  </Badge>
+                                  <Badge variant="outline" className={getImageStatusColor(image.status)}>
+                                    {image.status}
+                                  </Badge>
+                                </div>
+
+                                {image.description && (
+                                  <p className="text-xs text-muted-foreground mb-2 truncate">
+                                    {image.description}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center justify-end gap-1">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleImageStatusUpdate(image.id, 'APPROVED')}>
+                                        <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                                        Approve
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleImageStatusUpdate(image.id, 'REJECTED')}>
+                                        <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                                        Reject
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => window.open(image.original_url, '_blank')}>
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Download
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Image Detail Dialog */}
+                <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+                  <DialogContent className="sm:max-w-lg">
+                    {selectedImage && (
+                      <>
+                        <DialogHeader>
+                          <DialogTitle>
+                            {getImageTypeLabel(selectedImage.image_type as any)}
+                          </DialogTitle>
+                          <DialogDescription>
+                            {selectedImage.description || "No description provided"}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                            <img
+                              src={selectedImage.original_url || selectedImage.thumbnail_url || ''}
+                              alt={getImageTypeLabel(selectedImage.image_type as any)}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <div className="font-medium text-muted-foreground">Status</div>
+                              <Badge className={getImageStatusColor(selectedImage.status)}>
+                                {getStatusLabelForImage(selectedImage.status)}
+                              </Badge>
+                            </div>
+                            <div>
+                              <div className="font-medium text-muted-foreground">Uploaded</div>
+                              <div>{new Date(selectedImage.created_at).toLocaleDateString()}</div>
+                            </div>
+                            <div>
+                              <div className="font-medium text-muted-foreground">File Size</div>
+                              <div>{(selectedImage.file_size / 1024 / 1024).toFixed(2)} MB</div>
+                            </div>
+                            <div>
+                              <div className="font-medium text-muted-foreground">Dimensions</div>
                               <div>{selectedImage.width} × {selectedImage.height}</div>
                             </div>
                           </div>
@@ -1224,10 +1691,10 @@ export default function EditRoadiePage() {
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-gray-400" />
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     <div className="text-sm">
-                      <div className="text-gray-500">Email</div>
-                      <div className="font-medium">{roadie?.email}</div>
+                      <div className="text-muted-foreground font-medium text-xs uppercase tracking-wider">Email</div>
+                      <div className="font-medium text-foreground">{roadie?.email}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1238,36 +1705,36 @@ export default function EditRoadiePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <div className="text-sm">
-                      <div className="text-gray-500">Created</div>
-                      <div className="font-medium">
+                      <div className="text-muted-foreground font-medium text-xs uppercase tracking-wider">Created</div>
+                      <div className="font-medium text-foreground">
                         {roadie?.created_at ? new Date(roadie.created_at).toLocaleDateString() : "-"}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
+                    <Clock className="h-4 w-4 text-muted-foreground" />
                     <div className="text-sm">
-                      <div className="text-gray-500">Last Updated</div>
-                      <div className="font-medium">
+                      <div className="text-muted-foreground font-medium text-xs uppercase tracking-wider">Last Updated</div>
+                      <div className="font-medium text-foreground">
                         {roadie?.updated_at ? new Date(roadie.updated_at).toLocaleDateString() : "-"}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-400" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                     <div className="text-sm">
-                      <div className="text-gray-500">Role</div>
-                      <div className="font-medium">{roadie?.role}</div>
+                      <div className="text-muted-foreground font-medium text-xs uppercase tracking-wider">Role</div>
+                      <div className="font-medium text-foreground">{roadie?.role}</div>
                     </div>
                   </div>
                   {roadie?.referral_code && (
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-400" />
+                      <User className="h-4 w-4 text-muted-foreground" />
                       <div className="text-sm">
-                        <div className="text-gray-500">Referral Code</div>
-                        <div className="font-medium font-mono">{roadie.referral_code}</div>
+                        <div className="text-muted-foreground font-medium text-xs uppercase tracking-wider">Referral Code</div>
+                        <div className="font-medium font-mono text-foreground">{roadie.referral_code}</div>
                       </div>
                     </div>
                   )}
@@ -1286,24 +1753,24 @@ export default function EditRoadiePage() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Total Images</span>
-                    <span className="font-bold">{roadieImages.length}</span>
+                    <span className="text-sm text-muted-foreground">Total Images</span>
+                    <span className="font-bold text-foreground">{roadieImages.length}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Approved</span>
-                    <span className="font-bold text-green-600">
+                    <span className="text-sm text-muted-foreground">Approved</span>
+                    <span className="font-bold text-emerald-500">
                       {roadieImages.filter(img => img.status === 'APPROVED').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Pending</span>
-                    <span className="font-bold text-yellow-600">
+                    <span className="text-sm text-muted-foreground">Pending</span>
+                    <span className="font-bold text-amber-500">
                       {roadieImages.filter(img => img.status === 'PENDING').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Rejected</span>
-                    <span className="font-bold text-red-600">
+                    <span className="text-sm text-muted-foreground">Rejected</span>
+                    <span className="font-bold text-destructive">
                       {roadieImages.filter(img => img.status === 'REJECTED').length}
                     </span>
                   </div>

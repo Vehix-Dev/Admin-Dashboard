@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000"
+const API_BASE_URL = "https://vehix-backend-rxha.onrender.com"
 
 export interface AdminUser {
   id: string

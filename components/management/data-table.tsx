@@ -3,7 +3,7 @@
 import type React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Trash2, Edit, Download, ArrowUpDown } from "lucide-react"
+import { Trash2, Edit, Download, ArrowUpDown, RotateCcw } from "lucide-react"
 import { useState } from "react"
 
 export interface Column<T> {
@@ -19,9 +19,13 @@ interface DataTableProps<T extends { id: string | number }> {
   onView?: (row: T) => void
   onEdit?: (row: T) => void
   onDelete?: (row: T) => void
+  onRestore?: (row: T) => void
   isLoading?: boolean
   onExport?: () => void
   title?: string
+  pageSize?: number
+  initialSortColumn?: number | null
+  initialSortDirection?: "asc" | "desc"
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -30,12 +34,17 @@ export function DataTable<T extends { id: string | number }>({
   onView,
   onEdit,
   onDelete,
+  onRestore,
   isLoading,
   onExport,
   title,
+  pageSize = 10,
+  initialSortColumn = null,
+  initialSortDirection = "desc",
 }: DataTableProps<T>) {
-  const [sortColumn, setSortColumn] = useState<number | null>(null)
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [sortColumn, setSortColumn] = useState<number | null>(initialSortColumn)
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">(initialSortDirection)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const handleExport = () => {
     const csv = [
@@ -61,10 +70,10 @@ export function DataTable<T extends { id: string | number }>({
 
   const handleSort = (columnIndex: number) => {
     if (sortColumn === columnIndex) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+      setSortDirection(sortDirection === "desc" ? "asc" : "desc")
     } else {
       setSortColumn(columnIndex)
-      setSortDirection("asc")
+      setSortDirection("desc")
     }
   }
 
@@ -77,10 +86,23 @@ export function DataTable<T extends { id: string | number }>({
     if (aValue === null || aValue === undefined) return 1
     if (bValue === null || bValue === undefined) return -1
 
-    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1
-    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1
+    if (aValue < bValue) return sortDirection === "desc" ? 1 : -1
+    if (aValue > bValue) return sortDirection === "desc" ? -1 : 1
     return 0
   })
+
+  const totalPages = Math.ceil(sortedData.length / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = Math.min(startIndex + pageSize, sortedData.length)
+  const currentData = sortedData.slice(startIndex, endIndex)
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+  }
 
   return (
     <div className="space-y-6">
@@ -89,7 +111,7 @@ export function DataTable<T extends { id: string | number }>({
           <div className="flex-1">
             <h2 className="text-xl font-bold text-foreground tracking-tight">{title}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Showing {sortedData.length} of {sortedData.length} entries
+              Showing {startIndex + 1} to {endIndex} of {sortedData.length} entries
             </p>
           </div>
         )}
@@ -137,7 +159,7 @@ export function DataTable<T extends { id: string | number }>({
                     )}
                   </TableHead>
                 ))}
-                {(onEdit || onDelete) && (
+                {(onEdit || onDelete || onRestore) && (
                   <TableHead className="text-foreground px-6 py-4 text-sm font-semibold text-right tracking-wide">
                     Actions
                   </TableHead>
@@ -145,10 +167,10 @@ export function DataTable<T extends { id: string | number }>({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedData.length === 0 ? (
+              {currentData.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length + (onEdit || onDelete ? 1 : 0)}
+                    colSpan={columns.length + (onEdit || onDelete || onRestore ? 1 : 0)}
                     className="h-48 text-center py-8"
                   >
                     <div className="flex flex-col items-center justify-center">
@@ -175,7 +197,7 @@ export function DataTable<T extends { id: string | number }>({
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedData.map((row, rowIndex) => (
+                currentData.map((row, rowIndex) => (
                   <TableRow
                     key={row.id}
                     className={`
@@ -198,9 +220,20 @@ export function DataTable<T extends { id: string | number }>({
                         </TableCell>
                       )
                     })}
-                    {(onEdit || onDelete) && (
+                    {(onEdit || onDelete || onRestore) && (
                       <TableCell className="px-6 py-4">
                         <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {onRestore && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onRestore(row)}
+                              className="h-9 w-9 p-0 text-emerald-600 hover:bg-emerald-600/10 hover:text-emerald-600 rounded-lg"
+                              title="Restore"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          )}
                           {onEdit && (
                             <Button
                               variant="ghost"
@@ -237,8 +270,8 @@ export function DataTable<T extends { id: string | number }>({
       {sortedData.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-card border-t border-border rounded-b-lg text-sm text-muted-foreground">
           <div className="mb-2 sm:mb-0">
-            Showing <span className="font-semibold text-foreground">1</span> to{" "}
-            <span className="font-semibold text-foreground">{sortedData.length}</span> of{" "}
+            Showing <span className="font-semibold text-foreground">{startIndex + 1}</span> to{" "}
+            <span className="font-semibold text-foreground">{endIndex}</span> of{" "}
             <span className="font-semibold text-foreground">{sortedData.length}</span> entries
           </div>
           <div className="flex items-center gap-2">
@@ -246,22 +279,37 @@ export function DataTable<T extends { id: string | number }>({
               variant="outline"
               size="sm"
               className="h-8 px-3 border-border text-muted-foreground hover:bg-muted"
-              disabled
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
             >
               Previous
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-3 border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
-            >
-              1
-            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pageNum = i + 1
+                return (
+                  <Button
+                    key={pageNum}
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 w-8 p-0 ${currentPage === pageNum
+                      ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                      }`}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+              {totalPages > 5 && <span className="px-1">...</span>}
+            </div>
             <Button
               variant="outline"
               size="sm"
               className="h-8 px-3 border-border text-muted-foreground hover:bg-muted"
-              disabled
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
             >
               Next
             </Button>

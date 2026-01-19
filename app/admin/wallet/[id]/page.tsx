@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { EmptyState } from "@/components/dashboard/empty-state"
@@ -112,10 +113,10 @@ export default function WalletDetailsPage() {
     }
 
     const getBalanceColor = (balance: number) => {
-        if (balance > 0) return "text-green-600"
-        if (balance === 0) return "text-gray-600"
-        if (balance < 0 && balance >= -10000) return "text-yellow-600"
-        return "text-red-600"
+        if (balance > 0) return "text-emerald-500"
+        if (balance === 0) return "text-muted-foreground"
+        if (balance < 0 && balance >= -10000) return "text-amber-500"
+        return "text-destructive"
     }
 
     const getTransactionType = (amount: number) => {
@@ -123,7 +124,7 @@ export default function WalletDetailsPage() {
     }
 
     const getTransactionTypeColor = (amount: number) => {
-        return amount >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+        return amount >= 0 ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500" : "border-destructive/20 bg-destructive/10 text-destructive"
     }
 
     const getUserRole = () => {
@@ -140,9 +141,9 @@ export default function WalletDetailsPage() {
 
     const getUserRoleColor = () => {
         const role = getUserRole()
-        return role === 'RIDER' ? 'bg-blue-100 text-blue-800' :
-            role === 'RODIE' ? 'bg-purple-100 text-purple-800' :
-                'bg-gray-100 text-gray-800'
+        return role === 'RIDER' ? 'border-primary/20 bg-primary/10 text-primary' :
+            role === 'RODIE' ? 'border-purple-500/20 bg-purple-500/10 text-purple-500' :
+                'border-border bg-muted/30 text-muted-foreground'
     }
 
     const calculateStats = () => {
@@ -266,8 +267,8 @@ export default function WalletDetailsPage() {
                         Back to Wallets
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Transaction Details</h1>
-                        <p className="text-gray-600 mt-1">
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Transaction Details</h1>
+                        <p className="text-muted-foreground mt-1">
                             Transaction history for {wallet.user_username}
                         </p>
                     </div>
@@ -275,27 +276,27 @@ export default function WalletDetailsPage() {
             </div>
 
             {/* Wallet Summary Card */}
-            <Card className="bg-white border border-gray-200 shadow-sm">
+            <Card>
                 <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         {/* User Info */}
                         <div className="space-y-2">
-                            <div className="text-sm text-gray-500 flex items-center gap-2">
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
                                 <User className="h-4 w-4" />
                                 User Information
                             </div>
                             <div className="space-y-1">
-                                <div className="font-semibold text-lg">{wallet.user_username}</div>
+                                <div className="font-semibold text-lg text-foreground">{wallet.user_username}</div>
                                 <div className="flex items-center gap-2">
-                                    <Badge className={getUserRoleColor()}>
+                                    <Badge variant="outline" className={cn("font-medium", getUserRoleColor())}>
                                         {getUserRoleLabel()}
                                     </Badge>
-                                    <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded flex items-center gap-1">
+                                    <code className="text-sm font-mono bg-muted px-2 py-1 rounded flex items-center gap-1 text-foreground border">
                                         <ExternalLink className="h-3 w-3" />
                                         {wallet.user_external_id}
                                     </code>
                                 </div>
-                                <div className="text-sm text-gray-500">
+                                <div className="text-sm text-muted-foreground">
                                     User ID: {wallet.user_id}
                                 </div>
                             </div>
@@ -303,7 +304,7 @@ export default function WalletDetailsPage() {
 
                         {/* Balance Info */}
                         <div className="space-y-2">
-                            <div className="text-sm text-gray-500 flex items-center gap-2">
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
                                 <WalletIcon className="h-4 w-4" />
                                 Current Balance
                             </div>
@@ -311,7 +312,7 @@ export default function WalletDetailsPage() {
                                 <div className={`text-2xl font-bold ${getBalanceColor(balance)}`}>
                                     {formatCurrency(wallet.balance)}
                                 </div>
-                                <div className="text-sm text-gray-500">
+                                <div className="text-sm text-muted-foreground">
                                     Wallet ID: {wallet.id}
                                 </div>
                             </div>
@@ -319,41 +320,41 @@ export default function WalletDetailsPage() {
 
                         {/* Transaction Stats */}
                         <div className="space-y-2">
-                            <div className="text-sm text-gray-500">Transaction Summary</div>
+                            <div className="text-sm text-muted-foreground">Transaction Summary</div>
                             <div className="space-y-2">
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center text-foreground">
                                     <span className="text-sm">Total Transactions:</span>
                                     <span className="font-semibold">{stats?.totalTransactions || 0}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm">Credits:</span>
-                                    <span className="font-semibold text-green-600">{stats?.creditCount || 0}</span>
+                                    <span className="text-sm text-foreground">Credits:</span>
+                                    <span className="font-semibold text-emerald-500">{stats?.creditCount || 0}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm">Debits:</span>
-                                    <span className="font-semibold text-red-600">{stats?.debitCount || 0}</span>
+                                    <span className="text-sm text-foreground">Debits:</span>
+                                    <span className="font-semibold text-destructive">{stats?.debitCount || 0}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Date Info */}
                         <div className="space-y-2">
-                            <div className="text-sm text-gray-500">Wallet Dates</div>
+                            <div className="text-sm text-muted-foreground">Wallet Dates</div>
                             <div className="space-y-2">
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center text-foreground">
                                     <span className="text-sm">Created:</span>
                                     <span className="font-medium text-sm">
                                         {new Date(wallet.created_at).toLocaleDateString()}
                                     </span>
                                 </div>
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center text-foreground">
                                     <span className="text-sm">Updated:</span>
                                     <span className="font-medium text-sm">
                                         {new Date(wallet.updated_at).toLocaleDateString()}
                                     </span>
                                 </div>
                                 {stats?.firstTransaction && (
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center text-foreground">
                                         <span className="text-sm">First TX:</span>
                                         <span className="font-medium text-sm">
                                             {stats.firstTransaction.toLocaleDateString()}
@@ -369,21 +370,21 @@ export default function WalletDetailsPage() {
                         <>
                             <Separator className="my-4" />
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="text-center p-4 bg-green-50 rounded-lg">
-                                    <div className="text-sm text-green-700 mb-1">Total Credits</div>
-                                    <div className="text-2xl font-bold text-green-800">
+                                <div className="text-center p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                                    <div className="text-sm text-emerald-500 mb-1">Total Credits</div>
+                                    <div className="text-2xl font-bold text-emerald-600">
                                         {formatCurrency(stats.totalCredits)}
                                     </div>
                                 </div>
-                                <div className="text-center p-4 bg-red-50 rounded-lg">
-                                    <div className="text-sm text-red-700 mb-1">Total Debits</div>
-                                    <div className="text-2xl font-bold text-red-800">
+                                <div className="text-center p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                                    <div className="text-sm text-destructive mb-1">Total Debits</div>
+                                    <div className="text-2xl font-bold text-destructive">
                                         {formatCurrency(stats.totalDebits)}
                                     </div>
                                 </div>
-                                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                    <div className="text-sm text-blue-700 mb-1">Net Change</div>
-                                    <div className={`text-2xl font-bold ${stats.netChange >= 0 ? 'text-green-800' : 'text-red-800'}`}>
+                                <div className="text-center p-4 bg-primary/10 rounded-lg border border-primary/20">
+                                    <div className="text-sm text-primary mb-1">Net Change</div>
+                                    <div className={`text-2xl font-bold ${stats.netChange >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
                                         {stats.netChange >= 0 ? '+' : ''}{formatCurrency(stats.netChange)}
                                     </div>
                                 </div>
@@ -395,18 +396,18 @@ export default function WalletDetailsPage() {
 
             {/* Platform Config Warning */}
             {platformConfig && balance < -parseFloat(platformConfig.max_negative_balance) && (
-                <Card className="bg-red-50 border-red-200">
+                <Card className="border-destructive/20 bg-destructive/10">
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="font-semibold text-red-800">Balance Below Threshold</div>
-                                <div className="text-sm text-red-600 mt-1">
+                                <div className="font-semibold text-destructive">Balance Below Threshold</div>
+                                <div className="text-sm text-destructive/80 mt-1">
                                     This user's balance ({formatCurrency(balance)}) is below the platform threshold of {formatCurrency(parseFloat(platformConfig.max_negative_balance) * -1)}.
                                     They cannot receive services until they top up.
                                 </div>
                             </div>
                             <div className="text-sm">
-                                <div className="text-red-800 font-medium">Service Fee: {formatCurrency(platformConfig.service_fee)}</div>
+                                <div className="text-destructive font-medium">Service Fee: {formatCurrency(platformConfig.service_fee)}</div>
                             </div>
                         </div>
                     </CardContent>
@@ -414,12 +415,12 @@ export default function WalletDetailsPage() {
             )}
 
             {/* Transactions Table */}
-            <Card className="bg-white border border-gray-200 shadow-sm">
+            <Card>
                 <CardHeader>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <CardTitle>Transaction History</CardTitle>
-                            <CardDescription>
+                            <CardDescription className="text-muted-foreground">
                                 {wallet.transactions?.length || 0} transactions recorded
                             </CardDescription>
                         </div>
@@ -454,19 +455,18 @@ export default function WalletDetailsPage() {
                         <EmptyState
                             title="No transactions found"
                             description="This wallet has no recorded transactions yet."
-                            compact={true}
                         />
                     ) : (
-                        <div className="border rounded-lg overflow-hidden">
+                        <div className="border border-border rounded-lg overflow-hidden">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-gray-50">
-                                        <TableHead className="font-semibold">Transaction ID</TableHead>
-                                        <TableHead className="font-semibold">Date & Time</TableHead>
-                                        <TableHead className="font-semibold">Description</TableHead>
-                                        <TableHead className="font-semibold">Type</TableHead>
-                                        <TableHead className="font-semibold text-right">Amount</TableHead>
-                                        <TableHead className="font-semibold text-right">Running Balance</TableHead>
+                                    <TableRow className="bg-muted/50 border-b border-border">
+                                        <TableHead className="font-semibold text-foreground">Transaction ID</TableHead>
+                                        <TableHead className="font-semibold text-foreground">Date & Time</TableHead>
+                                        <TableHead className="font-semibold text-foreground">Description</TableHead>
+                                        <TableHead className="font-semibold text-foreground">Type</TableHead>
+                                        <TableHead className="font-semibold text-foreground text-right">Amount</TableHead>
+                                        <TableHead className="font-semibold text-foreground text-right">Running Balance</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -481,39 +481,39 @@ export default function WalletDetailsPage() {
                                             .reduce((sum, t) => sum + parseFloat(t.amount), 0)
 
                                         return (
-                                            <TableRow key={transaction.id} className="hover:bg-gray-50">
+                                            <TableRow key={transaction.id} className="hover:bg-muted/30 border-b border-border transition-colors">
                                                 <TableCell>
-                                                    <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                                                    <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-foreground border">
                                                         TX{transaction.id.toString().padStart(4, '0')}
                                                     </code>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="space-y-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <Calendar className="h-3 w-3 text-gray-400" />
+                                                        <div className="flex items-center gap-2 text-foreground">
+                                                            <Calendar className="h-3 w-3 text-muted-foreground" />
                                                             <span>{transactionDate.toLocaleDateString()}</span>
                                                         </div>
-                                                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                             <Clock className="h-3 w-3" />
                                                             <span>{transactionDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                         </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="font-medium">{transaction.reason}</div>
+                                                    <div className="font-medium text-foreground">{transaction.reason}</div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge className={getTransactionTypeColor(amount)}>
+                                                    <Badge variant="outline" className={cn("font-medium", getTransactionTypeColor(amount))}>
                                                         {getTransactionType(amount)}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <div className={`font-bold ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
+                                                    <div className={`font-bold ${isCredit ? 'text-emerald-500' : 'text-destructive'}`}>
                                                         {isCredit ? '+' : ''}{formatCurrency(transaction.amount)}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <div className={`font-medium ${runningBalance >= 0 ? 'text-gray-800' : 'text-red-600'}`}>
+                                                    <div className={`font-medium ${runningBalance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
                                                         {formatCurrency(runningBalance)}
                                                     </div>
                                                 </TableCell>
@@ -529,10 +529,10 @@ export default function WalletDetailsPage() {
 
             {/* Export/Print Options */}
             {wallet.transactions && wallet.transactions.length > 0 && (
-                <Card className="bg-gray-50 border-gray-200">
+                <Card className="bg-muted/30 border-border">
                     <CardContent className="pt-6">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-muted-foreground">
                                 Showing {wallet.transactions.length} transactions for {wallet.user_username}
                             </div>
                             <div className="flex gap-2">
