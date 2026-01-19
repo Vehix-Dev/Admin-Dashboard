@@ -58,7 +58,6 @@ export default function MediaModerationPage() {
         fetchImages()
     }, [filterStatus])
 
-    // Handle search with debounce in real implementation, simplified here
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
         fetchImages()
@@ -71,7 +70,6 @@ export default function MediaModerationPage() {
                 title: "Success",
                 description: `Image ${status.toLowerCase()} successfully`
             })
-            // Remove from list if filtering by pending, or update locally
             setImages(prev => prev.map(img =>
                 img.id === image.id ? { ...img, status } : img
             ).filter(img => filterStatus === "ALL" || filterStatus === img.status))
@@ -84,7 +82,6 @@ export default function MediaModerationPage() {
         }
     }
 
-    // Group images by user
     const groupedImages = images.reduce((acc, image) => {
         const key = image.external_id
         if (!acc[key]) {
@@ -108,7 +105,6 @@ export default function MediaModerationPage() {
                 </div>
             </div>
 
-            {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4 bg-card p-4 rounded-lg border border-border">
                 <div className="flex-1">
                     <form onSubmit={handleSearch} className="relative">
@@ -139,7 +135,6 @@ export default function MediaModerationPage() {
                 </div>
             </div>
 
-            {/* Grouped Gallery */}
             {isLoading ? (
                 <div className="space-y-8">
                     {[1, 2].map(i => (
@@ -161,14 +156,12 @@ export default function MediaModerationPage() {
                 />
             ) : (
                 <div className="space-y-8">
-                    {/* Main Table Header Style for Legend/Context if needed, though mostly visual per user request */}
                     <div className="hidden md:block text-sm font-semibold text-muted-foreground border-b border-border pb-2 mb-4">
                         SR No. &nbsp;&nbsp; User Asset Detail
                     </div>
 
                     {Object.entries(groupedImages).map(([externalId, group], groupIndex) => (
                         <div key={externalId} className="border border-border rounded-lg overflow-hidden shadow-sm bg-card">
-                            {/* User Header - Cyan/Blue Bar */}
                             <div className="bg-[#00B4D8] text-white px-4 py-3 font-semibold text-lg flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <span>{externalId}</span>
@@ -180,7 +173,6 @@ export default function MediaModerationPage() {
                                 </div>
                             </div>
 
-                            {/* Images Grid for User */}
                             <div className="p-4">
                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                     {group.images.map((image, idx) => (

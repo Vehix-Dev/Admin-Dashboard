@@ -65,10 +65,7 @@ export default function LoginPage() {
       } : await getAdminProfile()
 
       if (user) {
-        // Call AuthContext login to update state globally
         const token = localStorage.getItem('admin_access_token') || ""
-
-        // Adapt AdminUser to User interface
         const adaptedUser: User = {
           ...user,
           first_name: user.first_name || user.name?.split(' ')[0] || "",

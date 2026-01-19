@@ -20,13 +20,9 @@ import { Separator } from "@/components/ui/separator"
 export default function NotificationsPage() {
     const [loading, setLoading] = useState(false)
     const [creating, setCreating] = useState(false)
-
-    // Data for selection
     const [riders, setRiders] = useState<Rider[]>([])
     const [roadies, setRoadies] = useState<Roadie[]>([])
     const [fetchingUsers, setFetchingUsers] = useState(false)
-
-    // Form State
     const [audienceType, setAudienceType] = useState<"driver" | "user">("driver")
     const [selectionMode, setSelectionMode] = useState<"manual" | "audience">("manual")
     const [deliveryType, setDeliveryType] = useState<"single" | "broadcast">("single")
@@ -34,8 +30,6 @@ export default function NotificationsPage() {
     const [title, setTitle] = useState("")
     const [url, setUrl] = useState("")
     const [message, setMessage] = useState("")
-
-    // Combobox state
     const [open, setOpen] = useState(false)
 
     const canManage = useCan(PERMISSIONS.NOTIFICATIONS_MANAGE)
@@ -98,8 +92,6 @@ export default function NotificationsPage() {
             }
 
             await createNotification(payload)
-
-            // Reset form
             setTitle("")
             setMessage("")
             setUrl("")
