@@ -46,6 +46,7 @@ export const PERMISSIONS = {
     // Notifications
     NOTIFICATIONS_VIEW: 'notifications.view',
     NOTIFICATIONS_MANAGE: 'notifications.manage',
+    EMAIL_SEND: 'notifications.email_send',
 
     // Referrals
     REFERRALS_VIEW: 'referrals.view',
@@ -132,6 +133,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         PERMISSIONS.MEDIA_MANAGE,
         PERMISSIONS.NOTIFICATIONS_VIEW,
         PERMISSIONS.NOTIFICATIONS_MANAGE,
+        PERMISSIONS.EMAIL_SEND,
         PERMISSIONS.REFERRALS_VIEW,
         PERMISSIONS.REFERRALS_MANAGE,
         PERMISSIONS.REPORTS_VIEW,

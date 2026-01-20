@@ -45,10 +45,8 @@ import { debounce } from "lodash"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
-interface RequestRow extends ServiceRequest {
+interface RequestRow extends Omit<ServiceRequest, 'id'> {
     id: string
-    rider_lat: string | number | null
-    rider_lng: string | number | null
 }
 
 export default function CompletedRequestsPage() {
@@ -218,7 +216,6 @@ export default function CompletedRequestsPage() {
     }
 
     const handleDelete = async (request: RequestRow) => {
-        if (!confirm("Are you sure you want to delete this service request?")) return
         try {
             await deleteServiceRequest(Number(request.id))
             toast({
@@ -717,6 +714,24 @@ export default function CompletedRequestsPage() {
                             columns={columns}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
+                            deleteConfirmTitle="Delete Completed Request"
+                            deleteConfirmDescription="Are you sure you want to delete this completed service request record?"
+                            renderConfirmDetails={(request) => (
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Request ID:</span>
+                                        <span className="font-mono text-white">#{request.id}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Rider:</span>
+                                        <span className="text-white">{request.rider_username}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Service:</span>
+                                        <span className="font-medium text-primary">{getServiceDisplayName(request)}</span>
+                                    </div>
+                                </div>
+                            )}
                             searchable={false}
                             pagination={{
                                 pageSize: 10,

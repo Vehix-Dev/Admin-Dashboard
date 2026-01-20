@@ -53,6 +53,7 @@ export default function RidersPage() {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [showFilters, setShowFilters] = useState(false)
+  const [statusToggling, setStatusToggling] = useState<number[]>([])
   const { toast } = useToast()
 
   const canAdd = useCan(PERMISSIONS.RIDERS_ADD)
@@ -194,7 +195,6 @@ export default function RidersPage() {
   }, [searchQuery, statusFilter, startDate, endDate, riders])
 
   const handleDelete = async (rider: RiderWithThumbnail) => {
-    if (!confirm(`Are you sure you want to delete ${rider.first_name} ${rider.last_name}?`)) return
     try {
       await deleteRider(rider.id)
       toast({
@@ -213,10 +213,32 @@ export default function RidersPage() {
 
   const handleStatusToggle = async (rider: RiderWithThumbnail) => {
     try {
-      await updateRider(rider.id, { is_approved: !rider.is_approved })
+      setStatusToggling(prev => [...prev, rider.id])
+      const newStatus = !rider.is_approved
+      await updateRider(rider.id, { is_approved: newStatus })
+
+      if (newStatus) {
+        try {
+          await fetch('/api/admin/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: rider.email,
+              type: 'WELCOME_APPROVAL',
+              data: {
+                userName: rider.first_name,
+                role: 'Rider'
+              }
+            })
+          })
+        } catch (e) {
+          console.error("Failed to send welcome email", e)
+        }
+      }
+
       toast({
         title: "Success",
-        description: `Rider ${!rider.is_approved ? "approved" : "unapproved"} successfully`
+        description: `Rider ${newStatus ? "approved" : "unapproved"} successfully`
       })
       fetchRiders()
     } catch (err) {
@@ -225,6 +247,8 @@ export default function RidersPage() {
         description: "Failed to update rider status",
         variant: "destructive"
       })
+    } finally {
+      setStatusToggling(prev => prev.filter(id => id !== rider.id))
     }
   }
 
@@ -323,9 +347,10 @@ export default function RidersPage() {
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
-            disabled={!canApprove}
+            disabled={!canApprove || statusToggling.includes(row.id)}
             className="data-[state=checked]:bg-green-600 scale-90"
           />
+          {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           <div className="flex items-center gap-1">
             {value ? (
               <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Active</Badge>
@@ -512,8 +537,9 @@ export default function RidersPage() {
                   <Calendar
                     mode="single"
                     selected={startDate}
-                    onSelect={setStartDate}
+                    onSelect={(date) => setStartDate(date)}
                     initialFocus
+                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                   />
                 </PopoverContent>
               </Popover>
@@ -538,8 +564,9 @@ export default function RidersPage() {
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={setEndDate}
+                    onSelect={(date) => setEndDate(date)}
                     initialFocus
+                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                   />
                 </PopoverContent>
               </Popover>
@@ -615,6 +642,24 @@ export default function RidersPage() {
             columns={columns}
             onEdit={canChange ? handleEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
+            deleteConfirmTitle="Delete Customer"
+            deleteConfirmDescription="Are you sure you want to delete this customer account? This action cannot be undone."
+            renderConfirmDetails={(rider) => (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Name:</span>
+                  <span className="font-medium text-white">{rider.first_name} {rider.last_name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Username:</span>
+                  <span className="font-mono text-primary">@{rider.username}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Email:</span>
+                  <span className="text-white">{rider.email}</span>
+                </div>
+              </div>
+            )}
             initialSortColumn={5}
             initialSortDirection="desc"
           />

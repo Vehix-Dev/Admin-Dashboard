@@ -23,6 +23,7 @@ import {
 import { Clock, Map, Navigation } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ArrowLeft, MapPin, User, Wrench, Edit, Save, X, Trash2 } from "lucide-react"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -41,6 +42,7 @@ export default function RequestDetailPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState<Partial<ServiceRequest>>({})
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const { toast } = useToast()
 
   const id = params.id as string
@@ -120,8 +122,12 @@ export default function RequestDetailPage() {
     }
   }
 
-  const handleDelete = async () => {
-    if (!request || !confirm("Are you sure you want to delete this request?")) return
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!request) return
 
     try {
       await deleteServiceRequest(request.id)
@@ -129,6 +135,7 @@ export default function RequestDetailPage() {
         title: "Success",
         description: "Service request deleted successfully",
       })
+      setIsDeleteModalOpen(false)
       router.push("/admin/requests")
     } catch (err) {
       toast({
@@ -234,8 +241,8 @@ export default function RequestDetailPage() {
                   setIsEditing(false)
                   setFormData({
                     status: request.status,
-                    rider_lat: request.rider_lat ? request.rider_lat.toString() : "0",
-                    rider_lng: request.rider_lng ? request.rider_lng.toString() : "0",
+                    rider_lat: request.rider_lat || "0",
+                    rider_lng: request.rider_lng || "0",
                     rider: request.rider,
                     rodie: request.rodie,
                     service_type: request.service_type,
@@ -360,7 +367,7 @@ export default function RequestDetailPage() {
                         type="number"
                         step="any"
                         value={formData.rider_lat?.toString() || ""}
-                        onChange={(e) => setFormData({ ...formData, rider_lat: getNumericValue(e.target.value) })}
+                        onChange={(e) => setFormData({ ...formData, rider_lat: e.target.value })}
                       />
                     ) : (
                       <p className="text-sm">{formatCoordinate(request.rider_lat)}</p>
@@ -374,7 +381,7 @@ export default function RequestDetailPage() {
                         type="number"
                         step="any"
                         value={formData.rider_lng?.toString() || ""}
-                        onChange={(e) => setFormData({ ...formData, rider_lng: getNumericValue(e.target.value) })}
+                        onChange={(e) => setFormData({ ...formData, rider_lng: e.target.value })}
                       />
                     ) : (
                       <p className="text-sm">{formatCoordinate(request.rider_lng)}</p>
@@ -478,6 +485,27 @@ export default function RequestDetailPage() {
           </Card>
         </div>
       </div>
-    </div>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Service Request"
+        description="Are you sure you want to delete this service request? This action is permanent and will remove all associated logs and history."
+      >
+        {request && (
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Request ID:</span>
+              <span className="font-medium text-white">#{request.id}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Rider:</span>
+              <span className="text-primary">{request.rider_username}</span>
+            </div>
+          </div>
+        )}
+      </ConfirmModal>
+    </div >
   )
 }

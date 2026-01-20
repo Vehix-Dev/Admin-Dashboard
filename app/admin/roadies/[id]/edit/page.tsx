@@ -64,6 +64,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,6 +101,7 @@ export default function EditRoadiePage() {
   const [roadieAssignments, setRoadieAssignments] = useState<RodieService[]>([])
   const [selectedServiceToAdd, setSelectedServiceToAdd] = useState<string>("")
   const [addingService, setAddingService] = useState(false)
+  const [pendingRemoveAssignmentId, setPendingRemoveAssignmentId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -228,10 +230,14 @@ export default function EditRoadiePage() {
     }
   }
 
-  const handleRemoveService = async (assignmentId: number) => {
-    if (!confirm("Are you sure you want to remove this service assignment?")) return
+  const handleRemoveService = (assignmentId: number) => {
+    setPendingRemoveAssignmentId(assignmentId)
+  }
+
+  const confirmRemoveService = async () => {
+    if (!pendingRemoveAssignmentId) return
     try {
-      await deleteRodieService(assignmentId)
+      await deleteRodieService(pendingRemoveAssignmentId)
       toast({
         title: "Success",
         description: "Service removed successfully",
@@ -243,6 +249,8 @@ export default function EditRoadiePage() {
         description: err.message || "Failed to remove service",
         variant: "destructive",
       })
+    } finally {
+      setPendingRemoveAssignmentId(null)
     }
   }
 
@@ -1826,6 +1834,27 @@ export default function EditRoadiePage() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!pendingRemoveAssignmentId}
+        onClose={() => setPendingRemoveAssignmentId(null)}
+        onConfirm={confirmRemoveService}
+        title="Remove Service Assignment"
+        description="Are you sure you want to remove this service assignment? The roadie will no longer be able to accept requests for this service."
+      >
+        {pendingRemoveAssignmentId && (() => {
+          const assignment = roadieAssignments.find(a => a.id === pendingRemoveAssignmentId)
+          return assignment ? (
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Service:</span>
+                <span className="font-medium text-white">{assignment.service_display}</span>
+              </div>
+            </div>
+          ) : null
+        })()}
+      </ConfirmModal>
+
     </PermissionGuard>
   )
 }

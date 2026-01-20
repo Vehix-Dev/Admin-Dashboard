@@ -25,7 +25,9 @@ import {
   Globe,
   Menu,
   Trash2,
-  ArrowLeft
+  ArrowLeft,
+  DollarSign,
+  Mail
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -106,7 +108,9 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         permission: PERMISSIONS.ADMIN_USERS_VIEW,
         items: [
           { name: "All Admins", href: "/admin/users", icon: List, permission: PERMISSIONS.ADMIN_USERS_VIEW },
-          { name: "Add New", href: "/admin/users/add", icon: Plus, permission: PERMISSIONS.ADMIN_USERS_ADD },
+          { name: "Add Admin", href: "/admin/users/add", icon: Plus, permission: PERMISSIONS.ADMIN_USERS_ADD },
+          { name: "Roles", href: "/admin/users/roles", icon: Shield, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "Groups", href: "/admin/users/groups", icon: Users, permission: PERMISSIONS.ADMIN_USERS_VIEW },
           { name: "Deleted Users", href: "/admin/users/deleted", icon: Trash2, permission: PERMISSIONS.ADMIN_USERS_VIEW },
         ]
       },
@@ -124,13 +128,25 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         name: "Notifications",
         href: "/admin/notifications",
         icon: Bell,
+        hasSubItems: true,
         permission: PERMISSIONS.NOTIFICATIONS_VIEW,
+        items: [
+          { name: "All Notifications", href: "/admin/notifications", icon: Bell, permission: PERMISSIONS.NOTIFICATIONS_VIEW },
+          { name: "Send Email", href: "/admin/notifications/email", icon: Mail, permission: PERMISSIONS.EMAIL_SEND },
+        ]
       },
       {
         name: "Reports",
         href: "/admin/reports",
         icon: BarChart,
+        hasSubItems: true,
         permission: PERMISSIONS.REPORTS_VIEW,
+        items: [
+          { name: "Overview", href: "/admin/reports", icon: BarChart, permission: PERMISSIONS.REPORTS_VIEW },
+          { name: "Financial Report", href: "/admin/reports/financial", icon: DollarSign, permission: PERMISSIONS.REPORTS_VIEW },
+          { name: "User Analytics", href: "/admin/reports/users", icon: Users, permission: PERMISSIONS.REPORTS_VIEW },
+          { name: "Service Performance", href: "/admin/reports/services", icon: Wrench, permission: PERMISSIONS.REPORTS_VIEW },
+        ]
       },
       {
         name: "Support & Inquiries",

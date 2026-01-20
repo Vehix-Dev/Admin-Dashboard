@@ -219,7 +219,6 @@ export default function AcceptedRequestsPage() {
     }
 
     const handleDelete = async (request: RequestRow) => {
-        if (!confirm("Are you sure you want to delete this service request?")) return
         try {
             await deleteServiceRequest(Number(request.id))
             toast({
@@ -710,6 +709,24 @@ export default function AcceptedRequestsPage() {
                             columns={columns}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
+                            deleteConfirmTitle="Delete Accepted Request"
+                            deleteConfirmDescription="Are you sure you want to delete this active service request? This may disrupt the current service flow."
+                            renderConfirmDetails={(request) => (
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Request ID:</span>
+                                        <span className="font-mono text-white">#{request.id}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Roadie:</span>
+                                        <span className="text-white">{request.rodie_username}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Service:</span>
+                                        <span className="font-medium text-primary">{getServiceDisplayName(request)}</span>
+                                    </div>
+                                </div>
+                            )}
                             searchable={false}
                             pagination={{
                                 pageSize: 10,

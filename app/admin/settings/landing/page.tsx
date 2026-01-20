@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Save, Loader2, Globe, Mail, Plus, Trash2, Edit, MoveUp, MoveDown, Image as ImageIcon, Video, Type, Upload } from "lucide-react"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -64,6 +65,7 @@ export default function LandingSettingsPage() {
     const [currentSection, setCurrentSection] = useState<LandingSection>(DEFAULT_SECTION)
     const [isUploading, setIsUploading] = useState(false)
     const [uploadTarget, setUploadTarget] = useState<string | null>(null) // 'section' or setting key
+    const [pendingDeleteSectionId, setPendingDeleteSectionId] = useState<number | null>(null)
 
     const { toast } = useToast()
     const canChange = useCan(PERMISSIONS.SETTINGS_CHANGE)
@@ -244,16 +246,19 @@ export default function LandingSettingsPage() {
         }
     }
 
-    const handleDeleteSection = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this section?")) return
+    const handleDeleteSection = (id: number) => {
+        setPendingDeleteSectionId(id)
+    }
 
+    const confirmDeleteSection = async () => {
+        if (!pendingDeleteSectionId) return
         try {
-            const res = await fetch(`/api/settings/landing/sections?id=${id}`, {
+            const res = await fetch(`/api/settings/landing/sections?id=${pendingDeleteSectionId}`, {
                 method: "DELETE"
             })
 
             if (res.ok) {
-                setSections(prev => prev.filter(s => s.id !== id))
+                setSections(prev => prev.filter(s => s.id !== pendingDeleteSectionId))
                 toast({
                     title: "Deleted",
                     description: "Section removed successfully."
@@ -267,6 +272,8 @@ export default function LandingSettingsPage() {
                 description: "Failed to delete section.",
                 variant: "destructive"
             })
+        } finally {
+            setPendingDeleteSectionId(null)
         }
     }
 
@@ -919,6 +926,30 @@ export default function LandingSettingsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmModal
+                isOpen={!!pendingDeleteSectionId}
+                onClose={() => setPendingDeleteSectionId(null)}
+                onConfirm={confirmDeleteSection}
+                title="Delete Landing Section"
+                description="Are you sure you want to delete this landing page section? This action cannot be undone and will immediately reflect on the live site."
+            >
+                {pendingDeleteSectionId && (() => {
+                    const section = sections.find(s => s.id === pendingDeleteSectionId)
+                    return section ? (
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Title:</span>
+                                <span className="font-medium text-white">{section.title}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Type:</span>
+                                <span className="text-primary uppercase">{section.type}</span>
+                            </div>
+                        </div>
+                    ) : null
+                })()}
+            </ConfirmModal>
         </div>
     )
 }

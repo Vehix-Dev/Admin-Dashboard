@@ -61,8 +61,6 @@ export default function DeletedUsersPage() {
     }
 
     const handleRestore = async (admin: DeletedAdminUser) => {
-        if (!confirm(`Are you sure you want to restore ${admin.username}? This will make the user active again.`)) return
-
         try {
             await restoreAdminUser(Number(admin.id))
             toast({
@@ -226,6 +224,15 @@ export default function DeletedUsersPage() {
                         initialSortColumn={8}
                         initialSortDirection="desc"
                         onRestore={handleRestore}
+                        restoreConfirmTitle={(admin) => `Restore ${admin.username}?`}
+                        restoreConfirmDescription={(admin) => `Are you sure you want to restore this user?`}
+                        renderConfirmDetails={(admin) => (
+                            <div className="flex flex-col gap-1">
+                                <span className="text-white font-medium">{admin.first_name} {admin.last_name}</span>
+                                <span className="text-slate-400 text-xs">{admin.email}</span>
+                                <span className="text-emerald-400 text-[10px] mt-1 uppercase tracking-wider font-bold">Username: {admin.username}</span>
+                            </div>
+                        )}
                     />
                 )}
             </div>

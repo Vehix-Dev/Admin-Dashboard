@@ -13,6 +13,7 @@ import { loginAdmin, getAdminProfile } from "@/lib/auth"
 import { checkBackendConnection } from "@/lib/api"
 import { Loader2, AlertCircle, Lock, User as UserIcon, Server } from "lucide-react"
 import { useAuth, type User } from "@/contexts/auth-context"
+import ReCAPTCHA from "react-google-recaptcha"
 
 export default function LoginPage() {
   const { login: authLogin } = useAuth()
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isCheckingConnection, setIsCheckingConnection] = useState(true)
   const [connectionError, setConnectionError] = useState<string | null>(null)
+  const [captchaValue, setCaptchaValue] = useState<string | null>(null)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -49,6 +51,15 @@ export default function LoginPage() {
       toast({
         title: "Connection Error",
         description: connectionError,
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!captchaValue) {
+      toast({
+        title: "Verification Required",
+        description: "Please complete the captcha verification",
         variant: "destructive",
       })
       return
@@ -248,6 +259,16 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="flex justify-center py-2 h-[80px]">
+              <ReCAPTCHA
+                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+                onChange={(val) => setCaptchaValue(val)}
+                theme="dark"
+              />
+            </div>
+
+
+
             <Button
               type="submit"
               className="group relative w-full overflow-hidden bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 disabled:opacity-50 disabled:cursor-not-allowed h-12 text-base font-semibold"
@@ -301,6 +322,6 @@ export default function LoginPage() {
           © 2026 Vehix Admin Portal • All Rights Reserved
         </p>
       </div>
-    </div>
+    </div >
   )
 }

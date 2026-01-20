@@ -6,13 +6,11 @@ import {
     getServiceRequests,
     getRiders,
     getRoadies,
-    getServices,
     getPlatformConfig,
     type Wallet,
     type ServiceRequest,
     type Rider,
     type Roadie,
-    type Service,
     type PlatformConfig
 } from "@/lib/api"
 import { useCan } from "@/components/auth/permission-guard"
@@ -20,17 +18,16 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import {
-    Download,
-    FileDown,
     TrendingUp,
+    TrendingDown,
     DollarSign,
     Users,
-    BarChart2,
+    Wrench,
     Activity,
-    Calendar as CalendarIcon,
-    Filter,
-    X,
-    CalendarCheck2
+    ArrowUpRight,
+    ArrowDownRight,
+    Calendar,
+    BarChart3
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -43,172 +40,153 @@ import {
     Tooltip,
     Legend,
     ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
     AreaChart,
     Area
 } from "recharts"
-import { format, subDays, isWithinInterval, startOfDay, endOfDay } from "date-fns"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
+import { format, subDays, startOfMonth, subMonths, isSameMonth } from "date-fns"
+import ProtectedRoute from "@/components/auth/protected-route"
+import Link from "next/link"
 
-interface ReportData {
-    config: {
-        serviceFee: number
-        currency: string
-    }
+interface DashboardMetrics {
     revenue: {
-        totalWalletBalance: number
-        totalServiceFees: number
-        potentialRevenue: number
-    }
-    users: {
-        riders: number
-        roadies: number
         total: number
-        approvedRiders: number
-        approvedRoadies: number
-    }
+        growth: number
+        trend: 'up' | 'down' | 'neutral'
+    },
+    users: {
+        total: number
+        newThisMonth: number
+        growth: number
+        trend: 'up' | 'down' | 'neutral'
+    },
     services: {
-        totalRequests: number
-        completedRequests: number
-        cancelledRequests: number
-        completionRate: string
-        byType: Array<{ name: string; value: number }>
-        byStatus: Array<{ name: string; value: number }>
-        dailyTrend: Array<{ date: string; requests: number; completions: number }>
-    }
+        total: number
+        completed: number
+        completionRate: number
+        growth: number
+        trend: 'up' | 'down' | 'neutral'
+    },
+    dailyActivity: Array<{ date: string; requests: number; revenue: number }>
 }
 
-export default function ReportsPage() {
-    const [data, setData] = useState<ReportData | null>(null)
+export default function ReportsOverviewPage() {
+    const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30))
-    const [endDate, setEndDate] = useState<Date | undefined>(new Date())
-    const [showFilters, setShowFilters] = useState(false)
+    const [config, setConfig] = useState<PlatformConfig | null>(null)
 
     const { toast } = useToast()
     const canView = useCan(PERMISSIONS.REPORTS_VIEW)
 
-    const fetchReportData = async () => {
+    const fetchDashboardData = async () => {
         setIsLoading(true)
         try {
-            const [wallets, requests, riders, roadies, services, config] = await Promise.all([
+            const [wallets, requests, riders, roadies, platformConfig] = await Promise.all([
                 getWallets(),
                 getServiceRequests(),
                 getRiders(),
                 getRoadies(),
-                getServices(),
                 getPlatformConfig()
             ])
 
-            // Filter requests by date range if selected
-            const filteredRequests = requests.filter(r => {
-                if (!startDate && !endDate) return true
-                const requestDate = new Date(r.created_at)
-                const start = startDate ? startOfDay(startDate) : new Date(0)
-                const end = endDate ? endOfDay(endDate) : new Date()
-                return isWithinInterval(requestDate, { start, end })
+            setConfig(platformConfig)
+            const serviceFee = parseFloat(platformConfig.service_fee || '0')
+
+            // --- Revenue Metrics ---
+            const currentMonth = new Date()
+            const lastMonth = subMonths(new Date(), 1)
+
+            const completedRequests = requests.filter(r => r.status === 'COMPLETED')
+            const totalRevenue = completedRequests.length * serviceFee
+
+            const revenueThisMonth = completedRequests
+                .filter(r => isSameMonth(new Date(r.created_at), currentMonth))
+                .length * serviceFee
+
+            const revenueLastMonth = completedRequests
+                .filter(r => isSameMonth(new Date(r.created_at), lastMonth))
+                .length * serviceFee
+
+            const revenueGrowth = revenueLastMonth > 0
+                ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100
+                : revenueThisMonth > 0 ? 100 : 0
+
+            // --- User Metrics ---
+            const allUsers = [...riders.map(r => ({ ...r, type: 'rider' })), ...roadies.map(r => ({ ...r, type: 'roadie' }))]
+            const totalUsers = allUsers.length
+
+            const newUsersThisMonth = allUsers.filter(u =>
+                isSameMonth(new Date(u.created_at), currentMonth)
+            ).length
+
+            const newUsersLastMonth = allUsers.filter(u =>
+                isSameMonth(new Date(u.created_at), lastMonth)
+            ).length
+
+            const userGrowth = newUsersLastMonth > 0
+                ? ((newUsersThisMonth - newUsersLastMonth) / newUsersLastMonth) * 100
+                : newUsersThisMonth > 0 ? 100 : 0
+
+            // --- Service Metrics ---
+            const requestsThisMonth = requests.filter(r =>
+                isSameMonth(new Date(r.created_at), currentMonth)
+            ).length
+
+            const requestsLastMonth = requests.filter(r =>
+                isSameMonth(new Date(r.created_at), lastMonth)
+            ).length
+
+            const serviceGrowth = requestsLastMonth > 0
+                ? ((requestsThisMonth - requestsLastMonth) / requestsLastMonth) * 100
+                : requestsThisMonth > 0 ? 100 : 0
+
+            const completionRate = requests.length > 0
+                ? (completedRequests.length / requests.length) * 100
+                : 0
+
+            // --- Daily Activity (Last 14 days) ---
+            const last14Days = Array.from({ length: 14 }, (_, i) => {
+                const d = subDays(new Date(), 13 - i)
+                return format(d, 'MMM dd')
             })
 
-            const serviceFee = parseFloat(config.service_fee || "0")
-            const totalWalletBalance = wallets.reduce((acc, curr) => acc + parseFloat(curr.balance), 0)
-            const completedRequests = filteredRequests.filter(r => r.status === 'COMPLETED').length
-            const totalServiceFees = completedRequests * serviceFee
-            const activeRequests = filteredRequests.filter(r => ['ACCEPTED', 'EN_ROUTE', 'STARTED'].includes(r.status)).length
-            const potentialRevenue = (completedRequests + activeRequests) * serviceFee
-            const totalRequests = filteredRequests.length
-            const cancelledRequests = filteredRequests.filter(r => r.status === 'CANCELLED').length
-            const completionRate = totalRequests > 0
-                ? ((completedRequests / totalRequests) * 100).toFixed(1)
-                : "0.0"
-
-            const serviceCounts: Record<string, number> = {}
-            filteredRequests.forEach(r => {
-                const name = r.service_type_name || `Service ${r.service_type}`
-                serviceCounts[name] = (serviceCounts[name] || 0) + 1
-            })
-            const byType = Object.entries(serviceCounts)
-                .map(([name, value]) => ({ name, value }))
-                .sort((a, b) => b.value - a.value)
-
-            const statusCounts: Record<string, number> = {}
-            filteredRequests.forEach(r => {
-                statusCounts[r.status] = (statusCounts[r.status] || 0) + 1
-            })
-            const byStatus = Object.entries(statusCounts)
-                .map(([name, value]) => ({ name, value }))
-                .sort((a, b) => b.value - a.value)
-
-            const dailyStats: Record<string, { requests: number, completions: number }> = {}
-
-            // Calculate daily trend for the selected range or last 7 days
-            const startRange = startDate ? startOfDay(startDate) : subDays(new Date(), 6)
-            const endRange = endDate ? endOfDay(endDate) : new Date()
-
-            let current = new Date(startRange)
-            while (current <= endRange) {
-                const dateStr = current.toISOString().split('T')[0]
-                dailyStats[dateStr] = { requests: 0, completions: 0 }
-                current.setDate(current.getDate() + 1)
-            }
-
-            filteredRequests.forEach(r => {
-                const dateStr = r.created_at.split('T')[0]
-                if (dailyStats[dateStr]) {
-                    dailyStats[dateStr].requests++
-                    if (r.status === 'COMPLETED') {
-                        dailyStats[dateStr].completions++
-                    }
+            const dailyActivity = last14Days.map(dateStr => {
+                const dayRequests = requests.filter(r =>
+                    format(new Date(r.created_at), 'MMM dd') === dateStr
+                )
+                return {
+                    date: dateStr,
+                    requests: dayRequests.length,
+                    revenue: dayRequests.filter(r => r.status === 'COMPLETED').length * serviceFee
                 }
             })
 
-            const dailyTrend = Object.entries(dailyStats)
-                .map(([date, stats]) => ({
-                    date: new Date(date).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }),
-                    fullDate: date,
-                    requests: stats.requests,
-                    completions: stats.completions
-                }))
-
-            const approvedRiders = riders.filter(r => r.is_approved).length
-            const approvedRoadies = roadies.filter(r => r.is_approved).length
-
-            setData({
-                config: {
-                    serviceFee,
-                    currency: 'UGX'
-                },
+            setMetrics({
                 revenue: {
-                    totalWalletBalance,
-                    totalServiceFees,
-                    potentialRevenue
+                    total: totalRevenue,
+                    growth: revenueGrowth,
+                    trend: revenueGrowth >= 0 ? 'up' : 'down'
                 },
                 users: {
-                    riders: riders.length,
-                    roadies: roadies.length,
-                    total: riders.length + roadies.length,
-                    approvedRiders,
-                    approvedRoadies
+                    total: totalUsers,
+                    newThisMonth: newUsersThisMonth,
+                    growth: userGrowth,
+                    trend: userGrowth >= 0 ? 'up' : 'down'
                 },
                 services: {
-                    totalRequests,
-                    completedRequests,
-                    cancelledRequests,
+                    total: requests.length,
+                    completed: completedRequests.length,
                     completionRate,
-                    byType,
-                    byStatus,
-                    dailyTrend
-                }
+                    growth: serviceGrowth,
+                    trend: serviceGrowth >= 0 ? 'up' : 'down'
+                },
+                dailyActivity
             })
 
-        } catch (err) {
-            console.error(" Reports fetch error:", err)
+        } catch (err: any) {
+            console.error("Failed to fetch dashboard data:", err)
             toast({
                 title: "Error",
-                description: "Failed to generate robust report data.",
+                description: "Failed to load dashboard data.",
                 variant: "destructive",
             })
         } finally {
@@ -217,340 +195,198 @@ export default function ReportsPage() {
     }
 
     useEffect(() => {
-        fetchReportData()
-    }, [startDate, endDate])
+        fetchDashboardData()
+    }, [])
 
-    const clearFilters = () => {
-        setStartDate(subDays(new Date(), 30))
-        setEndDate(new Date())
-    }
-
-    const handleExport = (type: 'financial' | 'usage') => {
-        if (!data) return
-
-        const timestamp = new Date().toISOString().split('T')[0]
-        let csvContent = ""
-        let filename = ""
-
-        if (type === 'financial') {
-            filename = `financial_report_${timestamp}.csv`
-            csvContent = "Metric,Value,Currency\n"
-            csvContent += `Total Wallet Balance,${data.revenue.totalWalletBalance},${data.config.currency}\n`
-            csvContent += `Service Fee Rate,${data.config.serviceFee},${data.config.currency}\n`
-            csvContent += `Total Service Fees Generated,${data.revenue.totalServiceFees},${data.config.currency}\n`
-            csvContent += `Potential Revenue (Active inc.),${data.revenue.potentialRevenue},${data.config.currency}\n`
-        } else {
-            filename = `usage_report_${timestamp}.csv`
-            csvContent = "Metric,Value,Details\n"
-            csvContent += `Total Users,${data.users.total}\n`
-            csvContent += `Riders,${data.users.riders},${data.users.approvedRiders} Approved\n`
-            csvContent += `Roadies,${data.users.roadies},${data.users.approvedRoadies} Approved\n`
-            csvContent += `Total Requests,${data.services.totalRequests}\n`
-            csvContent += `Completed,${data.services.completedRequests}\n`
-            csvContent += `Cancelled,${data.services.cancelledRequests}\n`
-            csvContent += `Completion Rate,${data.services.completionRate}%\n`
-
-            csvContent += "\nRequests by Service Type\n"
-            data.services.byType.forEach(item => {
-                csvContent += `${item.name},${item.value}\n`
-            })
-        }
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', filename)
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-    }
-
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
-    const STATUS_COLORS: Record<string, string> = {
-        'COMPLETED': '#10b981',
-        'CANCELLED': '#ef4444',
-        'REQUESTED': '#3b82f6',
-        'ACCEPTED': '#f59e0b',
-    }
-
-    if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <Skeleton className="h-12 w-48 mb-6" />
-                <div className="grid gap-6 md:grid-cols-4">
-                    <Skeleton className="h-32 rounded-xl" />
-                    <Skeleton className="h-32 rounded-xl" />
-                    <Skeleton className="h-32 rounded-xl" />
-                    <Skeleton className="h-32 rounded-xl" />
-                </div>
-                <div className="grid gap-6 md:grid-cols-2">
-                    <Skeleton className="h-80 rounded-xl" />
-                    <Skeleton className="h-80 rounded-xl" />
-                </div>
-            </div>
-        )
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-UG', {
+            style: 'currency',
+            currency: 'UGX',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(amount)
     }
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground">Reports Center</h1>
-                    <p className="text-muted-foreground mt-1">Detailed system analytics, financials, and operational metrics</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                        variant={showFilters ? "default" : "outline"}
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="gap-2 h-9"
-                    >
-                        <Filter className="h-4 w-4" />
-                        {showFilters ? "Hide Filters" : "Date Filters"}
-                    </Button>
-                    <Button onClick={() => handleExport('usage')} variant="outline" size="sm" className="h-9 border-border bg-card hover:bg-muted">
-                        <FileDown className="h-4 w-4 mr-2" /> Export Usage
-                    </Button>
-                    <Button onClick={() => handleExport('financial')} className="h-9 bg-primary hover:bg-primary/90" size="sm">
-                        <Download className="h-4 w-4 mr-2" /> Export Financials
-                    </Button>
-                </div>
-            </div>
-
-            {showFilters && (
-                <Card className="border-primary/20 bg-primary/5 transition-all animate-in fade-in slide-in-from-top-2">
-                    <CardContent className="p-4 flex flex-wrap items-end gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Start Date</label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "w-[160px] justify-start text-left font-normal h-10 border-border bg-card",
-                                            !startDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                                        {startDate ? format(startDate, "MMM d, yyyy") : "Pick a date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={startDate}
-                                        onSelect={setStartDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">End Date</label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "w-[160px] justify-start text-left font-normal h-10 border-border bg-card",
-                                            !endDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                                        {endDate ? format(endDate, "MMM d, yyyy") : "Pick a date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={endDate}
-                                        onSelect={setEndDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        <div className="flex items-center gap-2 ml-auto">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={clearFilters}
-                                className="text-muted-foreground hover:text-foreground h-10 px-4"
-                            >
-                                <X className="h-4 w-4 mr-2" />
-                                Reset Range
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Top Level Financials */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-t-4 border-t-emerald-500 shadow-sm relative overflow-hidden bg-card">
-                    <div className="absolute right-0 top-0 h-16 w-16 -mr-4 -mt-4 rounded-full bg-emerald-500/10 opacity-50"></div>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-                        <DollarSign className="h-4 w-4 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-foreground">
-                            {new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', maximumSignificantDigits: 3 }).format(data?.revenue.totalServiceFees || 0)}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {data?.services.completedRequests} completed requests × {new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', maximumSignificantDigits: 1 }).format(data?.config.serviceFee || 0)}
+        <ProtectedRoute requiredPermissions={PERMISSIONS.REPORTS_VIEW}>
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
+                    <div>
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground font-mono">Executive Overview</h2>
+                        <p className="text-sm text-muted-foreground mt-1 font-mono">
+                            High-level performance metrics and system health
                         </p>
-                    </CardContent>
-                </Card>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-md border border-border/50">
+                        <Calendar className="h-4 w-4" />
+                        <span>{format(new Date(), 'MMMM d, yyyy')}</span>
+                    </div>
+                </div>
 
-                <Card className="border-t-4 border-t-blue-500 shadow-sm bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">User Wallets</CardTitle>
-                        <Activity className="h-4 w-4 text-blue-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-foreground">
-                            {new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', maximumSignificantDigits: 3 }).format(data?.revenue.totalWalletBalance || 0)}
+                {isLoading ? (
+                    <div className="grid gap-6 md:grid-cols-3">
+                        {[...Array(3)].map((_, i) => (
+                            <Skeleton key={i} className="h-40" />
+                        ))}
+                    </div>
+                ) : metrics ? (
+                    <>
+                        {/* KPI Cards */}
+                        <div className="grid gap-6 md:grid-cols-3">
+                            {/* Revenue Card */}
+                            <Link href="/admin/reports/financial">
+                                <Card className="hover:border-emerald-500/50 transition-all cursor-pointer border-emerald-500/10 bg-gradient-to-br from-emerald-500/5 to-transparent">
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                                        <DollarSign className="h-4 w-4 text-emerald-500" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold text-emerald-500">{formatCurrency(metrics.revenue.total)}</div>
+                                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                            {metrics.revenue.trend === 'up' ? (
+                                                <ArrowUpRight className="h-3 w-3 text-emerald-500" />
+                                            ) : (
+                                                <ArrowDownRight className="h-3 w-3 text-destructive" />
+                                            )}
+                                            <span className={metrics.revenue.trend === 'up' ? "text-emerald-500" : "text-destructive"}>
+                                                {Math.abs(metrics.revenue.growth).toFixed(1)}%
+                                            </span>
+                                            vs last month
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+
+                            {/* Users Card */}
+                            <Link href="/admin/reports/users">
+                                <Card className="hover:border-blue-500/50 transition-all cursor-pointer border-blue-500/10 bg-gradient-to-br from-blue-500/5 to-transparent">
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                                        <Users className="h-4 w-4 text-blue-500" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold text-blue-500">{metrics.users.total}</div>
+                                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                            {metrics.users.trend === 'up' ? (
+                                                <ArrowUpRight className="h-3 w-3 text-blue-500" />
+                                            ) : (
+                                                <ArrowDownRight className="h-3 w-3 text-destructive" />
+                                            )}
+                                            <span className={metrics.users.trend === 'up' ? "text-blue-500" : "text-destructive"}>
+                                                {Math.abs(metrics.users.growth).toFixed(1)}%
+                                            </span>
+                                            vs last month
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+
+                            {/* Services Card */}
+                            <Link href="/admin/reports/services">
+                                <Card className="hover:border-purple-500/50 transition-all cursor-pointer border-purple-500/10 bg-gradient-to-br from-purple-500/5 to-transparent">
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Services</CardTitle>
+                                        <Wrench className="h-4 w-4 text-purple-500" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold text-purple-500">{metrics.services.total}</div>
+                                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                            {metrics.services.trend === 'up' ? (
+                                                <ArrowUpRight className="h-3 w-3 text-purple-500" />
+                                            ) : (
+                                                <ArrowDownRight className="h-3 w-3 text-destructive" />
+                                            )}
+                                            <span className={metrics.services.trend === 'up' ? "text-purple-500" : "text-destructive"}>
+                                                {Math.abs(metrics.services.growth).toFixed(1)}%
+                                            </span>
+                                            vs last month
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Total held by all users</p>
-                    </CardContent>
-                </Card>
 
-                <Card className="border-t-4 border-t-purple-500 shadow-sm bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Completion Rate</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-purple-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-foreground">{data?.services.completionRate}%</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {data?.services.completedRequests} / {data?.services.totalRequests} requests
-                        </p>
-                    </CardContent>
-                </Card>
+                        {/* Activity Charts */}
+                        <div className="grid gap-6 md:grid-cols-2">
+                            <Card className="col-span-2 md:col-span-1">
+                                <CardHeader>
+                                    <CardTitle>Activity Trend (14 Days)</CardTitle>
+                                    <CardDescription>Daily service requests and platform activity</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <AreaChart data={metrics.dailyActivity}>
+                                            <defs>
+                                                <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis
+                                                dataKey="date"
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tickMargin={10}
+                                                tick={{ fontSize: 12 }}
+                                            />
+                                            <YAxis
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tick={{ fontSize: 12 }}
+                                            />
+                                            <Tooltip />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="requests"
+                                                stroke="#3b82f6"
+                                                fillOpacity={1}
+                                                fill="url(#colorRequests)"
+                                                strokeWidth={2}
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
 
-                <Card className="border-t-4 border-t-orange-500 shadow-sm bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
-                        <Users className="h-4 w-4 text-orange-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-foreground">{data?.users.total}</div>
-                        <div className="flex text-xs text-muted-foreground mt-1 gap-2">
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> {data?.users.riders} Riders</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span> {data?.users.roadies} Roadies</span>
+                            <Card className="col-span-2 md:col-span-1">
+                                <CardHeader>
+                                    <CardTitle>Revenue Trend (14 Days)</CardTitle>
+                                    <CardDescription>Daily financial performance</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={metrics.dailyActivity}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis
+                                                dataKey="date"
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tickMargin={10}
+                                                tick={{ fontSize: 12 }}
+                                            />
+                                            <YAxis
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tickFormatter={(value) => `${value}`}
+                                                tick={{ fontSize: 12 }}
+                                            />
+                                            <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                                            <Bar
+                                                dataKey="revenue"
+                                                fill="#10b981"
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={30}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </CardContent>
+                            </Card>
                         </div>
-                    </CardContent>
-                </Card>
+                    </>
+                ) : null}
             </div>
-
-            <div className="grid gap-6 lg:grid-cols-7">
-                <Card className="lg:col-span-4 shadow-sm bg-card border-border">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-foreground">
-                            <CalendarCheck2 className="h-4 w-4 text-muted-foreground" />
-                            Request Trends
-                        </CardTitle>
-                        <CardDescription>Daily volume and completion tracking</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[350px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={data?.services.dailyTrend}>
-                                <defs>
-                                    <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="colorCompletions" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" strokeOpacity={0.1} />
-                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.6 }} fontSize={12} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'currentColor', opacity: 0.6 }} fontSize={12} />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'var(--card)',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--border)',
-                                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                                        color: 'var(--foreground)'
-                                    }}
-                                    itemStyle={{ color: 'var(--foreground)' }}
-                                />
-                                <Legend />
-                                <Area type="monotone" dataKey="requests" name="Total Requests" stroke="#8884d8" fillOpacity={1} fill="url(#colorRequests)" />
-                                <Area type="monotone" dataKey="completions" name="Completed" stroke="#82ca9d" fillOpacity={1} fill="url(#colorCompletions)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-
-                <Card className="lg:col-span-3 shadow-sm bg-card border-border">
-                    <CardHeader>
-                        <CardTitle className="text-foreground">Request Status</CardTitle>
-                        <CardDescription>Current state distribution</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[350px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={data?.services.byStatus}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={100}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {data?.services.byStatus.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]}
-                                        />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend layout="horizontal" verticalAlign="bottom" height={36} iconType="circle" />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Card className="shadow-sm bg-card border-border">
-                <CardHeader>
-                    <CardTitle className="text-foreground">Service Popularity</CardTitle>
-                    <CardDescription>Which services are most in demand?</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                            data={data?.services.byType}
-                            layout="vertical"
-                            margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="currentColor" strokeOpacity={0.1} />
-                            <XAxis type="number" hide />
-                            <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 12, fill: 'currentColor', opacity: 0.8 }} />
-                            <Tooltip
-                                cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
-                                contentStyle={{
-                                    backgroundColor: 'var(--card)',
-                                    borderRadius: '8px',
-                                    border: '1px solid var(--border)',
-                                    color: 'var(--foreground)'
-                                }}
-                                itemStyle={{ color: 'var(--foreground)' }}
-                            />
-                            <Bar dataKey="value" fill="var(--primary)" radius={[0, 4, 4, 0]} barSize={20} name="Requests" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-        </div>
+        </ProtectedRoute>
     )
 }

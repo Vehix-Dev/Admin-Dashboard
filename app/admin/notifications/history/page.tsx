@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { getNotifications, deleteNotification, AdminNotification } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -9,10 +10,13 @@ import { Loader2, Trash2, ArrowLeft } from "lucide-react"
 import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import Link from "next/link"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 
 export default function NotificationHistoryPage() {
     const [notifications, setNotifications] = useState<AdminNotification[]>([])
+    const { toast } = useToast()
     const [loading, setLoading] = useState(true)
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
     const canManage = useCan(PERMISSIONS.NOTIFICATIONS_MANAGE)
 
     useEffect(() => {
@@ -31,13 +35,21 @@ export default function NotificationHistoryPage() {
         }
     }
 
-    async function handleDelete(id: number) {
-        if (!confirm("Are you sure you want to delete this notification?")) return
+    function handleDelete(id: number) {
+        setPendingDeleteId(id)
+    }
+
+    async function confirmDelete() {
+        if (!pendingDeleteId) return
         try {
-            await deleteNotification(id)
-            setNotifications(prev => prev.filter(n => n.id !== id))
+            await deleteNotification(pendingDeleteId)
+            setNotifications(prev => prev.filter(n => n.id !== pendingDeleteId))
+            toast({ title: "Deleted", description: "Notification record removed" })
         } catch (err) {
             console.error("Failed to delete notification", err)
+            toast({ title: "Error", description: "Failed to delete notification", variant: "destructive" })
+        } finally {
+            setPendingDeleteId(null)
         }
     }
 
@@ -118,6 +130,14 @@ export default function NotificationHistoryPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            <ConfirmModal
+                isOpen={!!pendingDeleteId}
+                onClose={() => setPendingDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Notification History"
+                description="Are you sure you want to delete this notification record? This will remove it from the history audit log."
+            />
         </div>
     )
 }

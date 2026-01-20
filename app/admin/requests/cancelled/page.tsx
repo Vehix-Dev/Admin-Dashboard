@@ -39,8 +39,10 @@ import {
     CalendarIcon,
     ExternalLink,
     XCircle,
-    AlertTriangle
+    AlertTriangle,
+    Trash2
 } from "lucide-react"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { RequestFormModal } from "@/components/forms/request-form-modal"
 import { debounce } from "lodash"
 import { format } from "date-fns"
@@ -64,6 +66,7 @@ export default function CancelledRequestsPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [searchInput, setSearchInput] = useState("")
+    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
     // Filter states
     const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all")
@@ -238,7 +241,6 @@ export default function CancelledRequestsPage() {
     }
 
     const handleDelete = async (request: RequestRow) => {
-        if (!confirm("Are you sure you want to permanently delete this cancelled request?")) return
         try {
             await deleteServiceRequest(Number(request.id))
             toast({
@@ -253,6 +255,16 @@ export default function CancelledRequestsPage() {
                 variant: "destructive"
             })
         }
+    }
+
+    const handleBulkDelete = async () => {
+        // Bulk delete logic here
+        toast({
+            title: "Bulk Delete",
+            description: "This feature is under development",
+            variant: "default",
+        })
+        setIsBulkDeleteOpen(false)
     }
 
     const handleEdit = (request: RequestRow) => {
@@ -795,6 +807,24 @@ export default function CancelledRequestsPage() {
                             columns={columns}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
+                            deleteConfirmTitle="Delete Cancelled Request"
+                            deleteConfirmDescription="Are you sure you want to permanently delete this cancelled request record?"
+                            renderConfirmDetails={(request) => (
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Request ID:</span>
+                                        <span className="font-mono text-white">#{request.id}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Reason:</span>
+                                        <span className="text-white truncate max-w-[200px]">{request.cancellation_reason || "None provided"}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Service:</span>
+                                        <span className="font-medium text-primary">{getServiceDisplayName(request)}</span>
+                                    </div>
+                                </div>
+                            )}
                             searchable={false}
                             pagination={{
                                 pageSize: 10,
@@ -814,6 +844,14 @@ export default function CancelledRequestsPage() {
                 roadies={roadies}
                 services={services}
                 defaultStatus="CANCELLED"
+            />
+
+            <ConfirmModal
+                isOpen={isBulkDeleteOpen}
+                onClose={() => setIsBulkDeleteOpen(null as any)}
+                onConfirm={handleBulkDelete}
+                title="Bulk Delete Cancelled Requests"
+                description="Are you sure you want to delete ALL cancelled requests? This action cannot be undone and will permanently remove all research data associated with these cancellations."
             />
         </div>
     )

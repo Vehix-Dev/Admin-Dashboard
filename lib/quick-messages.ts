@@ -1,0 +1,110 @@
+export const QUICK_MESSAGES = {
+    "On the Way / ETA": [
+        "Help is on the way! Your hero in a van/truck is en route.",
+        "Your roadside knight has been dispatched and is speeding (safely) to your location!",
+        "Sit tight, we’ve got a pro heading your way. ETA: [X] minutes.",
+        "Your ETA just got an upgrade! [Driver Name] will be there in [X] minutes.",
+        "No need to stress. [Driver Name] is on the map and headed your way.",
+        "Consider us your pit crew. We’re mobilizing now.",
+        "Your roadside SOS has been received! Help is [X] minutes out.",
+        "The cavalry is coming! Your driver is en route.",
+        "We’ve got your location locked in. Our expert is rolling out now.",
+        "Good news! Your assistance is closer than you think. ETA"
+    ],
+    "Start of Shift / Check-In": [
+        "Good morning, team! Let's make it a great and safe day on the road.",
+        "Shift starting? Remember to check your vehicle and kit. Safety first!",
+        "The roads are calling! Log in and let’s help some people today.",
+        "Ready to be someone’s hero? Get logged in and active.",
+        "Top of the morning! High ratings and quick resolutions today.",
+        "Clock in, gear up, and let’s roll. We’ve got customers waiting.",
+        "Start your day with a full tank and a positive attitude. Let's go!",
+        "Welcome to your shift! Double-check your app notifications are ON.",
+        "It’s go time. Remember: Professional = Tips & 5 Stars.",
+        "Let’s kick off this shift with efficiency and kindness. You’ve got this."
+    ],
+    "Performance & Efficiency": [
+        "Quick reminder: Timely arrivals are the #1 driver of 5-star reviews.",
+        "Pro tip: A 2-minute call to confirm location can save a 20-minute search.",
+        "Keep an eye on your queue. Accepting jobs promptly keeps the system flowing for everyone.",
+        "Remember to update your ETA after accepting. Communication is key!",
+        "Speedy safe service = Happy customers = More jobs for you.",
+        "Stuck in traffic? Just tap 'Delayed' in the app to auto-notify the customer.",
+        "Before you roll: Verify the service needed. It ensures you have the right gear.",
+        "Efficiency check: Is your most-used tool within easy reach?",
+        "Completing a job? Don’t forget to mark it done in the app right away.",
+        "Clear notes and photos on job completion help resolve any questions fast."
+    ],
+    "Safety & Professionalism": [
+        "Safety reminder: Always secure the scene with cones/flashers before starting work.",
+        "Your safety comes first. Never compromise on roadside hazard procedures.",
+        "Professionalism = Uniform/gear, clear communication, and a courteous attitude.",
+        "Remember, you’re the face of our company. A smile (even under a mask) is heard in your voice.",
+        "Customer interaction tip: Explain what you’re doing. It builds trust and reduces anxiety.",
+        "Weather alert in your area. Please drive and work with extra caution today.",
+        "Gloves on, phone away, focus sharp. Let’s work safely.",
+        "Reminder: All interactions are rated. Professional service from start to finish.",
+        "If a situation feels unsafe, trust your instincts and contact support immediately.",
+        "Clean truck, sharp appearance, confident service. You represent the best!"
+    ],
+    "Peak Times Motivation": [
+        "Demand is HIGH right now! Stay focused and keep those wheels turning.",
+        "We’re in the surge! This is your time to shine and earn.",
+        "Peak hours are here. Quick turnarounds mean more jobs per shift.",
+        "The map is lit up! Let’s help as many customers as we can efficiently.",
+        "Busy period alert: Prioritize speed and clear communication.",
+        "All hands on deck! We need everyone active and accepting jobs.",
+        "High volume = High opportunity. Let's crush this rush hour.",
+        "See a job in your zone? Snap it up fast. It’s going to be busy.",
+        "Your efficiency right now is crucial. Thanks for hustling, team!",
+        "Think of each job during peak as a bonus opportunity. Go get 'em."
+    ],
+    "App & Process Updates": [
+        "REMINDER: Please update the app to the latest version for bug fixes.",
+        "NEW: You can now add a quick text template from your driver screen. Check settings!",
+        "Process Update: Always take a photo of the completed job (tire changed, jump started).",
+        "Friendly reminder: Your online/offline status must be manually set in the app.",
+        "Having app issues? Force close and restart it before calling support.",
+        "Update: Customer contact preferences are now shown on the job screen. Please check.",
+        "Reminder: Invoices must be submitted within 2 hours of job completion.",
+        "NEW FEATURE: The in-app navigation now suggests optimal routes for service trucks.",
+        "Protocol Check: Remember to collect the digital signature before starting work.",
+        "System Note: Weekend jobs have a 10% bonus attached automatically. Keep an eye out."
+    ],
+    "Recognition & Appreciation": [
+        "Shoutout to [Provider Name] for an amazing 5.0 rating week! Well done.",
+        "We noticed your fantastic customer reviews this week. Thank you for your excellence!",
+        "Top Performer Alert: [Provider Name] completed the most jobs yesterday. Incredible hustle!",
+        "Thank you for your professionalism in a tough situation recently. We appreciate you.",
+        "Your consistent high ratings do not go unnoticed. Fantastic work.",
+        "A customer specifically asked to commend [Provider Name]. You made their day!",
+        "Thanks to the whole team for a record-breaking weekend. You are all legends.",
+        "We see you putting in the extra effort. It matters. Thank you.",
+        "Recognition: Our on-time arrival rate is up thanks to your diligence.",
+        "Simply put: You’re awesome. Thanks for being a reliable part of the team."
+    ],
+    "End of Shift": [
+        "Winding down? Remember to log out of the app to stop receiving pings.",
+        "Great work today. Please ensure all job reports and invoices are finalized.",
+        "Shift ending? Do a quick vehicle check so you’re ready for tomorrow.",
+        "Thanks for a productive day. Rest up and recharge.",
+        "Last job of the day? Finish strong with your usual excellent service.",
+        "Don’t forget to submit your hours/log if you had any off-app issues.",
+        "Well done today. Your hard work keeps the wheels of the city turning.",
+        "Heading out? Safe drive home. See you next shift.",
+        "Final reminder: Mark yourself offline and complete your end-of-day checklist.",
+        "Another day, dozens of problems solved. Thank you for your hard work. Get some rest."
+    ],
+    "General Broadcasts": [
+        "Team Huddle (via text): Our new goal is a 95% customer satisfaction rate. We can do it!",
+        "Just a boost: You provide an essential service. What you do matters.",
+        "Weather Advisory: High winds expected. Secure all equipment and doors.",
+        "Weekly Tip: A complimentary bottle of water can turn a 4-star into a 5-star review.",
+        "Policy Reminder: Zero tolerance for aggressive behavior. Always de-escalate and call support.",
+        "Holiday Pay Notice: Jobs on [Holiday] will have a 1.5x rate multiplier.",
+        "Training Opportunity: Free advanced battery service webinar this Thursday. Reply if interested.",
+        "Fleet News: New tire inflators are in stock at the depot. Come by and upgrade yours.",
+        "Community Note: A customer donated coffee gift cards for you all! First come, first served at the hub.",
+        "Thank you for being the reliable, professional faces of our service. We couldn't do it without you."
+    ]
+};

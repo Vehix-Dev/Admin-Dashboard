@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 
 interface Inquiry {
     id: number
@@ -33,6 +34,7 @@ export default function SupportPage() {
     const [isLoading, setIsLoading] = useState(true)
     const { toast } = useToast()
     const canManage = useCan(PERMISSIONS.SUPPORT_MANAGE)
+    const [pendingDeleteInquiry, setPendingDeleteInquiry] = useState<Inquiry | null>(null)
 
     const fetchInquiries = async () => {
         setIsLoading(true)
@@ -57,17 +59,23 @@ export default function SupportPage() {
         window.location.href = `mailto:${email}?subject=Re: ${subject}`
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this message?")) return;
+    const handleDeleteClick = (inquiry: Inquiry) => {
+        setPendingDeleteInquiry(inquiry)
+    }
+
+    const confirmDelete = async () => {
+        if (!pendingDeleteInquiry) return
 
         try {
-            const res = await fetch(`/api/inquiries?id=${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/inquiries?id=${pendingDeleteInquiry.id}`, { method: 'DELETE' });
             if (res.ok) {
-                setInquiries(prev => prev.filter(i => i.id !== id));
+                setInquiries(prev => prev.filter(i => i.id !== pendingDeleteInquiry.id));
                 toast({ title: "Deleted", description: "Message removed successfully" })
             }
         } catch (err) {
             toast({ title: "Error", description: "Could not delete message", variant: "destructive" })
+        } finally {
+            setPendingDeleteInquiry(null)
         }
     }
 
@@ -132,7 +140,7 @@ export default function SupportPage() {
                                                     <Button
                                                         variant="ghost" size="icon"
                                                         title="Delete"
-                                                        onClick={() => handleDelete(inquiry.id)}
+                                                        onClick={() => handleDeleteClick(inquiry)}
                                                     >
                                                         <Trash2 className="h-4 w-4 text-red-500" />
                                                     </Button>
@@ -146,6 +154,27 @@ export default function SupportPage() {
                     )}
                 </CardContent>
             </Card>
+
+            <ConfirmModal
+                isOpen={!!pendingDeleteInquiry}
+                onClose={() => setPendingDeleteInquiry(null)}
+                onConfirm={confirmDelete}
+                title="Delete Inquiry"
+                description="Are you sure you want to delete this support message? This action cannot be undone."
+            >
+                {pendingDeleteInquiry && (
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">From:</span>
+                            <span className="font-medium text-white">{pendingDeleteInquiry.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Subject:</span>
+                            <span className="text-white truncate max-w-[200px]">{pendingDeleteInquiry.subject || "No Subject"}</span>
+                        </div>
+                    </div>
+                )}
+            </ConfirmModal>
         </div>
     )
 }

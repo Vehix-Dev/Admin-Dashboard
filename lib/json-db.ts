@@ -12,6 +12,8 @@ const FILES = {
     settings: path.join(DATA_DIR, 'settings.json'),
     landingSections: path.join(DATA_DIR, 'landing_sections.json'),
     userPermissions: path.join(DATA_DIR, 'user_permissions.json'),
+    roles: path.join(DATA_DIR, 'roles.json'),
+    groups: path.join(DATA_DIR, 'groups.json'),
 };
 
 export interface Inquiry {
@@ -39,6 +41,26 @@ export interface UserPermission {
     user_id: string;
     permissions: string;
     updated_at: string;
+}
+
+export interface Role {
+    id: string;
+    name: string;
+    description?: string;
+    permissions: string[]; // List of permission strings
+    isSystem?: boolean; // If true, cannot be deleted
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface Group {
+    id: string;
+    name: string;
+    description?: string;
+    roleIds: string[]; // Roles assigned to this group
+    memberIds: string[]; // User IDs in this group
+    created_at?: string;
+    updated_at?: string;
 }
 
 
@@ -77,6 +99,32 @@ function initializeDefaults() {
     readJSON<Inquiry[]>(FILES.inquiries, []);
     readJSON<LandingSection[]>(FILES.landingSections, []);
     readJSON<Record<string, UserPermission>>(FILES.userPermissions, {});
+
+    // Initialize System Roles
+    const roles = readJSON<Role[]>(FILES.roles, []);
+    if (roles.length === 0) {
+        // We can seed initial system roles later or let the UI handle it, 
+        // but let's seed a Super Admin role for safety.
+        const initialRoles: Role[] = [
+            {
+                id: 'SUPER_ADMIN',
+                name: 'Super Admin',
+                description: 'Full system access',
+                permissions: [], // Empty implies all access in some systems, or we fill it. 
+                // For now, let's leave it empty and rely on existing ROLES logic or fill it
+                // Actually, let's keep it empty and let the app handle it via code constants if needed,
+                // OR better, we will migrate ROLES from code to here later.
+                isSystem: true,
+                created_at: new Date().toISOString()
+            }
+        ];
+        writeJSON(FILES.roles, initialRoles);
+    } else {
+        // Ensure roles exists
+        readJSON<Role[]>(FILES.roles, []);
+    }
+
+    readJSON<Group[]>(FILES.groups, []);
 }
 
 initializeDefaults();
@@ -174,18 +222,135 @@ export function deleteLandingSection(id: number): boolean {
     return true;
 }
 
-export function getUserPermissions(userId: string): string[] | null {
-    const permissions = readJSON<Record<string, UserPermission>>(FILES.userPermissions, {});
-    const userPerm = permissions[userId];
+// --- Roles & Groups Functions ---
 
-    if (!userPerm) return null;
+export function getRoles(): Role[] {
+    return readJSON<Role[]>(FILES.roles, []);
+}
 
-    try {
-        return JSON.parse(userPerm.permissions);
-    } catch (e) {
-        console.error("Failed to parse permissions json", e);
-        return [];
+export function getRole(id: string): Role | undefined {
+    return getRoles().find(r => r.id === id);
+}
+
+export function addRole(role: Omit<Role, 'created_at' | 'updated_at'>): Role {
+    const roles = getRoles();
+    if (roles.some(r => r.id === role.id)) {
+        throw new Error('Role ID already exists');
     }
+    const newRole: Role = {
+        ...role,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    };
+    roles.push(newRole);
+    writeJSON(FILES.roles, roles);
+    return newRole;
+}
+
+export function updateRole(id: string, updates: Partial<Omit<Role, 'id' | 'created_at' | 'updated_at' | 'isSystem'>>): Role | null {
+    const roles = getRoles();
+    const index = roles.findIndex(r => r.id === id);
+    if (index === -1) return null;
+
+    const updatedRole = {
+        ...roles[index],
+        ...updates,
+        updated_at: new Date().toISOString(),
+    };
+    roles[index] = updatedRole;
+    writeJSON(FILES.roles, roles);
+    return updatedRole;
+}
+
+export function deleteRole(id: string): boolean {
+    const roles = getRoles();
+    const role = roles.find(r => r.id === id);
+    if (!role || role.isSystem) return false;
+
+    const filtered = roles.filter(r => r.id !== id);
+    writeJSON(FILES.roles, filtered);
+    return true;
+}
+
+export function getGroups(): Group[] {
+    return readJSON<Group[]>(FILES.groups, []);
+}
+
+export function getGroup(id: string): Group | undefined {
+    return getGroups().find(g => g.id === id);
+}
+
+export function addGroup(group: Omit<Group, 'id' | 'created_at' | 'updated_at'>): Group {
+    const groups = getGroups();
+    const newId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const newGroup: Group = {
+        id: newId,
+        ...group,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    };
+    groups.push(newGroup);
+    writeJSON(FILES.groups, groups);
+    return newGroup;
+}
+
+export function updateGroup(id: string, updates: Partial<Omit<Group, 'id' | 'created_at' | 'updated_at'>>): Group | null {
+    const groups = getGroups();
+    const index = groups.findIndex(g => g.id === id);
+    if (index === -1) return null;
+
+    const updatedGroup = {
+        ...groups[index],
+        ...updates,
+        updated_at: new Date().toISOString(),
+    };
+    groups[index] = updatedGroup;
+    writeJSON(FILES.groups, groups);
+    return updatedGroup;
+}
+
+export function deleteGroup(id: string): boolean {
+    const groups = getGroups();
+    const filtered = groups.filter(g => g.id !== id);
+    if (filtered.length === groups.length) return false;
+    writeJSON(FILES.groups, filtered);
+    return true;
+}
+
+
+export function getUserPermissions(userId: string): string[] | null {
+    // 1. Get Direct Permissions
+    const userPermissionsDB = readJSON<Record<string, UserPermission>>(FILES.userPermissions, {});
+    const userPerm = userPermissionsDB[userId];
+    const directPermissions = userPerm ? (JSON.parse(userPerm.permissions) as string[]) : [];
+
+    // 2. Get Permissions from Groups
+    const groups = getGroups();
+    const roles = getRoles();
+
+    const userGroups = groups.filter(g => g.memberIds.includes(userId));
+
+    let groupPermissions: string[] = [];
+    userGroups.forEach(group => {
+        group.roleIds.forEach(roleId => {
+            const role = roles.find(r => r.id === roleId);
+            if (role && role.permissions) {
+                groupPermissions = [...groupPermissions, ...role.permissions];
+            }
+        });
+    });
+
+    // 3. Merge and Unique
+    const allPermissions = Array.from(new Set([...directPermissions, ...groupPermissions]));
+
+    // If no direct permissions and no group permissions, return null or empty?
+    // Start returning [] if found nothing, but maybe null if user has NO record at all?
+    // The previous implementation returned null if !userPerm. 
+    // But now we support groups even if no direct permissions exist.
+    if (!userPerm && userGroups.length === 0) return null;
+
+    return allPermissions;
 }
 
 export function saveUserPermissions(userId: string, perms: string[]): void {
@@ -213,6 +378,17 @@ const db = {
     deleteLandingSection,
     getUserPermissions,
     saveUserPermissions,
+    // Role/Group Exports
+    getRoles,
+    addRole,
+    updateRole,
+    deleteRole,
+    getGroups,
+    addGroup,
+    updateGroup,
+    deleteGroup,
+    getGroup,
+    getRole
 };
 
 export default db;

@@ -301,7 +301,6 @@ export default function RequestsPage() {
   }
 
   const handleDelete = async (request: RequestRow) => {
-    if (!confirm("Are you sure you want to delete this service request?")) return
     try {
       await deleteServiceRequest(Number(request.id))
       toast({
@@ -834,6 +833,31 @@ export default function RequestsPage() {
             columns={columns}
             onEdit={canChange ? handleEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
+            deleteConfirmTitle="Delete Service Request"
+            deleteConfirmDescription="Are you sure you want to delete this service request? This action cannot be undone."
+            renderConfirmDetails={(row: any) => {
+              const request = row as RequestRow
+              return (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Request ID:</span>
+                    <span className="font-mono text-white">#{request.id}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Service:</span>
+                    <span className="font-medium text-primary">{getServiceDisplayName(request)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Rider:</span>
+                    <span className="text-white">{request.rider_username || "N/A"}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Status:</span>
+                    <span className="text-white">{request.status}</span>
+                  </div>
+                </div>
+              )
+            }}
             initialSortColumn={6}
             initialSortDirection="desc"
           />

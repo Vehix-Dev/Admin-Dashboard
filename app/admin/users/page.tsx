@@ -54,7 +54,6 @@ export default function AdminUsersPage() {
     }, [])
 
     const handleDelete = async (admin: AdminUser) => {
-        if (!confirm(`Are you sure you want to delete ${admin.first_name} ${admin.last_name}?`)) return
         try {
             await deleteAdminUser(admin.id)
             toast({
@@ -322,6 +321,15 @@ export default function AdminUsersPage() {
                         columns={columns}
                         onEdit={canChange ? handleEdit : undefined}
                         onDelete={canDelete ? handleDelete : undefined}
+                        deleteConfirmTitle={(admin) => `Delete ${admin.first_name} ${admin.last_name}?`}
+                        deleteConfirmDescription={(admin) => `Are you sure you want to delete this admin user?`}
+                        renderConfirmDetails={(admin) => (
+                            <div className="flex flex-col gap-1">
+                                <span className="text-white font-medium">{admin.first_name} {admin.last_name}</span>
+                                <span className="text-slate-400 text-xs">{admin.email}</span>
+                                <span className="text-blue-400 text-[10px] mt-1 uppercase tracking-wider font-bold">Role: {admin.role}</span>
+                            </div>
+                        )}
                         initialSortColumn={9}
                         initialSortDirection="desc"
                         onExport={() => {

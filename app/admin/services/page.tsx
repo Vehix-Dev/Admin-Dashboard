@@ -205,7 +205,6 @@ export default function ServicesPage() {
   }
 
   const handleDelete = async (service: Service) => {
-    if (!confirm(`Are you sure you want to delete ${service.name}?`)) return
     try {
       await deleteService(service.id)
       toast({
@@ -652,6 +651,24 @@ export default function ServicesPage() {
             columns={columns}
             onEdit={canChange ? handleEditClick : undefined}
             onDelete={canDelete ? handleDelete : undefined}
+            deleteConfirmTitle="Delete Service"
+            deleteConfirmDescription="Are you sure you want to delete this service category? This may affect active roadies offering this service."
+            renderConfirmDetails={(service) => (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Service Name:</span>
+                  <span className="font-medium text-white">{service.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Service Code:</span>
+                  <span className="font-mono text-primary">{service.code}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Roadie Count:</span>
+                  <span className="text-white">{service.rodie_count || 0}</span>
+                </div>
+              </div>
+            )}
             initialSortColumn={3}
             initialSortDirection="desc"
           />

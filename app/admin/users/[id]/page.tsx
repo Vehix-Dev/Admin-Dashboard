@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { getAdminUserById, updateAdminUser, saveLocalPermissions, fetchLocalPermissions } from "@/lib/api"
+import { getAdminUserById, updateAdminUser } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
-import { PermissionSelector } from "@/components/auth/permission-selector"
-import { PERMISSIONS } from "@/lib/permissions"
+import { GroupSelector } from "@/components/auth/group-selector"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Loader2 } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 
 export default function EditAdminPage() {
     const router = useRouter()
@@ -26,16 +30,18 @@ export default function EditAdminPage() {
         is_active: true,
         is_approved: true
     })
-    const [permissions, setPermissions] = useState<string[]>([])
+    const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
+    // const [authUserId, setAuthUserId] = useState<string | null>(null) 
 
     const [errors, setErrors] = useState<Record<string, string>>({})
 
     useEffect(() => {
         const fetchAdminData = async () => {
             if (!params.id) return
+            const userId = params.id as string
 
             try {
-                const adminId = parseInt(params.id as string)
+                const adminId = parseInt(userId)
                 const adminData = await getAdminUserById(adminId)
 
                 setFormData({
@@ -48,15 +54,15 @@ export default function EditAdminPage() {
                     is_approved: adminData.is_approved
                 })
 
-                // Load local permissions
-                const savedPerms = await fetchLocalPermissions(adminId)
-                if (savedPerms && savedPerms.length > 0) {
-                    setPermissions(savedPerms)
-                } else {
-                    // Start with ALL permissions (Default Allow)
-                    // We only save if they change it
-                    setPermissions(Object.values(PERMISSIONS))
+                // Load User Groups
+                const groupRes = await fetch(`/api/admin/users/${userId}/groups`)
+                if (groupRes.ok) {
+                    const groupData = await groupRes.json()
+                    setSelectedGroupIds(groupData.groupIds || [])
                 }
+
+                // setAuthUserId(userId)
+
             } catch (err) {
                 console.error(" Fetch admin error:", err)
                 toast({
@@ -107,10 +113,7 @@ export default function EditAdminPage() {
             newErrors.email = "Please enter a valid email address"
         }
 
-        if (!formData.phone.trim()) {
-            newErrors.phone = "Phone number is required"
-        }
-
+        // Username is typically read-only or critical, but we validate if editable
         if (!formData.username.trim()) {
             newErrors.username = "Username is required"
         }
@@ -130,42 +133,38 @@ export default function EditAdminPage() {
 
         try {
             const adminId = parseInt(params.id as string)
-            // Update user details (without permissions, as backend doesn't handle them)
+
+            // 1. Update User Profile (Django)
             await updateAdminUser(adminId, {
                 first_name: formData.first_name,
                 last_name: formData.last_name,
                 email: formData.email,
                 phone: formData.phone,
-                username: formData.username,
+                // username: formData.username, // Username updates might be restricted
                 is_active: formData.is_active,
-                is_approved: formData.is_approved,
+                is_approved: formData.is_approved
             })
 
-            // Save permissions locally
-            await saveLocalPermissions(adminId, permissions)
+            // 2. Update User Groups (JSON DB)
+            const groupsRes = await fetch(`/api/admin/users/${params.id}/groups`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ groupIds: selectedGroupIds })
+            })
+
+            if (!groupsRes.ok) throw new Error("Failed to save groups")
 
             toast({
                 title: "Success",
                 description: "Admin user updated successfully"
             })
 
-            // Redirect back to admin users list
             router.push("/admin/users")
-
         } catch (err: any) {
-            console.error("Update admin error:", err)
-
-            // Handle specific error messages from API
-            let errorMessage = "Failed to update admin user"
-            if (err.message?.includes("username")) {
-                errorMessage = "Username already exists"
-            } else if (err.message?.includes("email")) {
-                errorMessage = "Email already exists"
-            }
-
+            console.error("Update error:", err)
             toast({
                 title: "Error",
-                description: errorMessage,
+                description: err.message || "Failed to update admin user",
                 variant: "destructive"
             })
         } finally {
@@ -175,227 +174,133 @@ export default function EditAdminPage() {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto py-8 max-w-4xl">
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="animate-pulse">
-                        <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                {[...Array(6)].map((_, i) => (
-                                    <div key={i} className="h-10 bg-gray-200 rounded"></div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div className="flex h-96 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         )
     }
 
     return (
-        <div className="container mx-auto py-8 max-w-4xl">
-            <div className="mb-6">
-                <Link href="/admin/users">
-                    <Button variant="ghost" className="gap-2 mb-4">
-                        <ArrowLeft className="h-4 w-4" />
-                        Back to Admin Users
-                    </Button>
-                </Link>
-
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Edit Admin User</h1>
-                        <p className="text-gray-600 mt-2">
-                            Update admin user information
-                        </p>
-                    </div>
-                </div>
+        <div className="max-w-4xl mx-auto py-6 space-y-6">
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="sm" asChild>
+                    <Link href="/admin/users">
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Users
+                    </Link>
+                </Button>
+                <h1 className="text-2xl font-bold tracking-tight">Edit Admin User</h1>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* First Name */}
-                        <div className="space-y-2">
-                            <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-                                First Name *
-                            </label>
-                            <input
-                                id="first_name"
-                                name="first_name"
-                                type="text"
-                                required
-                                value={formData.first_name}
-                                onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.first_name ? "border-red-500" : "border-gray-300"
-                                    }`}
-                                placeholder="Enter first name"
-                            />
-                            {errors.first_name && (
-                                <p className="text-sm text-red-600">{errors.first_name}</p>
-                            )}
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <Card>
+                    <CardContent className="pt-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="first_name">First Name</Label>
+                                <Input
+                                    id="first_name"
+                                    name="first_name"
+                                    value={formData.first_name}
+                                    onChange={handleChange}
+                                    className={errors.first_name ? "border-red-500" : ""}
+                                />
+                                {errors.first_name && <p className="text-xs text-red-500">{errors.first_name}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="last_name">Last Name</Label>
+                                <Input
+                                    id="last_name"
+                                    name="last_name"
+                                    value={formData.last_name}
+                                    onChange={handleChange}
+                                    className={errors.last_name ? "border-red-500" : ""}
+                                />
+                                {errors.last_name && <p className="text-xs text-red-500">{errors.last_name}</p>}
+                            </div>
                         </div>
 
-                        {/* Last Name */}
-                        <div className="space-y-2">
-                            <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
-                                Last Name *
-                            </label>
-                            <input
-                                id="last_name"
-                                name="last_name"
-                                type="text"
-                                required
-                                value={formData.last_name}
-                                onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.last_name ? "border-red-500" : "border-gray-300"
-                                    }`}
-                                placeholder="Enter last name"
-                            />
-                            {errors.last_name && (
-                                <p className="text-sm text-red-600">{errors.last_name}</p>
-                            )}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className={errors.email ? "border-red-500" : ""}
+                                />
+                                {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                />
+                            </div>
                         </div>
 
-                        {/* Email */}
                         <div className="space-y-2">
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email *
-                            </label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                required
-                                value={formData.email}
-                                onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? "border-red-500" : "border-gray-300"
-                                    }`}
-                                placeholder="Enter email address"
-                            />
-                            {errors.email && (
-                                <p className="text-sm text-red-600">{errors.email}</p>
-                            )}
-                        </div>
-
-                        {/* Phone */}
-                        <div className="space-y-2">
-                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                                Phone Number *
-                            </label>
-                            <input
-                                id="phone"
-                                name="phone"
-                                type="tel"
-                                required
-                                value={formData.phone}
-                                onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.phone ? "border-red-500" : "border-gray-300"
-                                    }`}
-                                placeholder="Enter phone number"
-                            />
-                            {errors.phone && (
-                                <p className="text-sm text-red-600">{errors.phone}</p>
-                            )}
-                        </div>
-
-                        {/* Username */}
-                        <div className="space-y-2">
-                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                Username *
-                            </label>
-                            <input
+                            <Label htmlFor="username">Username</Label>
+                            <Input
                                 id="username"
                                 name="username"
-                                type="text"
-                                required
                                 value={formData.username}
-                                onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.username ? "border-red-500" : "border-gray-300"
-                                    }`}
-                                placeholder="Enter username"
+                                disabled // Typically prevent username changes
+                                className="bg-gray-100"
                             />
-                            {errors.username && (
-                                <p className="text-sm text-red-600">{errors.username}</p>
-                            )}
                         </div>
 
-                        {/* External ID (read-only) */}
-                        <div className="space-y-2">
-                            <label htmlFor="external_id" className="block text-sm font-medium text-gray-700">
-                                Admin ID
-                            </label>
-                            <input
-                                id="external_id"
-                                type="text"
-                                value={params.id}
-                                disabled
-                                className="w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-md text-gray-500"
-                            />
-                            <p className="text-xs text-gray-500">Admin ID cannot be changed</p>
-                        </div>
-                    </div>
-
-                    {/* Permissions Selector */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                            Permissions
-                        </label>
-                        <PermissionSelector
-                            selectedPermissions={permissions}
-                            onChange={setPermissions}
-                        />
-                    </div>
-
-                    {/* Status Options */}
-                    <div className="space-y-4 pt-4 border-t">
-                        <div className="flex items-center space-x-3">
-                            <input
-                                id="is_active"
-                                name="is_active"
-                                type="checkbox"
+                        <div className="flex justify-between items-center py-2 border-t mt-4">
+                            <div className="space-y-0.5">
+                                <Label className="text-base">Active Status</Label>
+                                <p className="text-sm text-muted-foreground">User can log in to the system</p>
+                            </div>
+                            <Switch
                                 checked={formData.is_active}
-                                onChange={handleChange}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
                             />
-                            <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
-                                Account is active
-                            </label>
                         </div>
 
-                        <div className="flex items-center space-x-3">
-                            <input
-                                id="is_approved"
-                                name="is_approved"
-                                type="checkbox"
+                        <div className="flex justify-between items-center py-2 border-t">
+                            <div className="space-y-0.5">
+                                <Label className="text-base">Approval Status</Label>
+                                <p className="text-sm text-muted-foreground">User has been approved by an administrator</p>
+                            </div>
+                            <Switch
                                 checked={formData.is_approved}
-                                onChange={handleChange}
-                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_approved: checked }))}
                             />
-                            <label htmlFor="is_approved" className="text-sm font-medium text-gray-700">
-                                Admin is approved
-                            </label>
                         </div>
-                    </div>
+                    </CardContent>
+                </Card>
 
-                    {/* Form Actions */}
-                    <div className="flex justify-end gap-4 pt-6 border-t">
-                        <Link href="/admin/users">
-                            <Button type="button" variant="outline" disabled={isSubmitting}>
-                                Cancel
-                            </Button>
-                        </Link>
-                        <Button
-                            type="submit"
-                            className="gap-2 bg-blue-600 hover:bg-blue-700"
-                            disabled={isSubmitting}
-                        >
-                            <Save className="h-4 w-4" />
-                            {isSubmitting ? "Saving..." : "Save Changes"}
-                        </Button>
-                    </div>
-                </form>
-            </div>
+                <GroupSelector
+                    selectedGroupIds={selectedGroupIds}
+                    onChange={setSelectedGroupIds}
+                />
+
+                <div className="flex justify-end pt-4">
+                    <Button type="submit" size="lg" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="mr-2 h-4 w-4" />
+                                Save Changes
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </form>
         </div>
     )
 }

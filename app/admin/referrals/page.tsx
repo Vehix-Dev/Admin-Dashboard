@@ -52,7 +52,6 @@ export default function ReferralsPage() {
     }, [])
 
     const handleDelete = async (referral: Referral) => {
-        if (!confirm(`Are you sure you want to delete this referral?`)) return
         try {
             await deleteReferral(referral.id)
             toast({
@@ -286,6 +285,25 @@ export default function ReferralsPage() {
                 <DataTable
                     data={filteredReferrals}
                     columns={columns}
+                    onDelete={canManage ? handleDelete : undefined}
+                    deleteConfirmTitle="Delete Referral"
+                    deleteConfirmDescription="Are you sure you want to delete this referral record?"
+                    renderConfirmDetails={(referral) => (
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Referrer:</span>
+                                <span className="font-medium text-white">{referral.referrer_username}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Referee:</span>
+                                <span className="font-medium text-white">{referral.referee_username}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Reward:</span>
+                                <span className="text-primary font-mono">{formatCurrency(parseFloat(referral.reward_amount || '0'))}</span>
+                            </div>
+                        </div>
+                    )}
                     initialSortColumn={4}
                     initialSortDirection="desc"
                 />

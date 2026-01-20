@@ -10,7 +10,9 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import {
     getWallets,
     getPlatformConfig,
-    PlatformConfig
+    getRiders,
+    getRoadies,
+    type PlatformConfig
 } from "@/lib/api"
 import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
@@ -49,8 +51,6 @@ interface WalletWithUser {
         reason: string
         created_at: string
     }>
-    created_at: string
-    updated_at: string
 }
 
 export default function WalletsPage() {
@@ -68,16 +68,36 @@ export default function WalletsPage() {
     const fetchData = async () => {
         setIsLoading(true)
         try {
-            const walletsData = await getWallets() as unknown as WalletWithUser[]
-            const configData = await getPlatformConfig()
+            const [walletsData, ridersData, roadiesData, configData] = await Promise.all([
+                getWallets(),
+                getRiders(),
+                getRoadies(),
+                getPlatformConfig()
+            ])
 
-            // Filter wallets to only show Riders (R prefix) and Roadies (BS prefix)
-            const baseWallets = walletsData.filter(wallet => {
-                const externalId = wallet.user_external_id
-                return externalId && (externalId.startsWith('R') || externalId.startsWith('BS'))
+            // Map wallets to users (Riders and Roadies)
+            const enrichedWallets: WalletWithUser[] = walletsData.map((wallet: any) => {
+                // Find owner of this wallet
+                const rider = ridersData.find(r => r.wallet?.id === wallet.id)
+                const roadie = roadiesData.find(r => r.wallet?.id === wallet.id)
+                const user = rider || roadie
+
+                return {
+                    id: wallet.id,
+                    user_id: user?.id || wallet.user, // Use profile ID if found, else generic user ID
+                    user_external_id: user?.external_id || null,
+                    user_username: user?.username || 'Unknown User',
+                    balance: wallet.balance,
+                    transactions: wallet.transactions || []
+                }
             })
 
-            setWallets(baseWallets)
+            // Filter out system wallets or unknown users if desired. 
+            // For now we keep them but maybe sort them to bottom?
+            // Actually, let's keep all, but search helps finding specific ones.
+            // The previous logic filtered by 'R' or 'BS' prefix. Let's keep that broadly but allow 'Unknown User' to be visible so admins know there's a detached wallet.
+
+            setWallets(enrichedWallets)
             setPlatformConfig(configData)
 
         } catch (err: any) {
@@ -106,17 +126,7 @@ export default function WalletsPage() {
             wallet.user_id.toString().includes(searchLower)
         )
 
-        if (!matchesSearch) return false
-
-        // Date range filter
-        if (startDate || endDate) {
-            const walletDate = new Date(wallet.created_at)
-            const start = startDate ? startOfDay(startDate) : new Date(0)
-            const end = endDate ? endOfDay(endDate) : new Date()
-            return isWithinInterval(walletDate, { start, end })
-        }
-
-        return true
+        return matchesSearch
     })
 
     // Stats based on all filtered wallets
@@ -129,342 +139,231 @@ export default function WalletsPage() {
                 positiveBalanceCount: 0,
                 negativeBalanceCount: 0,
                 totalRiders: 0,
-                totalRoadies: 0,
+                totalRoadies: 0
             }
         }
-
-        const riderWallets = data.filter(w => w.user_external_id?.startsWith('R'))
-        const roadieWallets = data.filter(w => w.user_external_id?.startsWith('BS'))
 
         const totalBalance = data.reduce((sum, wallet) => sum + parseFloat(wallet.balance), 0)
         const positiveBalanceCount = data.filter(wallet => parseFloat(wallet.balance) > 0).length
         const negativeBalanceCount = data.filter(wallet => parseFloat(wallet.balance) < 0).length
+
+        const totalRiders = data.filter(w => w.user_external_id?.startsWith('R')).length
+        const totalRoadies = data.filter(w => w.user_external_id?.startsWith('BS')).length
 
         return {
             totalWallets: data.length,
             totalBalance,
             positiveBalanceCount,
             negativeBalanceCount,
-            totalRiders: riderWallets.length,
-            totalRoadies: roadieWallets.length,
+            totalRiders,
+            totalRoadies
         }
     }
 
     const stats = calculateStats()
 
-    const formatCurrency = (amount: number | string) => {
-        const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+    const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-UG', {
             style: 'currency',
             currency: 'UGX',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-        }).format(numAmount)
-    }
-
-    const getBalanceColor = (balance: number) => {
-        if (balance > 0) return "text-emerald-500"
-        if (balance === 0) return "text-muted-foreground"
-        if (balance < 0 && balance >= -10000) return "text-amber-500"
-        return "text-destructive"
-    }
-
-    const clearFilters = () => {
-        setStartDate(undefined)
-        setEndDate(undefined)
-        setSearchQuery("")
+        }).format(amount)
     }
 
     const columns: Column<WalletWithUser>[] = [
         {
             header: "User",
             accessor: "user_username",
-            cell: (value: string, row: WalletWithUser) => (
-                <div className="space-y-1">
-                    <div className="font-medium text-foreground">{value}</div>
-                    <div className="text-xs text-muted-foreground font-mono">ID: {row.user_id}</div>
-                </div>
-            )
-        },
-        {
-            header: "External ID",
-            accessor: "user_external_id",
-            cell: (value: string) => (
-                <div className="flex items-center gap-2">
-                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                    <code className="text-xs font-mono bg-muted px-2 py-1 rounded text-foreground">
-                        {value}
-                    </code>
+            cell: (value, wallet) => (
+                <div className="flex flex-col">
+                    <span className="font-medium text-foreground">{value}</span>
+                    <span className="text-xs text-muted-foreground">{wallet.user_external_id || `#${wallet.user_id}`}</span>
                 </div>
             )
         },
         {
             header: "Role",
             accessor: "user_external_id",
-            cell: (value: string) => {
-                const isRider = value?.startsWith('R')
-                const color = isRider ? 'border-blue-500/20 bg-blue-500/10 text-blue-500' : 'border-purple-500/20 bg-purple-500/10 text-purple-500'
-                return (
-                    <Badge variant="outline" className={`${color} capitalize font-medium border-2`}>
-                        {isRider ? 'Rider' : 'Roadie'}
-                    </Badge>
-                )
+            cell: (value) => {
+                if (!value) return <Badge variant="outline" className="text-muted-foreground">Unknown</Badge>
+                if (value.startsWith('R')) return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200">Rider</Badge>
+                if (value.startsWith('BS')) return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200">Roadie</Badge>
+                return <Badge variant="outline">{value}</Badge>
             }
         },
         {
             header: "Balance",
             accessor: "balance",
-            cell: (value: string) => {
-                const balance = parseFloat(value)
+            cell: (value) => {
+                const amount = parseFloat(value as string)
+                const isNegative = amount < 0
                 return (
-                    <div className={`text-lg font-bold ${getBalanceColor(balance)}`}>
-                        {formatCurrency(value)}
-                    </div>
+                    <span className={cn(
+                        "font-mono font-medium",
+                        isNegative ? "text-destructive" : "text-emerald-600"
+                    )}>
+                        {formatCurrency(amount)}
+                    </span>
                 )
             }
         },
         {
-            header: "Status",
-            accessor: "balance",
-            cell: (value: string) => {
-                const balance = parseFloat(value)
-                if (balance > 0) return <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-emerald-500">Positive</Badge>
-                if (balance === 0) return <Badge variant="outline" className="border-border bg-muted/30 text-muted-foreground">Zero</Badge>
-                if (balance < 0 && balance >= -10000) return <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-500">Warning</Badge>
-                return <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">Critical</Badge>
-            }
-        },
-        {
-            header: "Created",
-            accessor: "created_at",
-            cell: (value: string) => new Date(value).toLocaleDateString()
-        },
-        {
             header: "Actions",
             accessor: "id",
-            cell: (value: number) => (
-                <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2 h-8"
-                    onClick={() => router.push(`/admin/wallet/${value}`)}
-                >
-                    <Eye className="h-4 w-4" />
-                    Details
-                </Button>
+            cell: (value) => (
+                <div className="flex items-center justify-end gap-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => router.push(`/admin/wallet/${value}`)}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        title="View Details"
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                </div>
             )
         }
     ]
 
+    if (!canView) {
+        return null // Protected route handles redirect/error, this is just extra safety
+    }
+
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Wallets Management</h1>
-                    <p className="text-muted-foreground mt-2">
-                        View Rider and Roadie wallet balances
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground font-mono">Wallet Management</h2>
+                    <p className="text-sm text-muted-foreground mt-1 font-mono">
+                        Monitor user balances and transactions
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
-                        variant={showFilters ? "default" : "outline"}
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="gap-2 h-10"
+                        variant="outline"
+                        onClick={() => router.push('/admin/wallet/transactions')}
+                        className="gap-2"
                     >
-                        <Filter className="h-4 w-4" />
-                        {showFilters ? "Hide Filters" : "Filters"}
+                        <ArrowRight className="h-4 w-4" />
+                        All Transactions
                     </Button>
                 </div>
             </div>
 
-            {/* Filters Bar */}
-            {showFilters && (
-                <Card className="border-primary/20 bg-primary/5">
-                    <CardContent className="p-4 flex flex-wrap items-end gap-6">
-                        <div className="space-y-2 flex-grow max-w-sm">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Search</label>
-                            <Input
-                                placeholder="Username or ID..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-10 bg-background"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Created From</label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "w-[160px] justify-start text-left font-normal h-10 border-border bg-background",
-                                            !startDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                                        {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={startDate}
-                                        onSelect={setStartDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Created To</label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "w-[160px] justify-start text-left font-normal h-10 border-border bg-background",
-                                            !endDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
-                                        {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={endDate}
-                                        onSelect={setEndDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        <div className="flex items-center gap-2 ml-auto">
-                            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground h-10">
-                                <X className="h-4 w-4 mr-2" />
-                                Clear
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                            <WalletIcon className="h-4 w-4" />
-                            Total Wallets
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-foreground">
-                            {isLoading ? <Skeleton className="h-8 w-16" /> : stats.totalWallets}
-                        </div>
-                        <CardDescription className="text-xs text-muted-foreground mt-1">
-                            {stats.totalRiders} riders, {stats.totalRoadies} roadies
-                        </CardDescription>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                            <DollarSign className="h-4 w-4" />
-                            Total Balance
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`text-3xl font-bold ${stats.totalBalance >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-                            {isLoading ? <Skeleton className="h-8 w-24" /> : formatCurrency(stats.totalBalance)}
-                        </div>
-                        <CardDescription className="text-xs text-muted-foreground mt-1">
-                            Filtered wallet total
-                        </CardDescription>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            Positive Wallets
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-emerald-500">
-                            {isLoading ? <Skeleton className="h-8 w-12" /> : stats.positiveBalanceCount}
-                        </div>
-                        <CardDescription className="text-xs text-muted-foreground mt-1">
-                            {stats.totalWallets > 0 ? `${((stats.positiveBalanceCount / stats.totalWallets) * 100).toFixed(1)}% of filtered` : '0%'}
-                        </CardDescription>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-card border-border shadow-sm">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                            <TrendingDown className="h-4 w-4" />
-                            Negative Wallets
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-destructive">
-                            {isLoading ? <Skeleton className="h-8 w-12" /> : stats.negativeBalanceCount}
-                        </div>
-                        <CardDescription className="text-xs text-muted-foreground mt-1">
-                            {stats.totalWallets > 0 ? `${((stats.negativeBalanceCount / stats.totalWallets) * 100).toFixed(1)}% of filtered` : '0%'}
-                        </CardDescription>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Platform Config Info */}
-            {platformConfig && (
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardContent className="p-4 py-3 flex flex-wrap items-center justify-between gap-4 text-sm">
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground font-medium">Max Negative: </span>
-                                <span className="font-bold text-foreground">{formatCurrency(platformConfig.max_negative_balance)}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground font-medium">Service Fee: </span>
-                                <span className="font-bold text-foreground">{formatCurrency(platformConfig.service_fee)}</span>
-                            </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground italic">
-                            * Threshold for disabling services: {formatCurrency(parseFloat(platformConfig.max_negative_balance) * -1)}
-                        </p>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Main Table */}
             {isLoading ? (
-                <div className="space-y-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-96 w-full" />
+                <div className="space-y-6">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                        {[...Array(4)].map((_, i) => (
+                            <Skeleton key={i} className="h-32" />
+                        ))}
+                    </div>
+                    <Skeleton className="h-[400px]" />
                 </div>
-            ) : filteredWallets.length === 0 ? (
-                <EmptyState
-                    title={searchQuery || startDate || endDate ? "No matches found" : "No wallet data available"}
-                    description="Try adjusting your filters or search criteria."
-                    icon={WalletIcon}
-                />
             ) : (
-                <DataTable
-                    data={filteredWallets}
-                    columns={columns}
-                    initialSortColumn={3}
-                    initialSortDirection="desc"
-                />
+                <>
+                    {/* Stats Cards */}
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                        <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+                                <DollarSign className="h-4 w-4 text-emerald-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-emerald-500">{formatCurrency(stats.totalBalance)}</div>
+                                <p className="text-xs text-muted-foreground mt-1">Across {stats.totalWallets} wallets</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Rider Wallets</CardTitle>
+                                <User className="h-4 w-4 text-blue-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-blue-500">{stats.totalRiders}</div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    <span className="text-emerald-500">{filteredWallets.filter(w => w.user_external_id?.startsWith('R') && parseFloat(w.balance) > 0).length}</span> positive
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Roadie Wallets</CardTitle>
+                                <Wrench className="h-4 w-4 text-purple-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-purple-500">{stats.totalRoadies}</div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    <span className="text-destructive">{filteredWallets.filter(w => w.user_external_id?.startsWith('BS') && parseFloat(w.balance) < 0).length}</span> negative
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-destructive/20 bg-gradient-to-br from-destructive/5 to-transparent">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Negative Balances</CardTitle>
+                                <TrendingDown className="h-4 w-4 text-destructive" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-destructive">{stats.negativeBalanceCount}</div>
+                                <p className="text-xs text-muted-foreground mt-1">Users owing fees</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Filters & Table */}
+                    <div className="space-y-4">
+                        <div className="flex flex-col md:flex-row gap-4 justify-between">
+                            <div className="relative flex-1 max-w-sm">
+                                <Input
+                                    placeholder="Search users..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-9 font-mono text-sm"
+                                />
+                                <Filter className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            </div>
+                        </div>
+
+                        {filteredWallets.length === 0 ? (
+                            <EmptyState
+                                icon={WalletIcon}
+                                title="No wallets found"
+                                description="Try adjusting your search criteria"
+                            />
+                        ) : (
+                            <DataTable
+                                columns={columns}
+                                data={filteredWallets}
+                                onView={(row) => router.push(`/admin/wallet/${row.id}`)}
+                            />
+                        )}
+                    </div>
+                </>
             )}
         </div>
+    )
+}
+
+function Wrench(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+        </svg>
     )
 }

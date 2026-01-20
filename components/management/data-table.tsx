@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Trash2, Edit, Download, ArrowUpDown, RotateCcw } from "lucide-react"
 import { useState } from "react"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 
 export interface Column<T> {
   header: string
@@ -26,6 +27,12 @@ interface DataTableProps<T extends { id: string | number }> {
   pageSize?: number
   initialSortColumn?: number | null
   initialSortDirection?: "asc" | "desc"
+  confirmAction?: boolean
+  deleteConfirmTitle?: string | ((row: T) => string)
+  deleteConfirmDescription?: string | ((row: T) => string)
+  restoreConfirmTitle?: string | ((row: T) => string)
+  restoreConfirmDescription?: string | ((row: T) => string)
+  renderConfirmDetails?: (row: T) => React.ReactNode
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -41,10 +48,21 @@ export function DataTable<T extends { id: string | number }>({
   pageSize = 10,
   initialSortColumn = null,
   initialSortDirection = "desc",
+  confirmAction = true,
+  deleteConfirmTitle,
+  deleteConfirmDescription,
+  restoreConfirmTitle,
+  restoreConfirmDescription,
+  renderConfirmDetails,
 }: DataTableProps<T>) {
   const [sortColumn, setSortColumn] = useState<number | null>(initialSortColumn)
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">(initialSortDirection)
   const [currentPage, setCurrentPage] = useState(1)
+
+  // Modal State
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [confirmMode, setConfirmMode] = useState<"delete" | "restore">("delete")
+  const [pendingRow, setPendingRow] = useState<T | null>(null)
 
   const handleExport = () => {
     const csv = [
@@ -103,6 +121,43 @@ export function DataTable<T extends { id: string | number }>({
   const handleNextPage = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
   }
+
+  const triggerAction = (row: T, mode: "delete" | "restore") => {
+    if (confirmAction) {
+      setPendingRow(row)
+      setConfirmMode(mode)
+      setIsConfirmOpen(true)
+    } else {
+      if (mode === "delete" && onDelete) onDelete(row)
+      if (mode === "restore" && onRestore) onRestore(row)
+    }
+  }
+
+  const handleConfirm = () => {
+    if (!pendingRow) return
+    if (confirmMode === "delete" && onDelete) onDelete(pendingRow)
+    if (confirmMode === "restore" && onRestore) onRestore(pendingRow)
+    setIsConfirmOpen(false)
+    setPendingRow(null)
+  }
+
+  const getModalContent = () => {
+    if (!pendingRow) return { title: "", description: "" }
+
+    if (confirmMode === "delete") {
+      return {
+        title: typeof deleteConfirmTitle === "function" ? deleteConfirmTitle(pendingRow) : deleteConfirmTitle || "Confirm Deletion",
+        description: typeof deleteConfirmDescription === "function" ? deleteConfirmDescription(pendingRow) : deleteConfirmDescription || "Are you sure you want to delete this record? This action cannot be undone.",
+      }
+    }
+
+    return {
+      title: typeof restoreConfirmTitle === "function" ? restoreConfirmTitle(pendingRow) : restoreConfirmTitle || "Confirm Restoration",
+      description: typeof restoreConfirmDescription === "function" ? restoreConfirmDescription(pendingRow) : restoreConfirmDescription || "Are you sure you want to restore this record?",
+    }
+  }
+
+  const modalContent = getModalContent()
 
   return (
     <div className="space-y-6">
@@ -227,7 +282,7 @@ export function DataTable<T extends { id: string | number }>({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => onRestore(row)}
+                              onClick={() => triggerAction(row, "restore")}
                               className="h-9 w-9 p-0 text-emerald-600 hover:bg-emerald-600/10 hover:text-emerald-600 rounded-lg"
                               title="Restore"
                             >
@@ -249,7 +304,7 @@ export function DataTable<T extends { id: string | number }>({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => onDelete(row)}
+                              onClick={() => triggerAction(row, "delete")}
                               className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg"
                               title="Delete"
                             >
@@ -266,6 +321,17 @@ export function DataTable<T extends { id: string | number }>({
           </Table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleConfirm}
+        mode={confirmMode}
+        title={modalContent.title}
+        description={modalContent.description}
+      >
+        {pendingRow && renderConfirmDetails?.(pendingRow)}
+      </ConfirmModal>
 
       {sortedData.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 bg-card border-t border-border rounded-b-lg text-sm text-muted-foreground">

@@ -55,6 +55,7 @@ export default function RoadiesPage() {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [showFilters, setShowFilters] = useState(false)
+  const [statusToggling, setStatusToggling] = useState<number[]>([])
 
   const { toast } = useToast()
 
@@ -218,7 +219,6 @@ export default function RoadiesPage() {
   }, [searchQuery, statusFilter, startDate, endDate, roadies])
 
   const handleDelete = async (roadie: RoadieWithThumbnail) => {
-    if (!confirm(`Are you sure you want to delete ${roadie.first_name} ${roadie.last_name}?`)) return
     try {
       await deleteRoadie(roadie.id)
       toast({
@@ -237,10 +237,32 @@ export default function RoadiesPage() {
 
   const handleStatusToggle = async (roadie: RoadieWithThumbnail) => {
     try {
-      await updateRoadie(roadie.id, { is_approved: !roadie.is_approved })
+      setStatusToggling(prev => [...prev, roadie.id])
+      const newStatus = !roadie.is_approved
+      await updateRoadie(roadie.id, { is_approved: newStatus })
+
+      if (newStatus) {
+        try {
+          await fetch('/api/admin/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: roadie.email,
+              type: 'WELCOME_APPROVAL',
+              data: {
+                userName: roadie.first_name,
+                role: 'Roadie'
+              }
+            })
+          })
+        } catch (e) {
+          console.error("Failed to send welcome email", e)
+        }
+      }
+
       toast({
         title: "Success",
-        description: `Roadie ${!roadie.is_approved ? "approved" : "unapproved"} successfully`
+        description: `Roadie ${newStatus ? "approved" : "unapproved"} successfully`
       })
       fetchRoadies()
     } catch (err) {
@@ -249,6 +271,8 @@ export default function RoadiesPage() {
         description: "Failed to update roadie status",
         variant: "destructive"
       })
+    } finally {
+      setStatusToggling(prev => prev.filter(id => id !== roadie.id))
     }
   }
 
@@ -373,9 +397,10 @@ export default function RoadiesPage() {
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
-            disabled={!canApprove}
+            disabled={!canApprove || statusToggling.includes(row.id)}
             className="data-[state=checked]:bg-green-600 scale-90"
           />
+          {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           <div className="flex items-center gap-1">
             {value ? (
               <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Active</Badge>
@@ -568,8 +593,9 @@ export default function RoadiesPage() {
                   <Calendar
                     mode="single"
                     selected={startDate}
-                    onSelect={setStartDate}
+                    onSelect={(date) => setStartDate(date)}
                     initialFocus
+                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                   />
                 </PopoverContent>
               </Popover>
@@ -594,8 +620,9 @@ export default function RoadiesPage() {
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={setEndDate}
+                    onSelect={(date) => setEndDate(date)}
                     initialFocus
+                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                   />
                 </PopoverContent>
               </Popover>
@@ -672,6 +699,28 @@ export default function RoadiesPage() {
             columns={columns}
             onEdit={canChange ? handleEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
+            deleteConfirmTitle="Delete Roadie"
+            deleteConfirmDescription="Are you sure you want to delete this roadie account? This action cannot be undone."
+            renderConfirmDetails={(roadie) => (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Name:</span>
+                  <span className="font-medium text-white">{roadie.first_name} {roadie.last_name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Username:</span>
+                  <span className="font-mono text-primary">@{roadie.username}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Email:</span>
+                  <span className="text-white">{roadie.email}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Phone:</span>
+                  <span className="text-white">{roadie.phone}</span>
+                </div>
+              </div>
+            )}
             initialSortColumn={6}
             initialSortDirection="desc"
           />
