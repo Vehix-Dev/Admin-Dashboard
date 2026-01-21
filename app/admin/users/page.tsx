@@ -15,6 +15,8 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { useCan, PermissionButton } from "@/components/auth/permission-guard"
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { AuditService } from "@/lib/audit"
+import { getAdminProfile } from "@/lib/auth"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
@@ -31,6 +33,11 @@ export default function AdminUsersPage() {
     const canChange = useCan(PERMISSIONS.ADMIN_USERS_CHANGE)
     const canDelete = useCan(PERMISSIONS.ADMIN_USERS_DELETE)
     const canAdd = useCan(PERMISSIONS.ADMIN_USERS_ADD)
+    const canDisable = useCan(PERMISSIONS.ADMIN_USERS_DISABLE)
+    const canApprove = useCan(PERMISSIONS.ADMIN_USERS_APPROVE)
+
+    // Approval implies Disable permission
+    const hasDisablePermission = canDisable || canApprove
 
     const fetchAdmins = async () => {
         setIsLoading(true)
@@ -56,6 +63,16 @@ export default function AdminUsersPage() {
     const handleDelete = async (admin: AdminUser) => {
         try {
             await deleteAdminUser(admin.id)
+
+            // Audit Log
+            const currentUser = await getAdminProfile()
+            AuditService.log(
+                "Delete User",
+                `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
+                currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+                { userId: admin.id, email: admin.email }
+            )
+
             toast({
                 title: "Success",
                 description: "Admin user deleted successfully"
@@ -73,6 +90,16 @@ export default function AdminUsersPage() {
     const handleStatusToggle = async (admin: AdminUser) => {
         try {
             await updateAdminUser(admin.id, { is_active: !admin.is_active })
+
+            // Audit Log
+            const currentUser = await getAdminProfile()
+            AuditService.log(
+                !admin.is_active ? "Enable User" : "Disable User",
+                `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
+                currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+                { userId: admin.id, newState: !admin.is_active }
+            )
+
             toast({
                 title: "Success",
                 description: `Admin user ${!admin.is_active ? "enabled" : "disabled"} successfully`
@@ -90,6 +117,16 @@ export default function AdminUsersPage() {
     const handleApprovalToggle = async (admin: AdminUser) => {
         try {
             await updateAdminUser(admin.id, { is_approved: !admin.is_approved })
+
+            // Audit Log
+            const currentUser = await getAdminProfile()
+            AuditService.log(
+                !admin.is_approved ? "Approve User" : "Unapprove User",
+                `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
+                currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+                { userId: admin.id, newState: !admin.is_approved }
+            )
+
             toast({
                 title: "Success",
                 description: `Admin user ${!admin.is_approved ? "approved" : "unapproved"} successfully`
@@ -145,7 +182,7 @@ export default function AdminUsersPage() {
                     <Switch
                         checked={value}
                         onCheckedChange={() => handleStatusToggle(row)}
-                        disabled={!canChange}
+                        disabled={!hasDisablePermission}
                         className="data-[state=checked]:bg-green-600"
                     />
                     <span className={`text-xs font-medium ${value ? "text-emerald-500" : "text-destructive"}`}>
@@ -172,7 +209,7 @@ export default function AdminUsersPage() {
                     <Switch
                         checked={value}
                         onCheckedChange={() => handleApprovalToggle(row)}
-                        disabled={!canChange}
+                        disabled={!canApprove}
                         className="data-[state=checked]:bg-green-600"
                     />
                     <span className={`text-xs font-medium ${value ? "text-emerald-500" : "text-amber-500"}`}>
@@ -223,6 +260,12 @@ export default function AdminUsersPage() {
                             <Plus className="h-4 w-4" />
                             New Admin
                         </PermissionButton>
+                        <Link href="/admin/users/audit">
+                            <Button variant="outline" className="gap-2 h-10">
+                                <Filter className="h-4 w-4" /> {/* Reusing Filter icon for now or use FileText if available */}
+                                Audit Logs
+                            </Button>
+                        </Link>
                     </div>
                 </div>
 

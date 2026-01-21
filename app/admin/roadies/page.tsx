@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { getRoadies, updateRoadie, deleteRoadie, type Roadie, getCombinedRealtimeLocations, type RodieLocation, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
+import { AuditService } from "@/lib/audit"
+import { getAdminProfile } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -64,6 +66,10 @@ export default function RoadiesPage() {
   const canChange = useCan(PERMISSIONS.ROADIES_CHANGE)
   const canDelete = useCan(PERMISSIONS.ROADIES_DELETE)
   const canApprove = useCan(PERMISSIONS.ROADIES_APPROVE)
+  const canDisable = useCan(PERMISSIONS.ROADIES_DISABLE)
+
+  // Approval implies Disable permission
+  const hasDisablePermission = canDisable || canApprove
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -221,6 +227,14 @@ export default function RoadiesPage() {
   const handleDelete = async (roadie: RoadieWithThumbnail) => {
     try {
       await deleteRoadie(roadie.id)
+
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        "Delete Roadie",
+        `Roadie: ${roadie.first_name} ${roadie.last_name} (${roadie.username})`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { roadieId: roadie.id, externalId: roadie.external_id }
+      )
       toast({
         title: "Success",
         description: "Roadie deleted successfully"
@@ -240,6 +254,14 @@ export default function RoadiesPage() {
       setStatusToggling(prev => [...prev, roadie.id])
       const newStatus = !roadie.is_approved
       await updateRoadie(roadie.id, { is_approved: newStatus })
+
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        newStatus ? "Approve Roadie" : "Unapprove Roadie",
+        `Roadie: ${roadie.first_name} ${roadie.last_name} (${roadie.username})`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { roadieId: roadie.id, externalId: roadie.external_id, newStatus }
+      )
 
       if (newStatus) {
         try {
@@ -397,7 +419,10 @@ export default function RoadiesPage() {
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
-            disabled={!canApprove || statusToggling.includes(row.id)}
+            disabled={
+              statusToggling.includes(row.id) ||
+              (value ? !hasDisablePermission : !canApprove)
+            }
             className="data-[state=checked]:bg-green-600 scale-90"
           />
           {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}

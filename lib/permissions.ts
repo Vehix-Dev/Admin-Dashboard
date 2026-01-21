@@ -5,12 +5,15 @@ export const PERMISSIONS = {
     ADMIN_USERS_ADD: 'admin_users.add',
     ADMIN_USERS_CHANGE: 'admin_users.change',
     ADMIN_USERS_DELETE: 'admin_users.delete',
+    ADMIN_USERS_DISABLE: 'admin_users.disable',
+    ADMIN_USERS_APPROVE: 'admin_users.approve',
 
     // Riders
     RIDERS_VIEW: 'riders.view',
     RIDERS_ADD: 'riders.add',
     RIDERS_CHANGE: 'riders.change',
     RIDERS_DELETE: 'riders.delete',
+    RIDERS_DISABLE: 'riders.disable',
     RIDERS_APPROVE: 'riders.approve',
 
     // Roadies
@@ -18,6 +21,7 @@ export const PERMISSIONS = {
     ROADIES_ADD: 'roadies.add',
     ROADIES_CHANGE: 'roadies.change',
     ROADIES_DELETE: 'roadies.delete',
+    ROADIES_DISABLE: 'roadies.disable',
     ROADIES_APPROVE: 'roadies.approve',
 
     // Services
@@ -100,12 +104,15 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         PERMISSIONS.ADMIN_USERS_ADD,
         PERMISSIONS.ADMIN_USERS_CHANGE,
         PERMISSIONS.ADMIN_USERS_DELETE,
+        PERMISSIONS.ADMIN_USERS_DISABLE,
+        PERMISSIONS.ADMIN_USERS_APPROVE,
 
         // Manage riders
         PERMISSIONS.RIDERS_VIEW,
         PERMISSIONS.RIDERS_ADD,
         PERMISSIONS.RIDERS_CHANGE,
         PERMISSIONS.RIDERS_DELETE,
+        PERMISSIONS.RIDERS_DISABLE,
         PERMISSIONS.RIDERS_APPROVE,
 
         // Manage roadies
@@ -113,6 +120,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         PERMISSIONS.ROADIES_ADD,
         PERMISSIONS.ROADIES_CHANGE,
         PERMISSIONS.ROADIES_DELETE,
+        PERMISSIONS.ROADIES_DISABLE,
         PERMISSIONS.ROADIES_APPROVE,
 
         // Manage services

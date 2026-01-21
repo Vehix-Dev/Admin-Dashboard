@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Loader2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default function EditAdminPage() {
     const router = useRouter()
@@ -32,6 +34,13 @@ export default function EditAdminPage() {
     })
     const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
     // const [authUserId, setAuthUserId] = useState<string | null>(null) 
+
+    // Permissions
+    const canDisable = useCan(PERMISSIONS.ADMIN_USERS_DISABLE)
+    const canApprove = useCan(PERMISSIONS.ADMIN_USERS_APPROVE)
+
+    // Approval implies Disable permission
+    const hasDisablePermission = canDisable || canApprove
 
     const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -264,6 +273,7 @@ export default function EditAdminPage() {
                             <Switch
                                 checked={formData.is_active}
                                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+                                disabled={!hasDisablePermission}
                             />
                         </div>
 
@@ -275,6 +285,7 @@ export default function EditAdminPage() {
                             <Switch
                                 checked={formData.is_approved}
                                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_approved: checked }))}
+                                disabled={!canApprove}
                             />
                         </div>
                     </CardContent>

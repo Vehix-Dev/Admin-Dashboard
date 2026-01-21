@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
+import { useCan } from "@/components/auth/permission-guard"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export default function AddAdminPage() {
     const router = useRouter()
@@ -19,6 +21,13 @@ export default function AddAdminPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+    // Permissions
+    const canDisable = useCan(PERMISSIONS.ADMIN_USERS_DISABLE)
+    const canApprove = useCan(PERMISSIONS.ADMIN_USERS_APPROVE)
+
+    // Approval implies Disable permission
+    const hasDisablePermission = canDisable || canApprove
 
     const [formData, setFormData] = useState({
         first_name: "",
@@ -29,7 +38,7 @@ export default function AddAdminPage() {
         password: "",
         confirmPassword: "",
         is_active: true,
-        is_approved: true
+        is_approved: canApprove // Default to true only if they have permission, otherwise false (pending)
     })
     const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
 
@@ -116,8 +125,8 @@ export default function AddAdminPage() {
             })
 
             // 2. Assign Groups (JSON DB)
-            if (response && response.user && response.user.id) {
-                const userId = String(response.user.id);
+            if (response && response.id) {
+                const userId = String(response.id);
                 // Assign permissions/groups
                 const groupsRes = await fetch(`/api/admin/users/${userId}/groups`, {
                     method: 'POST',
@@ -125,15 +134,6 @@ export default function AddAdminPage() {
                     body: JSON.stringify({ groupIds: selectedGroupIds })
                 })
 
-                if (!groupsRes.ok) throw new Error("Created user but failed to assign groups")
-            } else if (response && response.id) {
-                // Handle case where createAdminUser returns object with top-level id (check lib/api implementation if unsure, but safe to check both)
-                const userId = String(response.id);
-                const groupsRes = await fetch(`/api/admin/users/${userId}/groups`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ groupIds: selectedGroupIds })
-                })
                 if (!groupsRes.ok) throw new Error("Created user but failed to assign groups")
             }
 
@@ -291,6 +291,7 @@ export default function AddAdminPage() {
                                 <Switch
                                     checked={formData.is_active}
                                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+                                    disabled={!hasDisablePermission}
                                 />
                             </div>
 
@@ -302,6 +303,7 @@ export default function AddAdminPage() {
                                 <Switch
                                     checked={formData.is_approved}
                                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_approved: checked }))}
+                                    disabled={!canApprove}
                                 />
                             </div>
                         </div>

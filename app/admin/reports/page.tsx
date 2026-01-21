@@ -67,6 +67,17 @@ interface DashboardMetrics {
         trend: 'up' | 'down' | 'neutral'
     },
     dailyActivity: Array<{ date: string; requests: number; revenue: number }>
+    financial: {
+        totalUserBalance: number
+        totalDebt: number
+        debtors: Array<{
+            id: number
+            username: string
+            balance: number
+            external_id: string
+        }>
+    }
+    topServices: Array<{ name: string; count: number }>
 }
 
 export default function ReportsOverviewPage() {
@@ -160,6 +171,31 @@ export default function ReportsOverviewPage() {
                 }
             })
 
+            // --- Financial Deep Dive ---
+            const totalUserBalance = wallets.reduce((acc, w) => acc + parseFloat(w.balance), 0)
+            const debtors = wallets
+                .filter(w => parseFloat(w.balance) < 0)
+                .map(w => ({
+                    id: w.id,
+                    username: w.user_username || `User #${w.user}`,
+                    balance: parseFloat(w.balance),
+                    external_id: w.user_external_id || 'N/A'
+                }))
+                .sort((a, b) => a.balance - b.balance) // Ascending (most negative first)
+
+            const totalDebt = debtors.reduce((acc, d) => acc + Math.abs(d.balance), 0)
+
+            // --- Top Services ---
+            const serviceCounts: Record<string, number> = {}
+            requests.forEach(r => {
+                const name = r.service_type_name || `Service ${r.service_type}`
+                serviceCounts[name] = (serviceCounts[name] || 0) + 1
+            })
+            const topServices = Object.entries(serviceCounts)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5)
+
             setMetrics({
                 revenue: {
                     total: totalRevenue,
@@ -179,7 +215,13 @@ export default function ReportsOverviewPage() {
                     growth: serviceGrowth,
                     trend: serviceGrowth >= 0 ? 'up' : 'down'
                 },
-                dailyActivity
+                dailyActivity,
+                financial: {
+                    totalUserBalance,
+                    totalDebt,
+                    debtors
+                },
+                topServices
             })
 
         } catch (err: any) {
@@ -386,6 +428,76 @@ export default function ReportsOverviewPage() {
                         </div>
                     </>
                 ) : null}
+
+                {/* --- Financial & Service Analytics Section --- */}
+                {metrics && (
+                    <div className="grid gap-6 md:grid-cols-2">
+                        {/* Debtors List */}
+                        <Card className="md:col-span-1 border-red-200 bg-red-50/10">
+                            <CardHeader>
+                                <CardTitle className="text-red-700 flex items-center gap-2">
+                                    <TrendingDown className="h-5 w-5" />
+                                    Outstanding User Debt
+                                </CardTitle>
+                                <CardDescription>
+                                    Total Outstanding: <span className="font-bold text-red-600">{formatCurrency(metrics.financial.totalDebt)}</span>
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {metrics.financial.debtors.length === 0 ? (
+                                        <p className="text-sm text-green-600 font-medium">No users currently owe the platform.</p>
+                                    ) : (
+                                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                                            {metrics.financial.debtors.slice(0, 10).map((debtor) => (
+                                                <div key={debtor.id} className="flex items-center justify-between p-2 rounded bg-white/50 border border-red-100">
+                                                    <div>
+                                                        <p className="text-sm font-medium">{debtor.username}</p>
+                                                        <p className="text-xs text-muted-foreground">{debtor.external_id}</p>
+                                                    </div>
+                                                    <span className="text-sm font-bold text-red-600">
+                                                        {formatCurrency(debtor.balance)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {metrics.financial.debtors.length > 10 && (
+                                                <p className="text-xs text-center text-muted-foreground pt-2">
+                                                    + {metrics.financial.debtors.length - 10} more debtors
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Top Services */}
+                        <Card className="md:col-span-1">
+                            <CardHeader>
+                                <CardTitle>Top Performing Services</CardTitle>
+                                <CardDescription>Most requested service types</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {metrics.topServices.map((service, index) => (
+                                        <div key={service.name} className="space-y-1">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="font-medium">{service.name}</span>
+                                                <span className="text-muted-foreground">{service.count} requests</span>
+                                            </div>
+                                            <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                                <div
+                                                    className="h-full bg-blue-500 rounded-full"
+                                                    style={{ width: `${(service.count / Math.max(...metrics.topServices.map(s => s.count))) * 100}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
             </div>
         </ProtectedRoute>
     )

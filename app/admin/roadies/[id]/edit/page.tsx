@@ -5,6 +5,8 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { getRoadieById, updateRoadie, type Roadie } from "@/lib/api"
+import { AuditService } from "@/lib/audit"
+import { getAdminProfile } from "@/lib/auth"
 import {
   getImagesByUser,
   type AdminImage,
@@ -121,7 +123,11 @@ export default function EditRoadiePage() {
   const canChange = useCan(PERMISSIONS.ROADIES_CHANGE)
   const canDelete = useCan(PERMISSIONS.ROADIES_DELETE)
   const canApprove = useCan(PERMISSIONS.ROADIES_APPROVE)
+  const canDisable = useCan(PERMISSIONS.ROADIES_DISABLE)
   const canUpload = useCan(PERMISSIONS.ROADIES_CHANGE) // Upload falls under change permission
+
+  // Approval implies Disable permission
+  const hasDisablePermission = canDisable || canApprove
 
   useEffect(() => {
     const fetchRoadie = async () => {
@@ -259,6 +265,16 @@ export default function EditRoadiePage() {
     setIsSubmitting(true)
     try {
       await updateRoadie(Number(params.id), formData)
+
+      // Audit Log
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        "Update Roadie",
+        `Roadie: ${formData.first_name} ${formData.last_name} (${formData.username})`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { roadieId: params.id, changes: formData }
+      )
+
       toast({
         title: "Success",
         description: "Roadie updated successfully",
@@ -619,7 +635,9 @@ export default function EditRoadiePage() {
                           checked={formData.is_approved}
                           onChange={(e) => setFormData({ ...formData, is_approved: e.target.checked })}
                           className="rounded text-primary focus:ring-primary border-border"
-                          disabled={!canApprove}
+                          disabled={
+                            (formData.is_approved ? !hasDisablePermission : !canApprove)
+                          }
                         />
                         <label htmlFor="is_approved" className="text-sm font-medium text-foreground">
                           Approved

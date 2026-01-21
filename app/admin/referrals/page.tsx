@@ -100,18 +100,33 @@ export default function ReferralsPage() {
     const columns: Column<Referral>[] = [
         {
             header: "Referrer",
-            accessor: "referrer_username",
-            cell: (value: string) => <span className="font-medium">{value}</span>
+            accessor: "referrer.username",
+            cell: (_: unknown, row: Referral) => (
+                <div className="flex flex-col">
+                    <span className="font-medium">{row.referrer?.username || row.referrer_username}</span>
+                    <span className="text-xs text-muted-foreground">{row.referrer?.email}</span>
+                    {row.referrer?.wallet && (
+                        <span className={`text-[10px] ${parseFloat(row.referrer.wallet.balance) < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                            Bal: {formatCurrency(parseFloat(row.referrer.wallet.balance))}
+                        </span>
+                    )}
+                </div>
+            )
         },
         {
             header: "Referee",
-            accessor: "referee_username",
-            cell: (value: string) => <span className="font-medium">{value}</span>
+            accessor: "referred.username",
+            cell: (_: unknown, row: Referral) => (
+                <div className="flex flex-col">
+                    <span className="font-medium">{row.referred?.username || row.referee_username}</span>
+                    <span className="text-xs text-muted-foreground">{row.referred?.phone}</span>
+                </div>
+            )
         },
         {
             header: "Reward",
-            accessor: "reward_amount",
-            cell: (value: string) => formatCurrency(parseFloat(value || '0'))
+            accessor: "amount",
+            cell: (_: unknown, row: Referral) => formatCurrency(parseFloat(row.amount || row.reward_amount || '0'))
         },
         {
             header: "Status",
@@ -273,6 +288,40 @@ export default function ReferralsPage() {
                 </Card>
             </div>
 
+            {/* Top Influencers (Mini Network View) */}
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card className="col-span-2">
+                    <CardHeader>
+                        <CardTitle>Top Influencers</CardTitle>
+                        <CardDescription>Users driving the most growth</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex gap-4 overflow-x-auto pb-2">
+                            {Object.entries(
+                                referrals.reduce((acc, curr) => {
+                                    const name = curr.referrer?.username || curr.referrer_username || 'Unknown'
+                                    acc[name] = (acc[name] || 0) + 1
+                                    return acc
+                                }, {} as Record<string, number>)
+                            )
+                                .sort(([, a], [, b]) => b - a)
+                                .slice(0, 5)
+                                .map(([name, count], i) => (
+                                    <div key={name} className="flex-shrink-0 flex items-center gap-3 p-3 bg-muted/40 rounded border border-border">
+                                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                                            #{i + 1}
+                                        </div>
+                                        <div>
+                                            <div className="font-medium">{name}</div>
+                                            <div className="text-xs text-muted-foreground">{count} Referrals</div>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
             {isLoading ? (
                 <Skeleton className="h-96 rounded" />
             ) : filteredReferrals.length === 0 ? (
@@ -292,15 +341,15 @@ export default function ReferralsPage() {
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Referrer:</span>
-                                <span className="font-medium text-white">{referral.referrer_username}</span>
+                                <span className="font-medium text-white">{referral.referrer?.username || referral.referrer_username}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Referee:</span>
-                                <span className="font-medium text-white">{referral.referee_username}</span>
+                                <span className="font-medium text-white">{referral.referred?.username || referral.referee_username}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Reward:</span>
-                                <span className="text-primary font-mono">{formatCurrency(parseFloat(referral.reward_amount || '0'))}</span>
+                                <span className="text-primary font-mono">{formatCurrency(parseFloat(referral.amount || referral.reward_amount || '0'))}</span>
                             </div>
                         </div>
                     )}

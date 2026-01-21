@@ -13,6 +13,8 @@ import {
   getRiderActiveRequests,
   getRiderStatusBreakdown,
 } from "@/lib/api"
+import { AuditService } from "@/lib/audit"
+import { getAdminProfile } from "@/lib/auth"
 import {
   getImagesByUser,
   type AdminImage,
@@ -117,6 +119,10 @@ export default function EditRiderPage() {
   const canChange = useCan(PERMISSIONS.RIDERS_CHANGE)
   const canDelete = useCan(PERMISSIONS.RIDERS_DELETE)
   const canApprove = useCan(PERMISSIONS.RIDERS_APPROVE)
+  const canDisable = useCan(PERMISSIONS.RIDERS_DISABLE)
+
+  // Approval implies Disable permission
+  const hasDisablePermission = canDisable || canApprove
 
   useEffect(() => {
     const fetchRider = async () => {
@@ -168,6 +174,16 @@ export default function EditRiderPage() {
     setIsSubmitting(true)
     try {
       await updateRider(Number(params.id), formData)
+
+      // Audit Log
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        "Update Rider",
+        `Rider: ${formData.first_name} ${formData.last_name} (${formData.username})`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { riderId: params.id, changes: formData }
+      )
+
       toast({
         title: "Success",
         description: "Rider updated successfully",
@@ -567,7 +583,9 @@ export default function EditRiderPage() {
                           checked={formData.is_approved}
                           onChange={(e) => setFormData({ ...formData, is_approved: e.target.checked })}
                           className="rounded text-primary focus:ring-primary border-border"
-                          disabled={!canApprove}
+                          disabled={
+                            (formData.is_approved ? !hasDisablePermission : !canApprove)
+                          }
                         />
                         <label htmlFor="is_approved" className="text-sm font-medium text-foreground">
                           Approved

@@ -27,7 +27,8 @@ import {
   Trash2,
   ArrowLeft,
   DollarSign,
-  Mail
+  Mail,
+  FileText
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -48,7 +49,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         permission: PERMISSIONS.REQUESTS_VIEW,
         items: [
           { name: "All Requests", href: "/admin/requests", icon: List, permission: PERMISSIONS.REQUESTS_VIEW },
-          { name: "Accepted", href: "/admin/requests/accepted", icon: UserCheck, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Accepted/On going", href: "/admin/requests/accepted", icon: UserCheck, permission: PERMISSIONS.REQUESTS_VIEW },
           { name: "Completed", href: "/admin/requests/completed", icon: CheckCircle, permission: PERMISSIONS.REQUESTS_VIEW },
           { name: "Cancelled", href: "/admin/requests/cancelled", icon: XCircle, permission: PERMISSIONS.REQUESTS_VIEW },
         ]
@@ -69,6 +70,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
           { name: "All Roadies", href: "/admin/roadies", icon: List, permission: PERMISSIONS.ROADIES_VIEW },
           { name: "Add New", href: "/admin/roadies/add", icon: Plus, permission: PERMISSIONS.ROADIES_ADD },
           { name: "Drivers Total Assists", href: "/admin/roadies/total-services", icon: BarChart, permission: PERMISSIONS.RODIE_SERVICES_VIEW },
+          { name: "Deleted", href: "/admin/roadies/deleted", icon: Trash2, permission: PERMISSIONS.ROADIES_DELETE },
         ]
       },
       {
@@ -80,6 +82,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         items: [
           { name: "All Riders", href: "/admin/riders", icon: List, permission: PERMISSIONS.RIDERS_VIEW },
           { name: "Add New", href: "/admin/riders/add", icon: Plus, permission: PERMISSIONS.RIDERS_ADD },
+          { name: "Deleted", href: "/admin/riders/deleted", icon: Trash2, permission: PERMISSIONS.RIDERS_DELETE },
         ]
       },
       {
@@ -112,6 +115,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
           { name: "Roles", href: "/admin/users/roles", icon: Shield, permission: PERMISSIONS.ADMIN_USERS_VIEW },
           { name: "Groups", href: "/admin/users/groups", icon: Users, permission: PERMISSIONS.ADMIN_USERS_VIEW },
           { name: "Deleted Users", href: "/admin/users/deleted", icon: Trash2, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "Audit Logs", href: "/admin/users/audit", icon: FileText, permission: PERMISSIONS.ADMIN_USERS_VIEW },
         ]
       },
       {

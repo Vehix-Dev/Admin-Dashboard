@@ -230,6 +230,7 @@ export async function getAdminProfile(): Promise<AdminUser | null> {
       email: "admin@example.com",
       name: "Administrator",
       role: "ADMIN",
+      username: "admin_user",
     }
 
   } catch (error) {

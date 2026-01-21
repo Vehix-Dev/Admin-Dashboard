@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { getRiders, updateRider, deleteRider, type Rider, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
+import { AuditService } from "@/lib/audit"
+import { getAdminProfile } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -60,6 +62,10 @@ export default function RidersPage() {
   const canChange = useCan(PERMISSIONS.RIDERS_CHANGE)
   const canDelete = useCan(PERMISSIONS.RIDERS_DELETE)
   const canApprove = useCan(PERMISSIONS.RIDERS_APPROVE)
+  const canDisable = useCan(PERMISSIONS.RIDERS_DISABLE)
+
+  // Approval implies Disable permission
+  const hasDisablePermission = canDisable || canApprove
 
   const debouncedSearch = useCallback(
     debounce((query: string) => {
@@ -197,6 +203,15 @@ export default function RidersPage() {
   const handleDelete = async (rider: RiderWithThumbnail) => {
     try {
       await deleteRider(rider.id)
+
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        "Delete Rider",
+        `Rider: ${rider.first_name} ${rider.last_name} (${rider.username})`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { riderId: rider.id, externalId: rider.external_id }
+      )
+
       toast({
         title: "Success",
         description: "Rider deleted successfully"
@@ -216,6 +231,14 @@ export default function RidersPage() {
       setStatusToggling(prev => [...prev, rider.id])
       const newStatus = !rider.is_approved
       await updateRider(rider.id, { is_approved: newStatus })
+
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        newStatus ? "Approve Rider" : "Unapprove Rider",
+        `Rider: ${rider.first_name} ${rider.last_name} (${rider.username})`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { riderId: rider.id, externalId: rider.external_id, newStatus }
+      )
 
       if (newStatus) {
         try {
@@ -347,7 +370,10 @@ export default function RidersPage() {
           <Switch
             checked={value}
             onCheckedChange={() => handleStatusToggle(row)}
-            disabled={!canApprove || statusToggling.includes(row.id)}
+            disabled={
+              statusToggling.includes(row.id) ||
+              (value ? !hasDisablePermission : !canApprove)
+            }
             className="data-[state=checked]:bg-green-600 scale-90"
           />
           {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}

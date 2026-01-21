@@ -74,6 +74,15 @@ function readJSON<T>(filePath: string, defaultValue: T): T {
         return JSON.parse(data);
     } catch (error) {
         console.error(`Error reading ${filePath}:`, error);
+        // Recovery: If file exists but is invalid JSON, overwrite with default to prevent persistent errors
+        if (error instanceof SyntaxError) {
+            try {
+                fs.writeFileSync(filePath, JSON.stringify(defaultValue, null, 2), 'utf-8');
+                console.log(`Recovered corrupted file: ${filePath}`);
+            } catch (writeError) {
+                console.error(`Failed to recover file ${filePath}:`, writeError);
+            }
+        }
         return defaultValue;
     }
 }

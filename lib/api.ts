@@ -187,6 +187,8 @@ export async function createAdminUser(data: {
   phone: string
   username: string
   password: string
+  is_active?: boolean
+  is_approved?: boolean
   permissions?: string[]
 }): Promise<AdminUser> {
   return apiRequest<AdminUser>("/api/auth/admin/users/", {
@@ -627,6 +629,9 @@ export interface WalletTransaction {
 export interface Wallet {
   id: number
   user: number
+  user_id?: number // Alias
+  user_external_id?: string
+  user_username?: string
   balance: string
   transactions: WalletTransaction[]
   created_at: string
@@ -664,16 +669,56 @@ export async function deleteWallet(id: number): Promise<void> {
   })
 }
 
-export interface Referral {
+export interface ReferralTransaction {
   id: number
-  referrer: number
-  referrer_username: string
-  referee: number
-  referee_username: string
-  reward_amount: string
-  status: string
+  amount: string
+  reason: string
+  created_at: string
+}
+
+export interface ReferralWallet {
+  id: number
+  user_id: number
+  user_external_id: string
+  user_username: string
+  balance: string
+  transactions: ReferralTransaction[]
+}
+
+export interface ReferralService {
+  service_id: number
+  service_name: string
+}
+
+export interface ReferralUser {
+  id: number
+  external_id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  username: string
+  role: string
+  referral_code: string
+  nin: string
+  is_approved: boolean
   created_at: string
   updated_at: string
+  wallet?: ReferralWallet
+  services?: ReferralService[]
+}
+
+export interface Referral {
+  id: number
+  referrer: ReferralUser
+  referrer_username?: string // Keep for backward compatibility if needed, though nested object is preferred
+  referred: ReferralUser
+  referee_username?: string // Keep for backward compatibility
+  amount: string // This is the reward amount
+  reward_amount?: string // Alias for compatibility
+  status: string // e.g. 'PAID', 'PENDING' - inferred or added if missing in sample
+  created_at: string
+  updated_at?: string
 }
 
 export async function getReferrals(): Promise<Referral[]> {
@@ -876,6 +921,15 @@ export async function deleteRider(id: number): Promise<void> {
   })
 }
 
+export async function getDeletedRiders(): Promise<Rider[]> {
+  const allDeleted = await getDeletedAdminUsers()
+  return allDeleted.filter(u => u.role === 'RIDER') as unknown as Rider[]
+}
+
+export async function restoreRider(id: number): Promise<Rider> {
+  return restoreAdminUser(id) as unknown as Promise<Rider>
+}
+
 export async function getActiveRiders(search?: string): Promise<Rider[]> {
   const params = new URLSearchParams()
   if (search) params.append("q", search)
@@ -938,6 +992,18 @@ export async function deleteRoadie(id: number): Promise<void> {
   await apiRequest(`/api/auth/admin/roadies/${id}/`, {
     method: "DELETE",
   })
+  await apiRequest(`/api/auth/admin/roadies/${id}/`, {
+    method: "DELETE",
+  })
+}
+
+export async function getDeletedRoadies(): Promise<Roadie[]> {
+  const allDeleted = await getDeletedAdminUsers()
+  return allDeleted.filter(u => u.role === 'ROADIE' || u.role === 'RODIE') as unknown as Roadie[]
+}
+
+export async function restoreRoadie(id: number): Promise<Roadie> {
+  return restoreAdminUser(id) as unknown as Promise<Roadie>
 }
 
 export interface Service {
