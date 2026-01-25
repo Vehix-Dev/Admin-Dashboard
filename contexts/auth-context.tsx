@@ -3,9 +3,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { UserRole, getUserRole, hasPermission, hasAnyPermission, hasAllPermissions, PERMISSIONS } from '@/lib/permissions'
 import type { Permission } from '@/lib/permissions'
-import { getAccessToken, fetchLocalPermissions } from '@/lib/api'
+import { getAccessToken, fetchLocalPermissions, getPlatformConfig } from '@/lib/api'
 import { getAdminProfile } from '@/lib/auth'
 import { InactivityWarning } from '@/components/auth/inactivity-warning'
+import { singleLoginManager } from '@/lib/single-login'
 
 
 export interface User {
@@ -19,6 +20,7 @@ export interface User {
     is_superuser?: boolean
     is_staff?: boolean
     permissions?: string[]
+    two_factor_enabled?: boolean
 }
 
 interface AuthContextType {
@@ -47,15 +49,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [lastActivity, setLastActivity] = useState<number>(Date.now())
     const [showInactivityWarning, setShowInactivityWarning] = useState(false)
     const [warningCountdown, setWarningCountdown] = useState(120)
+    const [loginTimestamp, setLoginTimestamp] = useState<number | null>(null)
+    const [clientIp, setClientIp] = useState<string | null>(null)
+    const [isIpBlocked, setIsIpBlocked] = useState(false)
 
 
     useEffect(() => {
         const initializeAuth = async () => {
+            console.log("[Auth] Initializing...")
             try {
                 const storedUserData = localStorage.getItem('admin_user_data')
+                console.log("[Auth] Stored user data raw:", storedUserData)
                 const parsedStoredUser = storedUserData ? JSON.parse(storedUserData) : null
 
                 if (parsedStoredUser) {
+                    console.log("[Auth] Setting initial user from storage:", parsedStoredUser.username)
                     setUser(parsedStoredUser)
                 }
 
@@ -68,14 +76,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         if (freshUser) {
                             console.log("[Auth] Profile data retrieved:", freshUser.username)
 
+                            // Defensive merge: Only overwrite if freshUser has values
                             const adaptedUser: User = {
                                 ...parsedStoredUser,
                                 ...freshUser,
+                                id: freshUser.id || parsedStoredUser?.id || "unknown",
+                                username: freshUser.username || parsedStoredUser?.username || "",
+                                email: freshUser.email || parsedStoredUser?.email || "",
                                 first_name: freshUser.first_name || parsedStoredUser?.first_name || freshUser.name?.split(' ')[0] || "",
                                 last_name: freshUser.last_name || parsedStoredUser?.last_name || freshUser.name?.split(' ').slice(1).join(' ') || "",
+                                role: freshUser.role || parsedStoredUser?.role || "admin",
                                 is_approved: true,
                             } as any
 
+                            console.log("[Auth] Final adapted user:", adaptedUser)
                             setUser(adaptedUser)
                             localStorage.setItem('admin_user_data', JSON.stringify(adaptedUser))
 
@@ -91,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                     setLocalPermissions(Object.values(PERMISSIONS))
                                 }
                             } catch (e) {
+                                console.error("[Auth] Permission fetch failed:", e)
                                 setLocalPermissions(Object.values(PERMISSIONS))
                             }
                         }
@@ -99,13 +114,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }
                 }
 
-                const storedUser = localStorage.getItem('admin_user_data')
-                if (storedUser && token) {
-                    const userData = JSON.parse(storedUser)
-                    setUser(userData)
+                const savedSidebarState = localStorage.getItem('sidebar_open')
+                if (savedSidebarState !== null) {
+                    setSidebarOpenState(JSON.parse(savedSidebarState))
+                }
 
+                const savedLoginTimestamp = localStorage.getItem('admin_login_timestamp')
+                if (savedLoginTimestamp) {
+                    const timestamp = parseInt(savedLoginTimestamp)
+                    setLoginTimestamp(timestamp)
+
+                    // Immediate check on initialization
+                    const SESSION_DURATION = 60 * 60 * 1000 // 1 hour
+                    if (Date.now() - timestamp >= SESSION_DURATION) {
+                        console.log("[Auth] Absolute session expired on init")
+                        logout()
+                        return
+                    }
+                }
+
+                // If user is from storage but no fresh profile was fetched (or failed), still try to get perms
+                if (parsedStoredUser && !token) {
                     try {
-                        const perms = await fetchLocalPermissions(userData.id)
+                        const perms = await fetchLocalPermissions(parsedStoredUser.id)
                         if (perms && perms.length > 0) {
                             setLocalPermissions(perms)
                         } else {
@@ -115,19 +146,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         setLocalPermissions(Object.values(PERMISSIONS))
                     }
                 }
-
-                const savedSidebarState = localStorage.getItem('sidebar_open')
-                if (savedSidebarState !== null) {
-                    setSidebarOpenState(JSON.parse(savedSidebarState))
-                }
-            } catch (error) {
-                console.error('Failed to initialize auth:', error)
             } finally {
                 setIsLoading(false)
             }
         }
 
-        initializeAuth()
+        const fetchClientIp = async () => {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json')
+                const data = await response.json()
+                setClientIp(data.ip)
+                return data.ip
+            } catch (e) {
+                console.error("[Auth] Failed to fetch client IP", e)
+                return null
+            }
+        }
+
+        const checkIpWhitelist = async (ip: string) => {
+            try {
+                const config = await getPlatformConfig()
+                if (config && config.ip_whitelist_enabled && config.ip_whitelist) {
+                    const whitelist = config.ip_whitelist.split(',').map((item: string) => item.trim())
+                    if (whitelist.length > 0 && !whitelist.includes(ip)) {
+                        console.log("[Auth] IP Blocked:", ip)
+                        setIsIpBlocked(true)
+                    }
+                }
+            } catch (e) {
+                console.error("[Auth] Failed to check IP whitelist", e)
+            }
+        }
+
+        const init = async () => {
+            const ip = await fetchClientIp()
+            if (ip) {
+                await checkIpWhitelist(ip)
+            }
+            await initializeAuth()
+        }
+
+        init()
     }, [])
 
     useEffect(() => {
@@ -138,8 +197,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!user) return
 
-        const INACTIVITY_TIMEOUT = 60 * 60 * 1000
-        const WARNING_TIME = 60 * 1000
+        const INACTIVITY_TIMEOUT = 30 * 60 * 1000 // 30 minutes
+        const WARNING_TIME = 60 * 1000 // 1 minute
 
         const resetActivity = () => {
             setLastActivity(Date.now())
@@ -175,6 +234,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [user, lastActivity, showInactivityWarning])
 
+    // Absolute session timeout check (1 hour from login)
+    useEffect(() => {
+        if (!user || !loginTimestamp) return
+
+        const SESSION_DURATION = 60 * 60 * 1000 // 1 hour
+
+        const checkSessionExpiry = () => {
+            const now = Date.now()
+            if (now - loginTimestamp >= SESSION_DURATION) {
+                console.log("[Auth] Absolute session expired (1 hour reached)")
+                logout()
+            }
+        }
+
+        // Check every minute
+        const interval = setInterval(checkSessionExpiry, 60000)
+
+        // Initial check
+        checkSessionExpiry()
+
+        return () => clearInterval(interval)
+    }, [user, loginTimestamp])
+
 
     const setSidebarOpen = (open: boolean) => {
         setSidebarOpenState(open)
@@ -193,9 +275,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const login = async (userData: User, token: string) => {
+        // Double check IP on login
+        if (clientIp) {
+            try {
+                const config = await getPlatformConfig()
+                if (config && config.ip_whitelist_enabled && config.ip_whitelist) {
+                    const whitelist = config.ip_whitelist.split(',').map((item: string) => item.trim())
+                    if (whitelist.length > 0 && !whitelist.includes(clientIp)) {
+                        setIsIpBlocked(true)
+                        return // Stop login
+                    }
+                }
+            } catch (e) {
+                console.error("[Auth] Login IP check failed", e)
+            }
+        }
+
+        const now = Date.now()
         setUser(userData)
+        setLoginTimestamp(now)
         localStorage.setItem('admin_user_data', JSON.stringify(userData))
         localStorage.setItem('admin_access_token', token)
+        localStorage.setItem('admin_login_timestamp', now.toString())
 
         try {
             const perms = await fetchLocalPermissions(userData.id)
@@ -218,6 +319,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('admin_access_token')
         localStorage.removeItem('admin_refresh_token')
         localStorage.removeItem('sidebar_open')
+        localStorage.removeItem('admin_login_timestamp')
+        localStorage.removeItem('single_login_session')
+        sessionStorage.removeItem('2fa_warning_shown')
         window.location.href = '/login'
     }
 
@@ -265,13 +369,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <AuthContext.Provider value={value}>
-            {children}
-            <InactivityWarning
-                open={showInactivityWarning}
-                remainingSeconds={warningCountdown}
-                onStayLoggedIn={handleStayLoggedIn}
-                onLogout={logout}
-            />
+            {isIpBlocked ? (
+                <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+                    <div className="max-w-md w-full space-y-8 text-center">
+                        <h1 className="text-2xl font-mono text-slate-800">System Maintenance</h1>
+                        <p className="text-slate-600 font-mono text-sm leading-relaxed">
+                            Error Code: 0x8004100E<br />
+                            The requested resource is temporarily unavailable due to scheduled maintenance.
+                            Please try again in approximately 42 minutes.
+                            If the problem persists, contact your network administrator.
+                        </p>
+                        <div className="pt-8 text-[10px] text-slate-400 font-mono">
+                            SESSION_ID: {Math.random().toString(36).substring(7).toUpperCase()}
+                            <br />
+                            TRACE_ID: {Math.random().toString(36).substring(7).toUpperCase()}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {children}
+                    <InactivityWarning
+                        open={showInactivityWarning}
+                        remainingSeconds={warningCountdown}
+                        onStayLoggedIn={handleStayLoggedIn}
+                        onLogout={logout}
+                    />
+                </>
+            )}
         </AuthContext.Provider>
     )
 }

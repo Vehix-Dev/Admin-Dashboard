@@ -9,11 +9,12 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
-import { loginAdmin, getAdminProfile } from "@/lib/auth"
+import { loginAdmin, getAdminProfile, removeAuthTokens, setAuthToken, setRefreshToken } from "@/lib/auth"
 import { checkBackendConnection } from "@/lib/api"
-import { Loader2, AlertCircle, Lock, User as UserIcon, Server } from "lucide-react"
+import { Loader2, AlertCircle, Lock, User as UserIcon, Server, ShieldCheck } from "lucide-react"
 import { useAuth, type User } from "@/contexts/auth-context"
-import ReCAPTCHA from "react-google-recaptcha"
+import { get2FAStatus, verify2FA } from "@/lib/2fa-client"
+import { singleLoginManager } from "@/lib/single-login"
 
 export default function LoginPage() {
   const { login: authLogin } = useAuth()
@@ -23,7 +24,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isCheckingConnection, setIsCheckingConnection] = useState(true)
   const [connectionError, setConnectionError] = useState<string | null>(null)
-  const [captchaValue, setCaptchaValue] = useState<string | null>(null)
+
+  // 2FA States
+  const [showTwoFactor, setShowTwoFactor] = useState(false)
+  const [twoFactorCode, setTwoFactorCode] = useState("")
+  const [pendingUser, setPendingUser] = useState<any>(null)
+  const [pendingTokens, setPendingTokens] = useState<{ access: string, refresh: string } | null>(null)
+
   const router = useRouter()
   const { toast } = useToast()
 
@@ -56,44 +63,46 @@ export default function LoginPage() {
       return
     }
 
-    if (!captchaValue) {
-      toast({
-        title: "Verification Required",
-        description: "Please complete the captcha verification",
-        variant: "destructive",
-      })
-      return
-    }
-
     setIsLoading(true)
 
     try {
       const loginResponse = await loginAdmin(username, password)
+
       const user = loginResponse.user ? {
         ...loginResponse.user,
         id: String(loginResponse.user.id),
         name: `${loginResponse.user.first_name} ${loginResponse.user.last_name}`,
       } : await getAdminProfile()
 
-      if (user) {
-        const token = localStorage.getItem('admin_access_token') || ""
-        const adaptedUser: User = {
-          ...user,
-          first_name: user.first_name || user.name?.split(' ')[0] || "",
-          last_name: user.last_name || user.name?.split(' ').slice(1).join(' ') || "",
-          is_approved: true
-        } as any
-
-        authLogin(adaptedUser as any, token)
-
-        toast({
-          title: "Login successful",
-          description: `Welcome back, ${user.name}!`,
-        })
-        router.push("/admin")
-      } else {
+      if (!user) {
         throw new Error("Failed to get user profile")
       }
+
+      // Check 2FA Status
+      let is2faEnabled = false;
+      try {
+        const status = await get2FAStatus(user.username || username);
+        is2faEnabled = status.enabled;
+      } catch (err) {
+        console.error("2FA Check failed", err);
+        // Fallback or error? For now, assume false or continue.
+      }
+
+      const tokens = { access: loginResponse.access, refresh: loginResponse.refresh };
+
+      if (is2faEnabled) {
+        // 2FA is enabled.
+        // IMPORTANT: Remove tokens from storage to prevent auto-login on refresh before 2FA check
+        removeAuthTokens();
+
+        setPendingUser(user);
+        setPendingTokens(tokens);
+        setShowTwoFactor(true);
+      } else {
+        // 2FA disabled, proceed with login
+        completeLogin(user, tokens);
+      }
+
     } catch (error) {
       console.error("Login error:", error)
       let errorMessage = "Invalid username or password. Please try again."
@@ -116,8 +125,75 @@ export default function LoginPage() {
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      if (!showTwoFactor) {
+        setIsLoading(false)
+      }
     }
+  }
+
+  const handleTwoFactorVerify = async (e?: React.FormEvent, code?: string) => {
+    if (e) e.preventDefault();
+    const finalCode = code || twoFactorCode;
+    if (finalCode.length !== 6) return;
+
+    setIsLoading(true);
+    console.log("LoginPage: Verifying 2FA for code", finalCode);
+
+    try {
+      const usernameToVerify = pendingUser?.username || username;
+      const result = await verify2FA(usernameToVerify, finalCode);
+      console.log("LoginPage: 2FA Verification result", result);
+
+      if (result.valid) {
+        if (pendingUser && pendingTokens) {
+          console.log("LoginPage: 2FA Success. Completing login.");
+          setAuthToken(pendingTokens.access);
+          setRefreshToken(pendingTokens.refresh);
+          completeLogin(pendingUser, pendingTokens);
+        } else {
+          throw new Error("Session lost. Please try logging in again.");
+        }
+      } else {
+        console.warn("LoginPage: 2FA Code Invalid.");
+        toast({
+          title: "Invalid Code",
+          description: "The authentication code is invalid. Please try again.",
+          variant: "destructive",
+        });
+        setTwoFactorCode(""); // Clear wrong code
+        setIsLoading(false);
+      }
+
+    } catch (error) {
+      console.error("LoginPage: 2FA Error:", error);
+      toast({
+        title: "Verification Failed",
+        description: "An error occurred during verification",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  }
+
+  const completeLogin = (user: any, tokens: { access: string }) => {
+    const adaptedUser: User = {
+      ...user,
+      first_name: user.first_name || user.name?.split(' ')[0] || "",
+      last_name: user.last_name || user.name?.split(' ').slice(1).join(' ') || "",
+      is_approved: true
+    } as any
+
+    // Set user in single login manager and broadcast login
+    singleLoginManager.setUser(adaptedUser.id)
+    singleLoginManager.broadcastLogin(adaptedUser.id)
+
+    authLogin(adaptedUser as any, tokens.access)
+
+    toast({
+      title: "Login successful",
+      description: `Welcome back, ${user.name}!`,
+    })
+    router.push("/admin")
   }
 
   if (isCheckingConnection) {
@@ -196,7 +272,7 @@ export default function LoginPage() {
               Vehix Admin
             </CardTitle>
             <CardDescription className="text-white/80">
-              Secure Access to Administration Panel
+              {showTwoFactor ? "Two-Factor Authentication" : "Secure Access to Administration Panel"}
             </CardDescription>
           </div>
         </CardHeader>
@@ -214,75 +290,129 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium text-white/90">
-                  <UserIcon className="mr-2 inline h-4 w-4" />
-                  Username
-                </Label>
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 blur-sm" />
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="admin@vehix.com"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    disabled={isLoading || !!connectionError}
-                    autoComplete="username"
-                    className="relative border-white/30 bg-white/5 text-white placeholder:text-white/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
-                  />
+          {!showTwoFactor ? (
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-medium text-white/90">
+                    <UserIcon className="mr-2 inline h-4 w-4" />
+                    Username
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 blur-sm" />
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="admin@vehix.com"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                      disabled={isLoading || !!connectionError}
+                      autoComplete="username"
+                      className="relative border-white/30 bg-white/5 text-white placeholder:text-white/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium text-white/90">
+                    <Lock className="mr-2 inline h-4 w-4" />
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent/10 to-secondary/10 blur-sm" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading || !!connectionError}
+                      autoComplete="current-password"
+                      className="relative border-white/30 bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/30"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-white/90">
-                  <Lock className="mr-2 inline h-4 w-4" />
-                  Password
-                </Label>
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent/10 to-secondary/10 blur-sm" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading || !!connectionError}
-                    autoComplete="current-password"
-                    className="relative border-white/30 bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/30"
-                  />
+              <Button
+                type="submit"
+                className="group relative w-full overflow-hidden bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 disabled:opacity-50 disabled:cursor-not-allowed h-12 text-base font-semibold"
+                disabled={isLoading || !!connectionError}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <Lock className="mr-2 h-5 w-5" />
+                )}
+                Sign In
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleTwoFactorVerify} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="2fa" className="text-sm font-medium text-white/90">
+                    <ShieldCheck className="mr-2 inline h-4 w-4" />
+                    Authentication Code
+                  </Label>
+                  <p className="text-xs text-white/60">
+                    Please enter the 6-digit code from your authenticator app.
+                  </p>
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 blur-sm" />
+                    <Input
+                      id="2fa"
+                      type="text"
+                      placeholder="000 000"
+                      value={twoFactorCode}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                        setTwoFactorCode(val);
+                        if (val.length === 6) {
+                          handleTwoFactorVerify(undefined, val);
+                        }
+                      }}
+                      required
+                      autoFocus
+                      maxLength={6}
+                      disabled={isLoading}
+                      className="relative border-white/30 bg-white/5 text-white placeholder:text-white/50 focus:border-primary focus:ring-2 focus:ring-primary/30 text-center text-3xl tracking-[0.5em] h-16 font-mono"
+                    />
+                  </div>
+                  {isLoading && (
+                    <div className="flex justify-center mt-2">
+                      <div className="flex items-center gap-2 text-primary text-sm animate-pulse">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Verifying...
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-center py-2 h-[80px]">
-              <ReCAPTCHA
-                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
-                onChange={(val) => setCaptchaValue(val)}
-                theme="dark"
-              />
-            </div>
-
-
-
-            <Button
-              type="submit"
-              className="group relative w-full overflow-hidden bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 disabled:opacity-50 disabled:cursor-not-allowed h-12 text-base font-semibold"
-              disabled={isLoading || !!connectionError}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-              {isLoading ? (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              ) : (
-                <Lock className="mr-2 h-5 w-5" />
-              )}
-              Sign In
-            </Button>
-          </form>
+              <div className="flex flex-col gap-3">
+                {/* Submit button hidden but present for accessibility/forms */}
+                <button type="submit" className="hidden" aria-hidden="true" />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-white/60 hover:text-white"
+                  onClick={() => {
+                    setShowTwoFactor(false);
+                    setPendingUser(null);
+                    setPendingTokens(null);
+                    // Ensure tokens are cleared
+                    removeAuthTokens();
+                  }}
+                >
+                  Back to Login
+                </Button>
+              </div>
+            </form>
+          )}
 
           {connectionError && (
             <div className="mt-8 rounded-xl border border-red-500/20 bg-gradient-to-br from-red-900/10 to-red-900/5 p-5 backdrop-blur-sm">
