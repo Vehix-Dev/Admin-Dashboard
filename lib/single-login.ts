@@ -19,9 +19,9 @@ export class SingleLoginManager {
       this.channel.onmessage = (event) => {
         const { type, userId, sessionId } = event.data
 
-        if (type === 'LOGIN' && userId && sessionId !== this.sessionId) {
+        if (type === 'LOGIN' && userId && sessionId !== this.sessionId && userId === this.userId) {
           // Another tab logged in with the same user
-          console.log('[SingleLogin] Another tab logged in, logging out this tab')
+          console.log('[SingleLogin] Another tab logged in with same user, logging out this tab')
           this.handleLogout()
         }
       }

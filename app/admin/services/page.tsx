@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
@@ -15,6 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -30,6 +31,11 @@ import {
   Tag,
   Clock,
   Check,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
+  Eye,
+  Download,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +48,28 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ServiceFormModal } from "@/components/forms/service-form-modal"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
@@ -50,6 +78,9 @@ export default function ServicesPage() {
   const [isSearching, setIsSearching] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{ url: string; serviceName: string } | null>(null)
+  const [uploadingImage, setUploadingImage] = useState<number | null>(null)
+  const [imageToDelete, setImageToDelete] = useState<{ serviceId: number; serviceName: string } | null>(null)
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
@@ -60,6 +91,7 @@ export default function ServicesPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   const { toast } = useToast()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Permission checks
   const canAdd = useCan(PERMISSIONS.SERVICES_ADD)
@@ -108,7 +140,7 @@ export default function ServicesPage() {
       setServices(data)
       setFilteredServices(data)
     } catch (err) {
-      console.error(" Services fetch error:", err)
+      console.error("Services fetch error:", err)
       toast({
         title: "Error",
         description: "Failed to load services data.",
@@ -160,12 +192,14 @@ export default function ServicesPage() {
     setFilteredServices(filtered)
   }, [searchQuery, statusFilter, startDate, endDate, services])
 
-  const handleCreate = async (data: Partial<Service>) => {
+  const handleCreate = async (data: Partial<Service> & { image?: File }) => {
     try {
       const serviceData = {
         name: data.name || "",
         code: data.code || "",
+        fixed_price: data.fixed_price,
         is_active: data.is_active !== undefined ? data.is_active : true,
+        image: data.image,
       }
 
       await createService(serviceData)
@@ -184,7 +218,7 @@ export default function ServicesPage() {
     }
   }
 
-  const handleEdit = async (data: Partial<Service>) => {
+  const handleEdit = async (data: Partial<Service> & { image?: File | null }) => {
     if (!editingService) return
 
     try {
@@ -247,15 +281,58 @@ export default function ServicesPage() {
     }
   }
 
+  const handleImageUpload = async (serviceId: number, file: File) => {
+    if (!file) return
+
+    setUploadingImage(serviceId)
+    try {
+      await updateService(serviceId, { image: file })
+      toast({
+        title: "Success",
+        description: "Service image uploaded successfully"
+      })
+      fetchServices()
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive"
+      })
+    } finally {
+      setUploadingImage(null)
+    }
+  }
+
+  const handleImageDelete = async () => {
+    if (!imageToDelete) return
+
+    try {
+      await updateService(imageToDelete.serviceId, { image: null })
+      toast({
+        title: "Success",
+        description: "Service image removed successfully"
+      })
+      fetchServices()
+      setImageToDelete(null)
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to remove image",
+        variant: "destructive"
+      })
+    }
+  }
+
   const handleExport = () => {
     try {
-      const headers = ['ID', 'Name', 'Code', 'Status', 'Roadies Offering', 'Created At']
+      const headers = ['ID', 'Name', 'Code', 'Status', 'Roadies Offering', 'Image URL', 'Created At']
       const csvData = services.map(service => [
         service.id,
         `"${service.name}"`,
         service.code,
         service.is_active ? 'Active' : 'Inactive',
         service.rodie_count || 0,
+        service.image || 'No image',
         new Date(service.created_at).toLocaleDateString()
       ])
 
@@ -291,19 +368,144 @@ export default function ServicesPage() {
     return name?.charAt(0).toUpperCase() || 'S'
   }
 
+  const ServiceImageCell = ({ service }: { service: Service }) => {
+    const [isUploading, setIsUploading] = useState(false)
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file && canChange) {
+        setIsUploading(true)
+        await handleImageUpload(service.id, file)
+        setIsUploading(false)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      }
+    }
+
+    return (
+      <div className="flex flex-col items-center gap-2">
+        {service.image ? (
+          <div className="relative group">
+            <div
+              className="w-12 h-12 rounded-lg overflow-hidden border border-border bg-gradient-to-br from-primary/10 to-primary/5 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setSelectedImage({ url: service.image!, serviceName: service.name })}
+            >
+              <img
+                src={service.image}
+                alt={service.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.parentElement!.innerHTML = `
+                    <div class="w-full h-full flex items-center justify-center bg-muted">
+                      <ImageIcon class="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  `
+                }}
+              />
+            </div>
+            {canChange && (
+              <div className="absolute inset-0 bg-black/60 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 bg-background/80 hover:bg-background"
+                  onClick={() => setSelectedImage({ url: service.image!, serviceName: service.name })}
+                >
+                  <Eye className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 bg-background/80 hover:bg-background"
+                  onClick={() => setImageToDelete({ serviceId: service.id, serviceName: service.name })}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative">
+            <div
+              className="w-12 h-12 rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors"
+              onClick={() => canChange && fileInputRef.current?.click()}
+            >
+              {isUploading || uploadingImage === service.id ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <>
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-[8px] text-muted-foreground">Upload</span>
+                </>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={!canChange || isUploading || uploadingImage === service.id}
+            />
+          </div>
+        )}
+        {service.image && (
+          <div className="flex items-center gap-1">
+            <Badge
+              variant="outline"
+              className="text-[8px] h-4 px-1 bg-green-500/10 text-green-600 border-green-500/20"
+            >
+              Has Image
+            </Badge>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const columns = [
+    {
+      header: "Image",
+      accessor: (row: Service) => row,
+      cell: (value: Service) => <ServiceImageCell service={value} />,
+      width: "80px",
+    },
     {
       header: "Service Details",
       accessor: "name" as const,
       cell: (value: string, row: Service) => (
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center text-primary font-bold text-lg">
-            {getInitials(value || row.code)}
+            {row.image ? (
+              <img
+                src={row.image}
+                alt={value}
+                className="h-8 w-8 rounded-lg object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.parentElement!.innerHTML = getInitials(value || row.code)
+                }}
+              />
+            ) : (
+              getInitials(value || row.code)
+            )}
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-foreground text-sm">{value || "Unnamed Service"}</span>
             <span className="text-xs text-muted-foreground font-mono">CODE: {row.code}</span>
           </div>
+        </div>
+      )
+    },
+    {
+      header: "Fixed Price",
+      accessor: "fixed_price" as const,
+      cell: (value: string) => (
+        <div className="flex items-center gap-1.5 font-mono font-medium text-foreground">
+          <Tag className="h-3 w-3 text-muted-foreground" />
+          <span>{value ? `UGX ${parseFloat(value).toLocaleString()}` : 'N/A'}</span>
         </div>
       )
     },
@@ -370,7 +572,8 @@ export default function ServicesPage() {
     total: services.length,
     active: services.filter(s => s.is_active).length,
     inactive: services.filter(s => !s.is_active).length,
-    totalRoadies: services.reduce((sum, service) => sum + (service.rodie_count || 0), 0)
+    totalRoadies: services.reduce((sum, service) => sum + (service.rodie_count || 0), 0),
+    withImages: services.filter(s => s.image).length,
   }
 
   const totalServices = filteredServices.length
@@ -410,7 +613,7 @@ export default function ServicesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono">
         <Card className="border-border/50 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
@@ -438,11 +641,23 @@ export default function ServicesPage() {
         <Card className="border-border/50 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Total Coverage</p>
-              <p className="text-2xl font-bold mt-1 text-blue-500">{stats.totalRoadies}</p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">With Images</p>
+              <p className="text-2xl font-bold mt-1 text-blue-500">{stats.withImages}</p>
             </div>
             <div className="bg-blue-500/10 p-2.5 rounded-xl">
-              <Users className="h-5 w-5 text-blue-500" />
+              <ImageIcon className="h-5 w-5 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Total Coverage</p>
+              <p className="text-2xl font-bold mt-1 text-purple-500">{stats.totalRoadies}</p>
+            </div>
+            <div className="bg-purple-500/10 p-2.5 rounded-xl">
+              <Users className="h-5 w-5 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -667,13 +882,86 @@ export default function ServicesPage() {
                   <span className="text-muted-foreground">Roadie Count:</span>
                   <span className="text-white">{service.rodie_count || 0}</span>
                 </div>
+                {service.image && (
+                  <div className="flex justify-between text-sm items-center">
+                    <span className="text-muted-foreground">Has Image:</span>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                      Yes
+                    </Badge>
+                  </div>
+                )}
               </div>
             )}
-            initialSortColumn={3}
+            initialSortColumn={4}
             initialSortDirection="desc"
           />
         )}
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-mono">Image Preview: {selectedImage?.serviceName}</DialogTitle>
+            <DialogDescription>
+              Service image preview. Click the download button to save the image.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-full h-96 rounded-lg overflow-hidden border border-border bg-muted">
+              {selectedImage && (
+                <img
+                  src={selectedImage.url}
+                  alt={selectedImage.serviceName}
+                  className="w-full h-full object-contain"
+                />
+              )}
+            </div>
+            <div className="flex gap-2 w-full justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (selectedImage) {
+                    const link = document.createElement('a')
+                    link.href = selectedImage.url
+                    link.download = `${selectedImage.serviceName.replace(/\s+/g, '-')}-image.jpg`
+                    link.click()
+                  }
+                }}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download Image
+              </Button>
+              <Button onClick={() => setSelectedImage(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Image Confirmation Dialog */}
+      <AlertDialog open={!!imageToDelete} onOpenChange={(open) => !open && setImageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Service Image</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove the image for service "{imageToDelete?.serviceName}"?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleImageDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove Image
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create Modal */}
       <ServiceFormModal

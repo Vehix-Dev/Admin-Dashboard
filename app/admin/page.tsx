@@ -52,6 +52,7 @@ import {
   PolarRadiusAxis
 } from "recharts"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { cn } from "@/lib/utils"
 
 interface DashboardStats {
   // Basic Stats
@@ -656,113 +657,126 @@ export default function AdminDashboardPage() {
         <>
           {/* Key Performance Indicators */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Service Requests"
-              value={stats.totalRequests}
-              icon={<Wrench className="h-5 w-5" />}
-              iconBg="bg-blue-500"
-              subtext={`${stats.activeRequests} active • ${stats.completedRequests} completed`}
-              trend={`${stats.completionRate}% completion rate`}
-            />
+            <Link href="/admin/requests" className="block">
+              <StatCard
+                title="Total Service Requests"
+                value={stats.totalRequests}
+                icon={<Wrench className="h-5 w-5" />}
+                iconBg="bg-blue-500"
+                subtext={`${stats.activeRequests} active • ${stats.completedRequests} completed`}
+                trend={`${stats.completionRate}% completion rate`}
+                className="hover:border-blue-500/50 transition-all cursor-pointer"
+              />
+            </Link>
 
-            <StatCard
-              title="Active Users"
-              value={stats.activeRiders + stats.activeRoadies}
-              icon={<Activity className="h-5 w-5" />}
-              iconBg="bg-emerald-500"
-              subtext={`${stats.activeRiders} riders • ${stats.activeRoadies} providers`}
-              trend={`${stats.acceptanceRate}% request acceptance`}
-            />
+            <Link href="/admin/reports/users" className="block">
+              <StatCard
+                title="Active Users"
+                value={stats.activeRiders + stats.activeRoadies}
+                icon={<Activity className="h-5 w-5" />}
+                iconBg="bg-emerald-500"
+                subtext={`${stats.activeRiders} riders • ${stats.activeRoadies} providers`}
+                trend={`${stats.acceptanceRate}% request acceptance`}
+                className="hover:border-emerald-500/50 transition-all cursor-pointer"
+              />
+            </Link>
 
-            <StatCard
-              title="Platform Health"
-              value={stats.platformHealth.satisfaction}
-              icon={<ThumbsUp className="h-5 w-5" />}
-              iconBg="bg-amber-500"
-              subtext="Service satisfaction score"
-              trend={`${stats.averageResponseTime}min avg. response`}
-              isPercentage={true}
-            />
+            <Link href="/admin/reports" className="block">
+              <StatCard
+                title="Platform Health"
+                value={stats.platformHealth.satisfaction}
+                icon={<ThumbsUp className="h-5 w-5" />}
+                iconBg="bg-amber-500"
+                subtext="Service satisfaction score"
+                trend={`${stats.averageResponseTime}min avg. response`}
+                isPercentage={true}
+                className="hover:border-amber-500/50 transition-all cursor-pointer"
+              />
+            </Link>
 
-            <StatCard
-              title="Realtime Activity"
-              value={stats.activeLocations}
-              icon={<MapPin className="h-5 w-5" />}
-              iconBg="bg-purple-500"
-              subtext={`${stats.enRouteAssignments} en route assignments`}
-              trend="Live updates every 30s"
-            />
+            <Link href="/admin/live-map" className="block">
+              <StatCard
+                title="Realtime Activity"
+                value={stats.activeLocations}
+                icon={<MapPin className="h-5 w-5" />}
+                iconBg="bg-purple-500"
+                subtext={`${stats.enRouteAssignments} en route assignments`}
+                trend="Live updates every 30s"
+                className="hover:border-purple-500/50 transition-all cursor-pointer"
+              />
+            </Link>
           </div>
 
           {/* User Statistics */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-foreground">Total Customers</h3>
-                <Users className="h-5 w-5 text-blue-500" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-foreground">{stats.totalRiders}</span>
-                  <div className="text-sm px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300">
-                    {stats.approvedRiders} approved
+            <Link href="/admin/riders" className="block group">
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm group-hover:border-blue-500/30 transition-all cursor-pointer">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Total Customers</h3>
+                  <Users className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-3xl font-bold text-foreground">{stats.totalRiders}</span>
+                    <div className="text-sm px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300">
+                      {stats.approvedRiders} approved
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground transition-colors group-hover:text-blue-500/70">
+                    <span>Pending: {stats.pendingRiders}</span>
+                    <span>{stats.activeRiders} active</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Pending: {stats.pendingRiders}</span>
-                  <span>{stats.activeRiders} active</span>
-                </div>
               </div>
-            </div>
+            </Link>
 
-            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-foreground">Total Providers</h3>
-                <UserCheck className="h-5 w-5 text-emerald-500" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-foreground">{stats.totalRoadies}</span>
-                  <div className="text-sm px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
-                    {stats.approvedRoadies} approved
+            <Link href="/admin/roadies" className="block group">
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm group-hover:border-emerald-500/30 transition-all cursor-pointer">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Total Providers</h3>
+                  <UserCheck className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-3xl font-bold text-foreground">{stats.totalRoadies}</span>
+                    <div className="text-sm px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">
+                      {stats.approvedRoadies} approved
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground transition-colors group-hover:text-emerald-500/70">
+                    <span>Pending: {stats.pendingRoadies}</span>
+                    <span>{stats.activeRoadies} active</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Pending: {stats.pendingRoadies}</span>
-                  <span>{stats.activeRoadies} active</span>
-                </div>
               </div>
-            </div>
+            </Link>
 
-            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-foreground">Service Status</h3>
-                <Target className="h-5 w-5 text-purple-500" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-3xl font-bold text-foreground">{stats.totalServices}</span>
-                  <div className="text-sm px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300">
-                    Services
-                  </div>
+            <Link href="/admin/services" className="block group">
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm group-hover:border-purple-500/30 transition-all cursor-pointer">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Service Status</h3>
+                  <Target className="h-5 w-5 text-purple-500 group-hover:scale-110 transition-transform" />
                 </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Active Requests:</span>
-                    <span className="font-medium text-foreground">{stats.activeRequests}</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-3xl font-bold text-foreground">{stats.totalServices}</span>
+                    <div className="text-sm px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300">
+                      Services
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Completed Today:</span>
-                    <span className="font-medium text-foreground">
-                      {stats.recentRequests.filter(r =>
-                        r.status === 'completed' &&
-                        new Date(r.created_at).toDateString() === new Date().toDateString()
-                      ).length}
-                    </span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Active Requests:</span>
+                      <span className="font-medium text-foreground transition-colors group-hover:text-purple-500">{stats.activeRequests}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground font-medium group-hover:text-purple-400">View Catalog</span>
+                      <ArrowUpRight className="h-3 w-3 text-purple-500 opacity-0 group-hover:opacity-100" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
 
             <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
@@ -923,44 +937,42 @@ export default function AdminDashboardPage() {
               {stats.topRiders.length > 0 ? (
                 <div className="space-y-3">
                   {stats.topRiders.map((rider, index) => (
-                    <div key={rider.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <Avatar className="h-8 w-8 border-2 border-border">
-                            {rider.profileImage ? (
-                              <AvatarImage
-                                src={rider.profileImage}
-                                alt={`${rider.firstName} ${rider.lastName}`}
-                                className="object-cover"
-                              />
-                            ) : null}
-                            <AvatarFallback className="bg-muted text-muted-foreground text-xs font-bold">
-                              {getInitials(rider.firstName, rider.lastName)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-foreground text-background text-[10px] font-bold rounded-full border border-background">
-                            {index + 1}
+                    <Link key={rider.id} href={`/admin/riders/${rider.id}`} className="block">
+                      <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <Avatar className="h-8 w-8 border-2 border-border group-hover:border-primary/50 transition-colors">
+                              {rider.profileImage ? (
+                                <AvatarImage
+                                  src={rider.profileImage}
+                                  alt={`${rider.firstName} ${rider.lastName}`}
+                                  className="object-cover"
+                                />
+                              ) : null}
+                              <AvatarFallback className="bg-muted text-muted-foreground text-xs font-bold">
+                                {getInitials(rider.firstName, rider.lastName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-foreground text-background text-[10px] font-bold rounded-full border border-background">
+                              {index + 1}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">
-                            {rider.firstName} {rider.lastName}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="truncate">@{rider.username}</span>
-                            <div className="flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3 text-green-500" />
-                              <span>{rider.completedRequests}/{rider.totalRequests}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                              {rider.firstName} {rider.lastName}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="truncate">@{rider.username}</span>
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3 text-green-500" />
+                                <span>{rider.completedRequests} completed</span>
+                              </div>
                             </div>
                           </div>
                         </div>
+                        <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs text-muted-foreground truncate max-w-[100px]">
-                          {rider.phone}
-                        </div>
-                      </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -987,64 +999,69 @@ export default function AdminDashboardPage() {
               {stats.topRoadies.length > 0 ? (
                 <div className="space-y-3">
                   {stats.topRoadies.map((roadie, index) => (
-                    <div key={roadie.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <Avatar className={`h-9 w-9 border-2 ${index === 0 ? 'border-amber-300' :
-                            index === 1 ? 'border-gray-300' :
-                              index === 2 ? 'border-orange-300' : 'border-blue-300'
-                            }`}>
-                            {roadie.profileImage ? (
-                              <AvatarImage
-                                src={roadie.profileImage}
-                                alt={`${roadie.firstName} ${roadie.lastName}`}
-                                className="object-cover"
-                              />
-                            ) : null}
-                            <AvatarFallback className={`
-                              ${index === 0 ? 'bg-amber-100 text-amber-700' :
-                                index === 1 ? 'bg-gray-100 text-gray-700' :
-                                  index === 2 ? 'bg-orange-100 text-orange-700' :
-                                    'bg-blue-100 text-blue-700'
-                              } font-bold text-sm
-                            `}>
-                              {getInitials(roadie.firstName, roadie.lastName)}
-                            </AvatarFallback>
-                          </Avatar>
-                          {index < 3 && (
-                            <div className={`
-                              absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center rounded-full
-                              ${index === 0 ? 'bg-amber-500' :
-                                index === 1 ? 'bg-gray-500' :
-                                  'bg-orange-500'
-                              } text-white
-                            `}>
-                              <Award className="h-3 w-3" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">
-                            {roadie.firstName} {roadie.lastName}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="truncate">@{roadie.username}</span>
-                            <div className={`px-1.5 py-0.5 rounded text-xs ${roadie.is_approved
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                              {roadie.is_approved ? 'Approved' : 'Pending'}
+                    <Link key={roadie.id} href={`/admin/roadies/${roadie.id}`} className="block">
+                      <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <Avatar className={`h-9 w-9 border-2 ${index === 0 ? 'border-amber-300' :
+                              index === 1 ? 'border-gray-300' :
+                                index === 2 ? 'border-orange-300' : 'border-blue-300'
+                              } group-hover:scale-105 transition-transform`}>
+                              {roadie.profileImage ? (
+                                <AvatarImage
+                                  src={roadie.profileImage}
+                                  alt={`${roadie.firstName} ${roadie.lastName}`}
+                                  className="object-cover"
+                                />
+                              ) : null}
+                              <AvatarFallback className={`
+                                ${index === 0 ? 'bg-amber-100 text-amber-700' :
+                                  index === 1 ? 'bg-gray-100 text-gray-700' :
+                                    index === 2 ? 'bg-orange-100 text-orange-700' :
+                                      'bg-blue-100 text-blue-700'
+                                } font-bold text-sm
+                              `}>
+                                {getInitials(roadie.firstName, roadie.lastName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            {index < 3 && (
+                              <div className={`
+                                absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center rounded-full
+                                ${index === 0 ? 'bg-amber-500' :
+                                  index === 1 ? 'bg-gray-500' :
+                                    'bg-orange-500'
+                                } text-white
+                              `}>
+                                <Award className="h-3 w-3" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                              {roadie.firstName} {roadie.lastName}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="truncate">@{roadie.username}</span>
+                              <div className={`px-1.5 py-0.5 rounded text-xs ${roadie.is_approved
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                {roadie.is_approved ? 'Approved' : 'Pending'}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold text-foreground">
-                          {roadie.completedRequests}
+                        <div className="text-right flex items-center gap-3">
+                          <div>
+                            <div className="text-sm font-semibold text-foreground group-hover:text-primary">
+                              {roadie.completedRequests}
+                            </div>
+                            <div className="text-xs text-muted-foreground">completed</div>
+                          </div>
+                          <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
                         </div>
-                        <div className="text-xs text-muted-foreground">completed</div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -1071,34 +1088,37 @@ export default function AdminDashboardPage() {
               {stats.recentServiceRequests.length > 0 ? (
                 <div className="space-y-3">
                   {stats.recentServiceRequests.map((request) => (
-                    <div key={request.id} className="p-3 border border-border rounded-lg hover:bg-muted transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="bg-foreground text-background px-2 py-0.5 rounded text-[10px] font-bold">
-                              #{request.id}
+                    <Link key={request.id} href={`/admin/requests/${request.id}`} className="block">
+                      <div className="p-3 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer group">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="bg-foreground text-background px-2 py-0.5 rounded text-[10px] font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                #{request.id}
+                              </div>
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
+                                {request.status}
+                              </span>
                             </div>
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
-                              {request.status}
-                            </span>
+                            <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                              {request.rider}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {getServiceIcon(request.service)}
+                              <span className="text-xs text-muted-foreground truncate">
+                                {request.service}
+                              </span>
+                            </div>
                           </div>
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {request.rider}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            {getServiceIcon(request.service)}
-                            <span className="text-xs text-muted-foreground truncate">
-                              {request.service}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground whitespace-nowrap">
-                            {formatDate(request.created_at)}
+                          <div className="text-right ml-2 flex flex-col items-end gap-1">
+                            <div className="text-xs text-muted-foreground whitespace-nowrap">
+                              {formatDate(request.created_at)}
+                            </div>
+                            <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" />
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -1128,27 +1148,32 @@ export default function AdminDashboardPage() {
               {stats.popularServices.length > 0 ? (
                 <div className="space-y-4">
                   {stats.popularServices.map((service, index) => (
-                    <div key={service.name} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: service.color }}
-                          />
-                          <span className="font-medium text-foreground">{service.name}</span>
+                    <Link key={service.name} href="/admin/services" className="block group/item">
+                      <div className="space-y-2 cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-3 h-3 rounded-full group-hover/item:scale-125 transition-transform"
+                              style={{ backgroundColor: service.color }}
+                            />
+                            <span className="font-medium text-foreground group-hover/item:text-primary transition-colors">{service.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-foreground">{service.count} requests</span>
+                            <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-all" />
+                          </div>
                         </div>
-                        <span className="font-bold text-foreground">{service.count} requests</span>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500 group-hover/item:opacity-80"
+                            style={{
+                              width: `${(service.count / stats.totalRequests) * 100}%`,
+                              backgroundColor: service.color
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${(service.count / stats.totalRequests) * 100}%`,
-                            backgroundColor: service.color
-                          }}
-                        />
-                      </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -1260,6 +1285,7 @@ interface StatCardProps {
   subtext: string
   trend: string
   isPercentage?: boolean
+  className?: string
 }
 
 const StatCard = ({
@@ -1269,7 +1295,8 @@ const StatCard = ({
   iconBg,
   subtext,
   trend,
-  isPercentage = false
+  isPercentage = false,
+  className
 }: StatCardProps) => {
   const formatValue = () => {
     if (isPercentage) return `${value}%`
@@ -1277,7 +1304,7 @@ const StatCard = ({
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className={cn("bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow", className)}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>

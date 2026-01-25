@@ -5,9 +5,11 @@ import {
     getRiders,
     getRoadies,
     getAdminUsers,
+    getServiceRequests,
     type Rider,
     type Roadie,
-    type AdminUser
+    type AdminUser,
+    type ServiceRequest
 } from "@/lib/api"
 import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
@@ -23,7 +25,8 @@ import {
     Filter,
     X,
     Shield,
-    Activity
+    Activity,
+    DollarSign
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -59,6 +62,8 @@ interface UserMetrics {
     usersByRole: Array<{ name: string; value: number; color: string }>
     monthlyGrowth: Array<{ month: string; riders: number; roadies: number; total: number }>
     recentRegistrations: Array<{ username: string; role: string; date: string; approved: boolean }>
+    activeUsers: number
+    averageLTV: number
 }
 
 const COLORS = {
@@ -80,10 +85,11 @@ export default function UserAnalyticsPage() {
     const fetchUserData = async () => {
         setIsLoading(true)
         try {
-            const [riders, roadies, admins] = await Promise.all([
+            const [riders, roadies, admins, requests] = await Promise.all([
                 getRiders(),
                 getRoadies(),
-                getAdminUsers()
+                getAdminUsers(),
+                getServiceRequests()
             ])
 
             const totalUsers = riders.length + roadies.length + admins.length
@@ -146,7 +152,9 @@ export default function UserAnalyticsPage() {
                 approvalRate,
                 usersByRole,
                 monthlyGrowth,
-                recentRegistrations: allUsers
+                recentRegistrations: allUsers,
+                activeUsers: new Set(requests.map(r => r.rider)).size + new Set(requests.filter(r => r.rodie).map(r => r.rodie)).size,
+                averageLTV: requests.filter(r => r.status === 'COMPLETED').length * 5000 / totalUsers // Placeholder LTV
             })
 
         } catch (err: any) {
@@ -270,6 +278,30 @@ export default function UserAnalyticsPage() {
                                 <CardContent>
                                     <div className="text-2xl font-bold text-emerald-500">{metrics.approvalRate.toFixed(1)}%</div>
                                     <p className="text-xs text-muted-foreground mt-1">Riders & Roadies approved</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-transparent">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                                    <Activity className="h-4 w-4 text-cyan-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-cyan-500">{metrics.activeUsers}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Users with at least one request</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-amber-600/20 bg-gradient-to-br from-amber-600/5 to-transparent">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Avg. LTV</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-amber-600" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-amber-600">
+                                        {new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', minimumFractionDigits: 0 }).format(metrics.averageLTV)}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">Estimated Lifetime Value</p>
                                 </CardContent>
                             </Card>
                         </div>

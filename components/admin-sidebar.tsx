@@ -28,7 +28,8 @@ import {
   ArrowLeft,
   DollarSign,
   Mail,
-  FileText
+  FileText,
+  Clock
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -52,6 +53,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
           { name: "Accepted/On going", href: "/admin/requests/accepted", icon: UserCheck, permission: PERMISSIONS.REQUESTS_VIEW },
           { name: "Completed", href: "/admin/requests/completed", icon: CheckCircle, permission: PERMISSIONS.REQUESTS_VIEW },
           { name: "Cancelled", href: "/admin/requests/cancelled", icon: XCircle, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Expired", href: "/admin/requests/expired", icon: Clock, permission: PERMISSIONS.REQUESTS_VIEW },
         ]
       },
       { name: "Live Map", href: "/admin/live-map", icon: Map, permission: PERMISSIONS.MAP_VIEW },
@@ -171,6 +173,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         permission: PERMISSIONS.SETTINGS_VIEW,
         items: [
           { name: "Platform Settings", href: "/admin/settings", icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
+          { name: "Security Settings", href: "/admin/settings/security", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
           { name: "Landing Page", href: "/admin/settings/landing", icon: Globe, permission: PERMISSIONS.SETTINGS_VIEW },
         ]
       },

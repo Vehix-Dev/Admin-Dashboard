@@ -27,7 +27,8 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Calendar,
-    BarChart3
+    BarChart3,
+    CheckCircle
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -78,6 +79,9 @@ interface DashboardMetrics {
         }>
     }
     topServices: Array<{ name: string; count: number }>
+    arpu: number
+    serviceSuccessRate: number
+    arpr: number
 }
 
 export default function ReportsOverviewPage() {
@@ -221,7 +225,10 @@ export default function ReportsOverviewPage() {
                     totalDebt,
                     debtors
                 },
-                topServices
+                topServices,
+                arpu: totalUsers > 0 ? totalRevenue / totalUsers : 0,
+                serviceSuccessRate: completionRate, // For now simplified, but could be more complex
+                arpr: requests.length > 0 ? totalRevenue / requests.length : 0
             })
 
         } catch (err: any) {
@@ -347,6 +354,55 @@ export default function ReportsOverviewPage() {
                                     </CardContent>
                                 </Card>
                             </Link>
+                        </div>
+
+                        {/* Advanced Analytics */}
+                        <div className="grid gap-4 md:grid-cols-4">
+                            <Card className="bg-card/50 border-input/50 shadow-none">
+                                <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+                                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ARPU</CardTitle>
+                                    <Users className="h-3 w-3 text-blue-500/50" />
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <div className="text-lg font-bold text-foreground">{formatCurrency(metrics.arpu)}</div>
+                                    <p className="text-[10px] text-muted-foreground">Average Revenue Per User</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="bg-card/50 border-input/50 shadow-none">
+                                <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+                                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Success Rate</CardTitle>
+                                    <CheckCircle className="h-3 w-3 text-emerald-500/50" />
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <div className="text-lg font-bold text-foreground">{metrics.serviceSuccessRate.toFixed(1)}%</div>
+                                    <p className="text-[10px] text-muted-foreground">Request Completion Efficiency</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="bg-card/50 border-input/50 shadow-none">
+                                <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+                                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ARPR</CardTitle>
+                                    <DollarSign className="h-3 w-3 text-amber-500/50" />
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <div className="text-lg font-bold text-foreground">{formatCurrency(metrics.arpr)}</div>
+                                    <p className="text-[10px] text-muted-foreground">Avg. Revenue Per Request</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="bg-card/50 border-input/50 shadow-none">
+                                <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+                                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Debt Ratio</CardTitle>
+                                    <Activity className="h-3 w-3 text-purple-500/50" />
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <div className="text-lg font-bold text-foreground">
+                                        {metrics.revenue.total > 0 ? ((metrics.financial.totalDebt / metrics.revenue.total) * 100).toFixed(1) : 0}%
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground">Debt vs System Revenue</p>
+                                </CardContent>
+                            </Card>
                         </div>
 
                         {/* Activity Charts */}

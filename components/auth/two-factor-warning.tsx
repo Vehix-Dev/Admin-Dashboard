@@ -11,7 +11,10 @@ export function TwoFactorWarning() {
     const [isVisible, setIsVisible] = useState(false)
 
     useEffect(() => {
-        if (!user) return
+        if (!user) {
+            setIsVisible(false)
+            return
+        }
 
         // Check if 2FA is enabled
         if (user.two_factor_enabled) {
@@ -28,7 +31,7 @@ export function TwoFactorWarning() {
         }, 10000)
 
         return () => clearTimeout(timer)
-    }, [user])
+    }, [user?.id, user?.two_factor_enabled])
 
     // If user enables 2FA while banner is visible (e.g. via another tab or real-time update), hide it
     useEffect(() => {

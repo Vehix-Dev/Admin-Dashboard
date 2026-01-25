@@ -10,6 +10,7 @@ import { getAuthToken } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
 import { PageLoader } from "@/components/ui/page-loader"
 import { PERMISSIONS } from "@/lib/permissions"
+import { TwoFactorWarning } from "@/components/auth/two-factor-warning"
 
 // Map routes to required permissions
 const ROUTE_PERMISSIONS: Record<string, string> = {
@@ -79,6 +80,7 @@ export default function AdminLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <TwoFactorWarning />
       <AdminSidebar />
       <div
         className={`flex flex-1 flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-19'

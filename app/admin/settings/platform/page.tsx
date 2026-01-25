@@ -20,6 +20,7 @@ export default function PlatformConfigPage() {
     const [formData, setFormData] = useState({
         max_negative_balance: "",
         service_fee: "",
+        trial_days: "",
     })
     const canChange = useCan(PERMISSIONS.SETTINGS_CHANGE)
 
@@ -35,6 +36,7 @@ export default function PlatformConfigPage() {
             setFormData({
                 max_negative_balance: data.max_negative_balance,
                 service_fee: data.service_fee,
+                trial_days: String(data.trial_days || 0),
             })
         } catch (err: any) {
             setError(err.message || "Failed to load platform configuration")
@@ -58,6 +60,7 @@ export default function PlatformConfigPage() {
             const updated = await updatePlatformConfig({
                 max_negative_balance: formData.max_negative_balance,
                 service_fee: formData.service_fee,
+                trial_days: parseInt(formData.trial_days),
             })
             setConfig(updated)
             setSuccess("Configuration updated successfully")
@@ -146,6 +149,22 @@ export default function PlatformConfigPage() {
                                 />
                                 <p className="text-sm text-muted-foreground">
                                     Fixed fee charged to Roadies when a service is completed.
+                                </p>
+                            </div>
+
+                            <div className="grid w-full items-center gap-1.5">
+                                <Label htmlFor="trial_days">Trial Period (Days)</Label>
+                                <Input
+                                    type="number"
+                                    id="trial_days"
+                                    name="trial_days"
+                                    placeholder="14"
+                                    value={formData.trial_days}
+                                    onChange={handleChange}
+                                    disabled={!canChange}
+                                />
+                                <p className="text-sm text-muted-foreground">
+                                    Number of days new roadies can use the platform for free before service fees apply.
                                 </p>
                             </div>
                         </div>

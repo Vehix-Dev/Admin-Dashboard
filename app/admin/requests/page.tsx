@@ -833,6 +833,7 @@ export default function RequestsPage() {
             columns={columns}
             onEdit={canChange ? handleEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
+            onExport={() => { }}
             deleteConfirmTitle="Delete Service Request"
             deleteConfirmDescription="Are you sure you want to delete this service request? This action cannot be undone."
             renderConfirmDetails={(row: any) => {

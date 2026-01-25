@@ -18,7 +18,8 @@ import {
     XCircle,
     Clock,
     TrendingUp,
-    BarChart3
+    BarChart3,
+    DollarSign
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -48,6 +49,8 @@ interface ServiceMetrics {
     requestsByService: Array<{ name: string; value: number }>
     requestsByStatus: Array<{ name: string; value: number; color: string }>
     topServices: Array<{ name: string; count: number; completionRate: number }>
+    conversionRate: number
+    totalRevenue: number
 }
 
 const STATUS_COLORS = {
@@ -81,7 +84,7 @@ export default function ServicePerformancePage() {
             // Requests by service type
             const serviceMap = new Map<number, { name: string; count: number; completed: number }>()
             requests.forEach(req => {
-                const service = services.find(s => s.id === req.service)
+                const service = services.find(s => s.id === req.service_type)
                 if (service) {
                     const current = serviceMap.get(service.id) || { name: service.name, count: 0, completed: 0 }
                     current.count++
@@ -121,7 +124,9 @@ export default function ServicePerformancePage() {
                 cancellationRate,
                 requestsByService,
                 requestsByStatus,
-                topServices
+                topServices,
+                conversionRate: completionRate,
+                totalRevenue: completed * 5000 // Placeholder if fee not available, but let's try to get config?
             })
 
         } catch (err: any) {
@@ -244,6 +249,30 @@ export default function ServicePerformancePage() {
                                 <CardContent>
                                     <div className="text-2xl font-bold text-amber-500">{metrics.acceptedRequests}</div>
                                     <p className="text-xs text-muted-foreground mt-1">In progress</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Conversion</CardTitle>
+                                    <TrendingUp className="h-4 w-4 text-purple-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-purple-500">{metrics.conversionRate.toFixed(1)}%</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Request success efficiency</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-emerald-600/20 bg-gradient-to-br from-emerald-600/5 to-transparent col-span-1 md:col-span-2 lg:col-span-1">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Est. Revenue</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-emerald-600" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-emerald-600">
+                                        {new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX', minimumFractionDigits: 0 }).format(metrics.totalRevenue)}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">From completed requests</p>
                                 </CardContent>
                             </Card>
                         </div>

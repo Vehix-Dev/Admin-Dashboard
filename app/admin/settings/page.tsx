@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Upload, Save, Settings, DollarSign, CreditCard } from "lucide-react"
+import { Save, Settings, DollarSign, CreditCard, Clock, Info, ShieldAlert, RefreshCw } from "lucide-react"
 import {
   getPlatformConfig,
   updatePlatformConfig,
@@ -27,6 +27,7 @@ export default function SettingsPage() {
   // Form state for platform config
   const [maxNegativeBalance, setMaxNegativeBalance] = useState("")
   const [serviceFee, setServiceFee] = useState("")
+  const [trialDays, setTrialDays] = useState("")
 
   useEffect(() => {
     loadSettings()
@@ -40,6 +41,7 @@ export default function SettingsPage() {
       setPlatformConfig(config)
       setMaxNegativeBalance(config.max_negative_balance)
       setServiceFee(config.service_fee)
+      setTrialDays(String(config.trial_days || 0))
 
     } catch (error) {
       console.error("Failed to load settings:", error)
@@ -115,7 +117,8 @@ export default function SettingsPage() {
     try {
       const updatedConfig = await updatePlatformConfig({
         max_negative_balance: maxNegativeBalance,
-        service_fee: serviceFee
+        service_fee: serviceFee,
+        trial_days: parseInt(trialDays || "0")
       })
 
       setPlatformConfig(updatedConfig)
@@ -148,89 +151,10 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage system configuration and branding</p>
+        <p className="text-muted-foreground mt-1">Manage system configuration and platform rules</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Branding Card */}
-        <Card className="bg-card border-border shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-foreground">Branding</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Upload your logo for the admin system and login pages
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <Label>Upload New Logo</Label>
-              <div className="border-2 border-dashed border-border rounded p-6 text-center">
-                {logoPreview ? (
-                  <div className="space-y-3">
-                    <img
-                      src={logoPreview || "/placeholder.svg"}
-                      alt="Logo preview"
-                      className="h-20 mx-auto object-contain"
-                    />
-                    <p className="text-sm text-muted-foreground truncate">{logoFile?.name}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Upload className="h-8 w-8 mx-auto text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground">Click to select a logo</p>
-                    <p className="text-xs text-muted-foreground/70">Max 5MB, PNG/JPG/SVG</p>
-                  </div>
-                )}
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoSelect}
-                  className="hidden"
-                  id="logo-input"
-                />
-                <Label htmlFor="logo-input" className="cursor-pointer">
-                  <Button
-                    type="button"
-                    variant={logoPreview ? "outline" : "default"}
-                    size="sm"
-                    className="mt-2"
-                  >
-                    {logoPreview ? "Change Logo" : "Select Logo"}
-                  </Button>
-                </Label>
-              </div>
-            </div>
-
-            {logoPreview && (
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setLogoFile(null)
-                    setLogoPreview(null)
-                  }}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleLogoUpload}
-                  disabled={isUploading}
-                  className="flex-1 gap-2 bg-primary hover:bg-primary/90"
-                >
-                  {isUploading ? (
-                    "Uploading..."
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Upload Logo
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="max-w-2xl">
 
         {/* Platform Configuration Card */}
         <Card className="bg-card border-border shadow-sm">
@@ -291,6 +215,26 @@ export default function SettingsPage() {
                   Fixed fee charged to Roadies when a service is completed.
                 </p>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trialDays">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Trial Period (Days)
+                  </div>
+                </Label>
+                <Input
+                  id="trialDays"
+                  type="number"
+                  min="0"
+                  value={trialDays}
+                  onChange={(e) => setTrialDays(e.target.value)}
+                  placeholder="14"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Number of days new roadies can use the platform for free before service fees apply.
+                </p>
+              </div>
             </div>
 
             <Separator />
@@ -305,6 +249,10 @@ export default function SettingsPage() {
                 <div>
                   <span className="text-muted-foreground">Service Fee:</span>
                   <span className="font-medium ml-2 text-foreground">UGX {platformConfig?.service_fee}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Trial Period:</span>
+                  <span className="font-medium ml-2 text-foreground">{platformConfig?.trial_days || 0} Days</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Last Updated:</span>

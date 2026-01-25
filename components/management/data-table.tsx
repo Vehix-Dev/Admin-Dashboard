@@ -3,9 +3,18 @@
 import type React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Trash2, Edit, Download, ArrowUpDown, RotateCcw } from "lucide-react"
-import { useState } from "react"
+import { Trash2, Edit, Download, ArrowUpDown, RotateCcw, FileText, CheckCircle, ChevronDown } from "lucide-react"
+import { useState, useMemo } from "react"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
 export interface Column<T> {
   header: string
@@ -23,6 +32,8 @@ interface DataTableProps<T extends { id: string | number }> {
   onRestore?: (row: T) => void
   isLoading?: boolean
   onExport?: () => void
+  onBulkDelete?: (rows: T[]) => void
+  onBulkRestore?: (rows: T[]) => void
   title?: string
   pageSize?: number
   initialSortColumn?: number | null
@@ -32,7 +43,14 @@ interface DataTableProps<T extends { id: string | number }> {
   deleteConfirmDescription?: string | ((row: T) => string)
   restoreConfirmTitle?: string | ((row: T) => string)
   restoreConfirmDescription?: string | ((row: T) => string)
+  bulkDeleteConfirmTitle?: string
+  bulkDeleteConfirmDescription?: string
+  bulkRestoreConfirmTitle?: string
+  bulkRestoreConfirmDescription?: string
   renderConfirmDetails?: (row: T) => React.ReactNode
+  // New props for ID sorting
+  externalIdKey?: keyof T // Key for external ID field (e.g., 'externalId', 'referenceId', etc.)
+  defaultSortBy?: "id" | "externalId" | "none" // Default sorting behavior
 }
 
 export function DataTable<T extends { id: string | number }>({
@@ -44,6 +62,8 @@ export function DataTable<T extends { id: string | number }>({
   onRestore,
   isLoading,
   onExport,
+  onBulkDelete,
+  onBulkRestore,
   title,
   pageSize = 10,
   initialSortColumn = null,
@@ -53,37 +73,149 @@ export function DataTable<T extends { id: string | number }>({
   deleteConfirmDescription,
   restoreConfirmTitle,
   restoreConfirmDescription,
+  bulkDeleteConfirmTitle = "Confirm Bulk Deletion",
+  bulkDeleteConfirmDescription = "Are you sure you want to delete the selected records? This action cannot be undone.",
+  bulkRestoreConfirmTitle = "Confirm Bulk Restoration",
+  bulkRestoreConfirmDescription = "Are you sure you want to restore the selected records?",
   renderConfirmDetails,
+  // New props with defaults
+  externalIdKey,
+  defaultSortBy = "id",
 }: DataTableProps<T>) {
   const [sortColumn, setSortColumn] = useState<number | null>(initialSortColumn)
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">(initialSortDirection)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set())
+  const [isBulkActionOpen, setIsBulkActionOpen] = useState(false)
+  const [bulkActionMode, setBulkActionMode] = useState<"delete" | "restore">("delete")
 
   // Modal State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [confirmMode, setConfirmMode] = useState<"delete" | "restore">("delete")
   const [pendingRow, setPendingRow] = useState<T | null>(null)
 
-  const handleExport = () => {
+  // Function to extract sort value based on ID or External ID
+  const getSortValue = (row: T): number => {
+    if (defaultSortBy === "externalId" && externalIdKey) {
+      const externalId = row[externalIdKey]
+      if (typeof externalId === "number") return externalId
+      if (typeof externalId === "string") {
+        const parsed = parseInt(externalId, 10)
+        return isNaN(parsed) ? 0 : parsed
+      }
+    }
+
+    // Default to regular ID
+    if (typeof row.id === "number") return row.id
+    if (typeof row.id === "string") {
+      const parsed = parseInt(row.id, 10)
+      return isNaN(parsed) ? 0 : parsed
+    }
+    return 0
+  }
+
+  const handleExportCSV = (scope: 'all' | 'selected' = 'all') => {
+    const exportData = scope === 'selected'
+      ? data.filter(r => selectedRows.has(r.id))
+      : data
+
+    if (exportData.length === 0) return
+
     const csv = [
       columns.map((col) => col.header).join(","),
-      ...data.map((row) =>
+      ...exportData.map((row) =>
         columns
           .map((col) => {
             const value = typeof col.accessor === "function" ? col.accessor(row) : row[col.accessor]
-            return String(value).replace(/"/g, '""')
+            return `"${String(value || "").replace(/"/g, '""')}"`
           })
           .join(","),
       ),
     ].join("\n")
 
-    const blob = new Blob([csv], { type: "text/csv" })
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `export-${new Date().toISOString().split("T")[0]}.csv`
+    a.download = `${title?.toLowerCase().replace(/\s+/g, '-') || 'export'}-${scope}-${new Date().toISOString().split("T")[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
+  }
+
+  const handleExportPDF = (scope: 'all' | 'selected' = 'all') => {
+    const exportData = scope === 'selected'
+      ? data.filter(r => selectedRows.has(r.id))
+      : data
+
+    if (exportData.length === 0) return
+
+    const doc = new jsPDF()
+
+    // Colours
+    const primaryOrange: [number, number, number] = [240, 90, 40]
+    const secondaryNavy: [number, number, number] = [31, 42, 68]
+
+    // Add Logo
+    try {
+      doc.addImage('/vehix-logo.jpg', 'JPEG', 14, 10, 20, 20)
+    } catch (e) {
+      console.error("Logo failed to load", e)
+    }
+
+    doc.setTextColor(secondaryNavy[0], secondaryNavy[1], secondaryNavy[2])
+    doc.setFontSize(20)
+    doc.text("VEHIX OPS", 38, 20)
+    doc.setFontSize(11)
+    doc.text(`${title || "Export Report"}`, 38, 27)
+
+    doc.setFontSize(9)
+    doc.setTextColor(100, 116, 139) // slate-500
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 140, 20)
+    doc.text(`Type: ${scope === 'all' ? 'Full Export' : 'Selected Records'}`, 140, 26)
+
+    const tableColumn = columns.map(col => col.header)
+    const tableRows = exportData.map(row =>
+      columns.map(col => {
+        const value = typeof col.accessor === "function" ? col.accessor(row) : row[col.accessor]
+        return String(value || "")
+      })
+    )
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        lineColor: [229, 231, 235] as [number, number, number],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: primaryOrange,
+        textColor: [255, 255, 255] as [number, number, number],
+        fontStyle: 'bold',
+        halign: 'left'
+      },
+      alternateRowStyles: {
+        fillColor: [250, 251, 252] as [number, number, number]
+      },
+      margin: { top: 35 },
+      didDrawPage: (data) => {
+        // Footer
+        const str = `Page ${doc.internal.pages.length - 1}`
+        doc.setFontSize(8)
+        doc.setTextColor(150)
+        doc.text(
+          str,
+          doc.internal.pageSize.width - 20,
+          doc.internal.pageSize.height - 10
+        )
+      }
+    })
+
+    doc.save(`${title?.toLowerCase().replace(/\s+/g, '-') || 'export'}-${scope}-${new Date().toISOString().split("T")[0]}.pdf`)
   }
 
   const handleSort = (columnIndex: number) => {
@@ -95,19 +227,40 @@ export function DataTable<T extends { id: string | number }>({
     }
   }
 
-  const sortedData = [...data].sort((a, b) => {
-    if (sortColumn === null) return 0
-    const column = columns[sortColumn]
-    const aValue = typeof column.accessor === "function" ? column.accessor(a) : a[column.accessor]
-    const bValue = typeof column.accessor === "function" ? column.accessor(b) : b[column.accessor]
+  // Enhanced sorting logic that includes default ID-based sorting
+  const sortedData = useMemo(() => {
+    const dataCopy = [...data]
 
-    if (aValue === null || aValue === undefined) return 1
-    if (bValue === null || bValue === undefined) return -1
+    // If no column is selected for sorting, apply default ID sorting
+    if (sortColumn === null && defaultSortBy !== "none") {
+      return dataCopy.sort((a, b) => {
+        const aValue = getSortValue(a)
+        const bValue = getSortValue(b)
+        // By default, sort descending (higher IDs on top)
+        return bValue - aValue
+      })
+    }
 
-    if (aValue < bValue) return sortDirection === "desc" ? 1 : -1
-    if (aValue > bValue) return sortDirection === "desc" ? -1 : 1
-    return 0
-  })
+    // If a column is selected for sorting, use column-based sorting
+    return dataCopy.sort((a, b) => {
+      const column = columns[sortColumn!]
+      const aValue = typeof column.accessor === "function" ? column.accessor(a) : a[column.accessor]
+      const bValue = typeof column.accessor === "function" ? column.accessor(b) : b[column.accessor]
+
+      if (aValue === null || aValue === undefined) return 1
+      if (bValue === null || bValue === undefined) return -1
+
+      // Handle numeric comparison for numbers
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === "desc" ? bValue - aValue : aValue - bValue
+      }
+
+      // Handle string comparison
+      if (aValue < bValue) return sortDirection === "desc" ? 1 : -1
+      if (aValue > bValue) return sortDirection === "desc" ? -1 : 1
+      return 0
+    })
+  }, [data, sortColumn, sortDirection, columns, defaultSortBy, externalIdKey])
 
   const totalPages = Math.ceil(sortedData.length / pageSize)
   const startIndex = (currentPage - 1) * pageSize
@@ -134,11 +287,47 @@ export function DataTable<T extends { id: string | number }>({
   }
 
   const handleConfirm = () => {
-    if (!pendingRow) return
-    if (confirmMode === "delete" && onDelete) onDelete(pendingRow)
-    if (confirmMode === "restore" && onRestore) onRestore(pendingRow)
-    setIsConfirmOpen(false)
-    setPendingRow(null)
+    if (isBulkActionOpen) {
+      const selectedItems = data.filter(r => selectedRows.has(r.id))
+      if (bulkActionMode === "delete" && onBulkDelete) {
+        onBulkDelete(selectedItems)
+      } else if (bulkActionMode === "restore" && onBulkRestore) {
+        onBulkRestore(selectedItems)
+      }
+      setSelectedRows(new Set())
+      setIsBulkActionOpen(false)
+    } else {
+      if (!pendingRow) return
+      if (confirmMode === "delete" && onDelete) onDelete(pendingRow)
+      if (confirmMode === "restore" && onRestore) onRestore(pendingRow)
+      setIsConfirmOpen(false)
+      setPendingRow(null)
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedRows.size === currentData.length) {
+      setSelectedRows(new Set())
+    } else {
+      const newSelected = new Set(selectedRows)
+      currentData.forEach(row => newSelected.add(row.id))
+      setSelectedRows(newSelected)
+    }
+  }
+
+  const toggleSelectRow = (id: string | number) => {
+    const newSelected = new Set(selectedRows)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedRows(newSelected)
+  }
+
+  const triggerBulkAction = (mode: "delete" | "restore") => {
+    setBulkActionMode(mode)
+    setIsBulkActionOpen(true)
   }
 
   const getModalContent = () => {
@@ -167,29 +356,118 @@ export function DataTable<T extends { id: string | number }>({
             <h2 className="text-xl font-bold text-foreground tracking-tight">{title}</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Showing {startIndex + 1} to {endIndex} of {sortedData.length} entries
+              {defaultSortBy !== "none" && !sortColumn && (
+                <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                  Sorted by {defaultSortBy === "externalId" ? "External ID" : "ID"} (highest on top)
+                </span>
+              )}
             </p>
           </div>
         )}
 
         {onExport && (
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              className="border-primary/20 text-primary bg-card hover:bg-primary/10 hover:text-primary hover:border-primary/30 shadow-sm"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="border-primary/20 text-primary bg-card hover:bg-primary/10 hover:text-primary hover:border-primary/30 shadow-sm"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export All
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExportCSV('all')}>
+                  <Download className="h-4 w-4 mr-2" />
+                  CSV Format
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportPDF('all')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  PDF Format
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
+
+      {selectedRows.size > 0 && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-primary">
+              {selectedRows.size} items selected
+            </span>
+            <div className="h-4 w-px bg-primary/20" />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleExportCSV('selected')}
+                className="text-primary hover:bg-primary/10 h-8 px-3"
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                CSV
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleExportPDF('selected')}
+                className="text-primary hover:bg-primary/10 h-8 px-3"
+              >
+                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                PDF
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {onBulkRestore && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => triggerBulkAction("restore")}
+                className="h-8 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                Restore Selected
+              </Button>
+            )}
+            {onBulkDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => triggerBulkAction("delete")}
+                className="h-8"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Delete Selected
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedRows(new Set())}
+              className="h-8 text-muted-foreground"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-card rounded-xl shadow-md overflow-hidden border border-border">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 border-b border-border">
+                <TableHead className="w-[50px] px-6 py-4">
+                  <Checkbox
+                    checked={currentData.length > 0 && selectedRows.size === currentData.length}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all"
+                  />
+                </TableHead>
                 {columns.map((column, idx) => (
                   <TableHead
                     key={idx}
@@ -225,7 +503,7 @@ export function DataTable<T extends { id: string | number }>({
               {currentData.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length + (onEdit || onDelete || onRestore ? 1 : 0)}
+                    colSpan={columns.length + (onEdit || onDelete || onRestore ? 1 : 0) + 1}
                     className="h-48 text-center py-8"
                   >
                     <div className="flex flex-col items-center justify-center">
@@ -262,6 +540,13 @@ export function DataTable<T extends { id: string | number }>({
                       group
                     `}
                   >
+                    <TableCell className="px-6 py-4">
+                      <Checkbox
+                        checked={selectedRows.has(row.id)}
+                        onCheckedChange={() => toggleSelectRow(row.id)}
+                        aria-label={`Select row ${row.id}`}
+                      />
+                    </TableCell>
                     {columns.map((column, idx) => {
                       const value = typeof column.accessor === "function" ? column.accessor(row) : row[column.accessor]
                       return (
@@ -323,14 +608,31 @@ export function DataTable<T extends { id: string | number }>({
       </div>
 
       <ConfirmModal
-        isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
+        isOpen={isConfirmOpen || isBulkActionOpen}
+        onClose={() => {
+          setIsConfirmOpen(false)
+          setIsBulkActionOpen(false)
+        }}
         onConfirm={handleConfirm}
-        mode={confirmMode}
-        title={modalContent.title}
-        description={modalContent.description}
+        mode={isBulkActionOpen ? bulkActionMode : confirmMode}
+        title={isBulkActionOpen
+          ? (bulkActionMode === "delete" ? bulkDeleteConfirmTitle : bulkRestoreConfirmTitle)
+          : modalContent.title
+        }
+        description={isBulkActionOpen
+          ? (bulkActionMode === "delete" ? bulkDeleteConfirmDescription : bulkRestoreConfirmDescription)
+          : modalContent.description
+        }
       >
-        {pendingRow && renderConfirmDetails?.(pendingRow)}
+        {!isBulkActionOpen && pendingRow && renderConfirmDetails?.(pendingRow)}
+        {isBulkActionOpen && (
+          <div className="mt-4 p-3 bg-muted rounded-lg border border-border">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <CheckCircle className="h-4 w-4 text-primary" />
+              {selectedRows.size} items will be {bulkActionMode === "delete" ? "deleted" : "restored"}
+            </div>
+          </div>
+        )}
       </ConfirmModal>
 
       {sortedData.length > 0 && (

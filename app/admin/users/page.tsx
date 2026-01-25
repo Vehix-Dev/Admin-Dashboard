@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { getAdminUsers, updateAdminUser, deleteAdminUser, type AdminUser } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit, Trash2, Shield, ShieldOff, Eye, EyeOff, Calendar as CalendarIcon, Filter, X } from "lucide-react"
+import { Plus, Edit, Trash2, Shield, ShieldOff, Eye, EyeOff, Calendar as CalendarIcon, Filter, X, Lock, Unlock } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
@@ -172,6 +172,25 @@ export default function AdminUsersPage() {
                 <span className="px-2 py-1 bg-blue-500/10 text-blue-500 text-xs font-medium rounded border border-blue-500/20">
                     {value}
                 </span>
+            ),
+        },
+        {
+            header: "2FA",
+            accessor: "two_factor_enabled" as const,
+            cell: (value: boolean) => (
+                <div className={`flex items-center gap-1.5 text-xs font-medium ${value ? "text-emerald-500" : "text-amber-500"}`}>
+                    {value ? (
+                        <>
+                            <Lock className="h-3 w-3" />
+                            Enabled
+                        </>
+                    ) : (
+                        <>
+                            <Unlock className="h-3 w-3" />
+                            Disabled
+                        </>
+                    )}
+                </div>
             ),
         },
         {

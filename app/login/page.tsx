@@ -30,6 +30,7 @@ export default function LoginPage() {
   const [twoFactorCode, setTwoFactorCode] = useState("")
   const [pendingUser, setPendingUser] = useState<any>(null)
   const [pendingTokens, setPendingTokens] = useState<{ access: string, refresh: string } | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
 
   const router = useRouter()
   const { toast } = useToast()
@@ -64,6 +65,7 @@ export default function LoginPage() {
     }
 
     setIsLoading(true)
+    let willShowTwoFactor = false
 
     try {
       const loginResponse = await loginAdmin(username, password)
@@ -78,14 +80,15 @@ export default function LoginPage() {
         throw new Error("Failed to get user profile")
       }
 
-      // Check 2FA Status
+      // Check 2FA Status - Security critical: fail securely
       let is2faEnabled = false;
       try {
         const status = await get2FAStatus(user.username || username);
         is2faEnabled = status.enabled;
       } catch (err) {
-        console.error("2FA Check failed", err);
-        // Fallback or error? For now, assume false or continue.
+        console.error("2FA Check failed:", err);
+        // Security: On status check failure, require 2FA to be safe
+        is2faEnabled = true;
       }
 
       const tokens = { access: loginResponse.access, refresh: loginResponse.refresh };
@@ -98,6 +101,8 @@ export default function LoginPage() {
         setPendingUser(user);
         setPendingTokens(tokens);
         setShowTwoFactor(true);
+        willShowTwoFactor = true;
+        setIsLoading(false); // Stop loading spinner for 2FA input
       } else {
         // 2FA disabled, proceed with login
         completeLogin(user, tokens);
@@ -125,7 +130,7 @@ export default function LoginPage() {
         variant: "destructive",
       })
     } finally {
-      if (!showTwoFactor) {
+      if (!willShowTwoFactor) {
         setIsLoading(false)
       }
     }
@@ -134,19 +139,16 @@ export default function LoginPage() {
   const handleTwoFactorVerify = async (e?: React.FormEvent, code?: string) => {
     if (e) e.preventDefault();
     const finalCode = code || twoFactorCode;
-    if (finalCode.length !== 6) return;
+    if (finalCode.length !== 6 || isVerifying) return;
 
-    setIsLoading(true);
-    console.log("LoginPage: Verifying 2FA for code", finalCode);
+    setIsVerifying(true);
 
     try {
       const usernameToVerify = pendingUser?.username || username;
       const result = await verify2FA(usernameToVerify, finalCode);
-      console.log("LoginPage: 2FA Verification result", result);
 
       if (result.valid) {
         if (pendingUser && pendingTokens) {
-          console.log("LoginPage: 2FA Success. Completing login.");
           setAuthToken(pendingTokens.access);
           setRefreshToken(pendingTokens.refresh);
           completeLogin(pendingUser, pendingTokens);
@@ -154,14 +156,12 @@ export default function LoginPage() {
           throw new Error("Session lost. Please try logging in again.");
         }
       } else {
-        console.warn("LoginPage: 2FA Code Invalid.");
         toast({
           title: "Invalid Code",
           description: "The authentication code is invalid. Please try again.",
           variant: "destructive",
         });
         setTwoFactorCode(""); // Clear wrong code
-        setIsLoading(false);
       }
 
     } catch (error) {
@@ -171,7 +171,8 @@ export default function LoginPage() {
         description: "An error occurred during verification",
         variant: "destructive",
       });
-      setIsLoading(false);
+    } finally {
+      setIsVerifying(false);
     }
   }
 
@@ -371,18 +372,15 @@ export default function LoginPage() {
                       onChange={(e) => {
                         const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
                         setTwoFactorCode(val);
-                        if (val.length === 6) {
-                          handleTwoFactorVerify(undefined, val);
-                        }
                       }}
                       required
                       autoFocus
                       maxLength={6}
-                      disabled={isLoading}
+                      disabled={isVerifying}
                       className="relative border-white/30 bg-white/5 text-white placeholder:text-white/50 focus:border-primary focus:ring-2 focus:ring-primary/30 text-center text-3xl tracking-[0.5em] h-16 font-mono"
                     />
                   </div>
-                  {isLoading && (
+                  {isVerifying && (
                     <div className="flex justify-center mt-2">
                       <div className="flex items-center gap-2 text-primary text-sm animate-pulse">
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -394,8 +392,19 @@ export default function LoginPage() {
               </div>
 
               <div className="flex flex-col gap-3">
-                {/* Submit button hidden but present for accessibility/forms */}
-                <button type="submit" className="hidden" aria-hidden="true" />
+                <Button
+                  type="submit"
+                  className="group relative w-full overflow-hidden bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 disabled:opacity-50 disabled:cursor-not-allowed h-12 text-base font-semibold"
+                  disabled={isLoading || twoFactorCode.length !== 6}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="mr-2 h-5 w-5" />
+                  )}
+                  Verify Code
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"

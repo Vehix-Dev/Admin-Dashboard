@@ -159,7 +159,7 @@ export default function CompletedRequestsPage() {
                     request.id.toLowerCase(),
                     request.rider_username?.toLowerCase() || "",
                     request.rodie_username?.toLowerCase() || "",
-                    request.service_type_name?.toLowerCase() || getServiceName(request).toLowerCase(),
+                    request.service_type_name?.toLowerCase() || getServiceName(request as any).toLowerCase(),
                     request.service_type_details?.name?.toLowerCase() || "",
                     request.service_type_details?.code?.toLowerCase() || "",
                     request.status?.toLowerCase() || "",
@@ -265,7 +265,7 @@ export default function CompletedRequestsPage() {
                 request.rodie || '',
                 `"${request.rodie_username || ''}"`,
                 request.service_type,
-                `"${request.service_type_name || getServiceName(request)}"`,
+                `"${request.service_type_name || getServiceName(request as any)}"`,
                 `"${request.service_type_details?.code || ''}"`,
                 `"${getStatusLabel(request.status as ServiceStatus)}"`,
                 request.rider_lat,
@@ -356,7 +356,7 @@ export default function CompletedRequestsPage() {
     }
 
     const getServiceDisplayName = (request: RequestRow): string => {
-        return request.service_type_name || getServiceName(request)
+        return request.service_type_name || getServiceName(request as any)
     }
 
     const columns = [
@@ -732,11 +732,7 @@ export default function CompletedRequestsPage() {
                                     </div>
                                 </div>
                             )}
-                            searchable={false}
-                            pagination={{
-                                pageSize: 10,
-                                pageSizeOptions: [5, 10, 20, 50],
-                            }}
+                            pageSize={10}
                         />
                     </div>
                 )}
@@ -750,7 +746,6 @@ export default function CompletedRequestsPage() {
                 riders={riders}
                 roadies={roadies}
                 services={services}
-                defaultStatus="COMPLETED"
             />
         </div>
     )

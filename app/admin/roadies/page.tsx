@@ -249,6 +249,33 @@ export default function RoadiesPage() {
     }
   }
 
+  const handleBulkDelete = async (selectedRoadies: RoadieWithThumbnail[]) => {
+    try {
+      await Promise.all(selectedRoadies.map(r => deleteRoadie(r.id)))
+
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        "Bulk Delete Roadies",
+        `Deleted ${selectedRoadies.length} roadies`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { count: selectedRoadies.length, roadieIds: selectedRoadies.map(r => r.id) }
+      )
+
+      toast({
+        title: "Success",
+        description: `${selectedRoadies.length} roadies deleted successfully`
+      })
+      fetchRoadies()
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some roadies",
+        variant: "destructive"
+      })
+      fetchRoadies()
+    }
+  }
+
   const handleStatusToggle = async (roadie: RoadieWithThumbnail) => {
     try {
       setStatusToggling(prev => [...prev, roadie.id])
@@ -400,10 +427,17 @@ export default function RoadiesPage() {
       },
     },
     {
+      header: "Device",
+      accessor: "device_type" as const,
+      cell: (value: string | null) => (
+        <span className="text-xs text-muted-foreground font-mono">{value || "Unknown"}</span>
+      ),
+    },
+    {
       header: "Online",
-      accessor: (row: RoadieWithThumbnail) => onlineRoadies.has(row.id),
-      cell: (value: any, row: RoadieWithThumbnail) => {
-        const isOnline = onlineRoadies.has(row.id)
+      accessor: (row: RoadieWithThumbnail) => row.is_online,
+      cell: (value: boolean, row: RoadieWithThumbnail) => {
+        const isOnline = value || onlineRoadies.has(row.id)
         return (
           <Badge variant={isOnline ? "default" : "outline"} className={isOnline ? "bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase" : "text-muted-foreground border-border text-[10px] font-bold uppercase"}>
             {isOnline ? "Online" : "Offline"}
@@ -415,22 +449,32 @@ export default function RoadiesPage() {
       header: "Status",
       accessor: (row: RoadieWithThumbnail) => row.is_approved,
       cell: (value: boolean, row: RoadieWithThumbnail) => (
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={value}
-            onCheckedChange={() => handleStatusToggle(row)}
-            disabled={
-              statusToggling.includes(row.id) ||
-              (value ? !hasDisablePermission : !canApprove)
-            }
-            className="data-[state=checked]:bg-green-600 scale-90"
-          />
-          {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-          <div className="flex items-center gap-1">
-            {value ? (
-              <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Active</Badge>
-            ) : (
-              <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20 text-[10px] font-bold uppercase">Pending</Badge>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={value}
+              onCheckedChange={() => handleStatusToggle(row)}
+              disabled={
+                statusToggling.includes(row.id) ||
+                (value ? !hasDisablePermission : !canApprove)
+              }
+              className="data-[state=checked]:bg-green-600 scale-90"
+            />
+            {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            <div className="flex items-center gap-1">
+              {value ? (
+                <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Approved</Badge>
+              ) : (
+                <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20 text-[10px] font-bold uppercase">Pending</Badge>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-1">
+            {!row.is_active && (
+              <Badge variant="destructive" className="text-[9px] h-4 px-1 uppercase">Inactive</Badge>
+            )}
+            {row.is_deleted && (
+              <Badge variant="destructive" className="text-[9px] h-4 px-1 uppercase bg-red-900">Deleted</Badge>
             )}
           </div>
         </div>
@@ -724,8 +768,12 @@ export default function RoadiesPage() {
             columns={columns}
             onEdit={canChange ? handleEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
+            onBulkDelete={canDelete ? handleBulkDelete : undefined}
+            onExport={() => { }}
             deleteConfirmTitle="Delete Roadie"
             deleteConfirmDescription="Are you sure you want to delete this roadie account? This action cannot be undone."
+            bulkDeleteConfirmTitle="Delete Multiple Roadies"
+            bulkDeleteConfirmDescription="Are you sure you want to delete the selected roadie accounts? This action cannot be undone."
             renderConfirmDetails={(roadie) => (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">

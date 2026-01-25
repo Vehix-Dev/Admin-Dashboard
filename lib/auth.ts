@@ -10,6 +10,7 @@ export interface AdminUser {
   username?: string
   is_superuser?: boolean
   is_staff?: boolean
+  two_factor_enabled?: boolean
 }
 
 // Token management
@@ -212,17 +213,21 @@ export async function getAdminProfile(): Promise<AdminUser | null> {
     const payload = decodeJWT(token)
 
     if (payload) {
-      return {
-        id: payload.user_id?.toString() || payload.id?.toString() || "unknown",
+      const profile: AdminUser = {
+        id: (payload.user_id || payload.id || "unknown").toString(),
         email: payload.email || "",
         name: payload.name || `${payload.first_name || ''} ${payload.last_name || ''}`.trim() || payload.username || "Admin User",
-        first_name: payload.first_name || undefined,
-        last_name: payload.last_name || undefined,
         role: payload.role || "admin",
-        username: payload.username || undefined,
-        is_superuser: payload.is_superuser || false,
-        is_staff: payload.is_staff || false,
-      }
+        is_superuser: !!payload.is_superuser,
+        is_staff: !!payload.is_staff,
+        two_factor_enabled: !!payload.two_factor_enabled,
+      };
+
+      if (payload.username) profile.username = payload.username;
+      if (payload.first_name) profile.first_name = payload.first_name;
+      if (payload.last_name) profile.last_name = payload.last_name;
+
+      return profile;
     }
 
     return {
@@ -231,6 +236,7 @@ export async function getAdminProfile(): Promise<AdminUser | null> {
       name: "Administrator",
       role: "ADMIN",
       username: "admin_user",
+      two_factor_enabled: false,
     }
 
   } catch (error) {

@@ -123,7 +123,7 @@ export default function WalletsPage() {
         const matchesSearch = (
             wallet.user_username.toLowerCase().includes(searchLower) ||
             (wallet.user_external_id && wallet.user_external_id.toLowerCase().includes(searchLower)) ||
-            wallet.user_id.toString().includes(searchLower)
+            (wallet.user_id && wallet.user_id.toString().includes(searchLower))
         )
 
         return matchesSearch

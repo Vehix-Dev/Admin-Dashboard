@@ -226,6 +226,33 @@ export default function RidersPage() {
     }
   }
 
+  const handleBulkDelete = async (selectedRiders: RiderWithThumbnail[]) => {
+    try {
+      await Promise.all(selectedRiders.map(r => deleteRider(r.id)))
+
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        "Bulk Delete Riders",
+        `Deleted ${selectedRiders.length} riders`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { count: selectedRiders.length, riderIds: selectedRiders.map(r => r.id) }
+      )
+
+      toast({
+        title: "Success",
+        description: `${selectedRiders.length} riders deleted successfully`
+      })
+      fetchRiders()
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some riders",
+        variant: "destructive"
+      })
+      fetchRiders()
+    }
+  }
+
   const handleStatusToggle = async (rider: RiderWithThumbnail) => {
     try {
       setStatusToggling(prev => [...prev, rider.id])
@@ -363,25 +390,51 @@ export default function RidersPage() {
       ),
     },
     {
+      header: "Device",
+      accessor: "device_type" as const,
+      cell: (value: string | null) => (
+        <span className="text-xs text-muted-foreground font-mono">{value || "Unknown"}</span>
+      ),
+    },
+    {
+      header: "Online",
+      accessor: "is_online" as const,
+      cell: (value: boolean) => (
+        <Badge variant={value ? "default" : "outline"} className={value ? "bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase" : "text-muted-foreground border-border text-[10px] font-bold uppercase"}>
+          {value ? "Online" : "Offline"}
+        </Badge>
+      )
+    },
+    {
       header: "Status",
       accessor: (row: RiderWithThumbnail) => row.is_approved,
       cell: (value: boolean, row: RiderWithThumbnail) => (
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={value}
-            onCheckedChange={() => handleStatusToggle(row)}
-            disabled={
-              statusToggling.includes(row.id) ||
-              (value ? !hasDisablePermission : !canApprove)
-            }
-            className="data-[state=checked]:bg-green-600 scale-90"
-          />
-          {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-          <div className="flex items-center gap-1">
-            {value ? (
-              <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Active</Badge>
-            ) : (
-              <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20 text-[10px] font-bold uppercase">Pending</Badge>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={value}
+              onCheckedChange={() => handleStatusToggle(row)}
+              disabled={
+                statusToggling.includes(row.id) ||
+                (value ? !hasDisablePermission : !canApprove)
+              }
+              className="data-[state=checked]:bg-green-600 scale-90"
+            />
+            {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            <div className="flex items-center gap-1">
+              {value ? (
+                <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Approved</Badge>
+              ) : (
+                <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20 text-[10px] font-bold uppercase">Pending</Badge>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-1">
+            {!row.is_active && (
+              <Badge variant="destructive" className="text-[9px] h-4 px-1 uppercase">Inactive</Badge>
+            )}
+            {row.is_deleted && (
+              <Badge variant="destructive" className="text-[9px] h-4 px-1 uppercase bg-red-900">Deleted</Badge>
             )}
           </div>
         </div>
@@ -668,8 +721,12 @@ export default function RidersPage() {
             columns={columns}
             onEdit={canChange ? handleEdit : undefined}
             onDelete={canDelete ? handleDelete : undefined}
+            onBulkDelete={canDelete ? handleBulkDelete : undefined}
+            onExport={() => { }} // Now handled internally by DataTable
             deleteConfirmTitle="Delete Customer"
             deleteConfirmDescription="Are you sure you want to delete this customer account? This action cannot be undone."
+            bulkDeleteConfirmTitle="Delete Multiple Customers"
+            bulkDeleteConfirmDescription="Are you sure you want to delete the selected customer accounts? This action cannot be undone."
             renderConfirmDetails={(rider) => (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">

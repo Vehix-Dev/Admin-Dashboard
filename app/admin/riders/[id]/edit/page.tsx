@@ -12,6 +12,7 @@ import {
   getRiderTotalRequests,
   getRiderActiveRequests,
   getRiderStatusBreakdown,
+  resetAdminUserPassword,
 } from "@/lib/api"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
@@ -109,6 +110,12 @@ export default function EditRiderPage() {
     nin: "",
     is_approved: false,
   })
+  const [passwordResetData, setPasswordResetData] = useState({
+    new_password: "",
+    confirm_password: "",
+  })
+  const [isResettingPassword, setIsResettingPassword] = useState(false)
+  const [passwordResetOpen, setPasswordResetOpen] = useState(false)
   const [uploadForm, setUploadForm] = useState({
     imageType: IMAGE_TYPES.PROFILE,
     description: "",
@@ -166,6 +173,46 @@ export default function EditRiderPage() {
       // Don't show error toast - images are optional
     } finally {
       setIsLoadingImages(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (passwordResetData.new_password !== passwordResetData.confirm_password) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsResettingPassword(true)
+    try {
+      await resetAdminUserPassword(Number(params.id), passwordResetData.new_password)
+
+      const currentUser = await getAdminProfile()
+      AuditService.log(
+        "Reset Rider Password",
+        `Rider: ${rider?.first_name} ${rider?.last_name} (${rider?.username})`,
+        currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+        { riderId: params.id }
+      )
+
+      toast({
+        title: "Success",
+        description: "Password reset successfully",
+      })
+      setPasswordResetOpen(false)
+      setPasswordResetData({ new_password: "", confirm_password: "" })
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to reset password",
+        variant: "destructive",
+      })
+    } finally {
+      setIsResettingPassword(false)
     }
   }
 
@@ -1353,15 +1400,66 @@ export default function EditRiderPage() {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <PermissionGuard permissions={PERMISSIONS.REQUESTS_VIEW}>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    onClick={() => window.open(`/admin/requests?search=${rider?.username}`, '_blank')}
-                  >
-                    View All Requests
-                  </Button>
+                <PermissionGuard permissions={PERMISSIONS.RIDERS_CHANGE}>
+                  <Dialog open={passwordResetOpen} onOpenChange={setPasswordResetOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start gap-2 text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                      >
+                        <Clock className="h-4 w-4" />
+                        Reset Password
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
+                          Enter a new password for {rider?.first_name} {rider?.last_name}.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleResetPassword} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="new_password">New Password</Label>
+                          <Input
+                            id="new_password"
+                            type="password"
+                            value={passwordResetData.new_password}
+                            onChange={(e) => setPasswordResetData({ ...passwordResetData, new_password: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirm_password">Confirm New Password</Label>
+                          <Input
+                            id="confirm_password"
+                            type="password"
+                            value={passwordResetData.confirm_password}
+                            onChange={(e) => setPasswordResetData({ ...passwordResetData, confirm_password: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button type="button" variant="outline" onClick={() => setPasswordResetOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={isResettingPassword} className="bg-amber-500 hover:bg-amber-600 text-white">
+                            {isResettingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Reset Password
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </PermissionGuard>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={() => window.open(`/admin/requests?search=${rider?.username}`, '_blank')}
+                >
+                  <Check className="h-4 w-4" />
+                  View All Requests
+                </Button>
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2"

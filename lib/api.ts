@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://vehix-backend-rxha.onrender.com"
+const API_BASE_URL = "http://localhost:8000"
 
 let authToken: string | null = null
 
@@ -34,7 +34,7 @@ function getRefreshToken(): string | null {
 
 export async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
-    const headers: HeadersInit = {
+    const headers: any = {
       "Content-Type": "application/json",
       ...options?.headers,
     }
@@ -168,6 +168,7 @@ export interface AdminUser {
   is_approved: boolean
   is_active: boolean
   permissions?: string[]
+  two_factor_enabled?: boolean
   created_at: string
   updated_at: string
 }
@@ -210,6 +211,13 @@ export async function deleteAdminUser(id: number): Promise<void> {
   })
 }
 
+export async function resetAdminUserPassword(id: number, password: string): Promise<any> {
+  return apiRequest(`/api/auth/admin/users/${id}/password/`, {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  })
+}
+
 export interface DeletedAdminUser extends AdminUser {
   nin?: string
   wallet?: {
@@ -236,7 +244,7 @@ export interface UserImage {
   image_type: string
   original_image: string
   thumbnail: string
-  status: 'APPROVED' | 'REJECTED'
+  status: 'APPROVED' | 'REJECTED' | 'PENDING'
   description: string
   created_at: string
   updated_at: string
@@ -352,7 +360,7 @@ export async function uploadUserImage(imageFile: File, imageType: string, descri
 }
 
 export async function updateUserImageStatus(id: number, status: 'APPROVED' | 'REJECTED'): Promise<UserImage> {
-  return apiRequest<UserImage>(`/api/images/user-images/${id}/update_status/`, {
+  return apiRequest<UserImage>(`/api/images/user-images/${id}/update-status/`, {
     method: "POST",
     body: JSON.stringify({ status }),
   })
@@ -365,7 +373,7 @@ export async function deleteUserImage(id: number): Promise<void> {
 }
 
 export async function getUserImagesByType(imageType: string): Promise<UserImage[]> {
-  return apiRequest<UserImage[]>(`/api/images/user-images/by_type/?type=${imageType}`)
+  return apiRequest<UserImage[]>(`/api/images/user-images/by-type/?type=${imageType}`)
 }
 
 export async function getUserThumbnails(): Promise<Array<{
@@ -498,7 +506,7 @@ export async function getImagesByUser(
   }
 }
 
-export async function updateImageStatus(id: number, status: 'APPROVED' | 'REJECTED'): Promise<{
+export async function updateImageStatus(id: number, status: 'APPROVED' | 'REJECTED' | 'PENDING'): Promise<{
   status: string
   new_status: string
   image_id: number
@@ -506,18 +514,18 @@ export async function updateImageStatus(id: number, status: 'APPROVED' | 'REJECT
   updated_by: string
   updated_at: string
 }> {
-  return apiRequest(`/api/images/admin-images/${id}/update_status/`, {
+  return apiRequest(`/api/images/admin-images/${id}/update-status/`, {
     method: "POST",
     body: JSON.stringify({ status }),
   })
 }
 
-export async function bulkUpdateImageStatus(imageIds: number[], status: 'APPROVED' | 'REJECTED'): Promise<{
+export async function bulkUpdateImageStatus(imageIds: number[], status: 'APPROVED' | 'REJECTED' | 'PENDING'): Promise<{
   message: string
   status: string
   updated_count: number
 }> {
-  return apiRequest("/api/images/admin-images/bulk_update_status/", {
+  return apiRequest("/api/images/admin-images/bulk-update-status/", {
     method: "POST",
     body: JSON.stringify({ image_ids: imageIds, status }),
   })
@@ -629,7 +637,7 @@ export interface WalletTransaction {
 export interface Wallet {
   id: number
   user: number
-  user_id?: number // Alias
+  user_id?: number
   user_external_id?: string
   user_username?: string
   balance: string
@@ -711,12 +719,12 @@ export interface ReferralUser {
 export interface Referral {
   id: number
   referrer: ReferralUser
-  referrer_username?: string // Keep for backward compatibility if needed, though nested object is preferred
+  referrer_username?: string
   referred: ReferralUser
-  referee_username?: string // Keep for backward compatibility
-  amount: string // This is the reward amount
-  reward_amount?: string // Alias for compatibility
-  status: string // e.g. 'PAID', 'PENDING' - inferred or added if missing in sample
+  referee_username?: string
+  amount: string
+  reward_amount?: string
+  status: string
   created_at: string
   updated_at?: string
 }
@@ -757,26 +765,82 @@ export async function deleteReferral(id: number): Promise<void> {
 }
 
 export async function getUserReferrals(): Promise<Referral[]> {
-  return apiRequest<Referral[]>("/api/auth/referrals/")
+  return apiRequest<Referral[]>("/api/referrals/")
 }
 
 export interface PlatformConfig {
   id: number
   max_negative_balance: string
   service_fee: string
+  trial_days: number
+  ip_whitelist_enabled: boolean
+  ip_whitelist: string
   updated_at: string
 }
 
 export async function getPlatformConfig(): Promise<PlatformConfig> {
-  return apiRequest<PlatformConfig>("/api/auth/platform/config/")
+  return apiRequest<PlatformConfig>("/api/auth/admin/platform/config/")
 }
 
 export async function updatePlatformConfig(data: {
   max_negative_balance?: string
   service_fee?: string
+  trial_days?: number
+  ip_whitelist_enabled?: boolean
+  ip_whitelist?: string
 }): Promise<PlatformConfig> {
-  return apiRequest<PlatformConfig>("/api/auth/platform/config/", {
+  return apiRequest<PlatformConfig>("/api/auth/admin/platform/config/", {
     method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function register(data: any): Promise<any> {
+  return apiRequest("/api/register/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function login(data: any): Promise<any> {
+  const response = await apiRequest<any>("/api/login/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+  if (response.access) setAccessToken(response.access)
+  return response
+}
+
+export async function getMe(): Promise<any> {
+  return apiRequest("/api/me/")
+}
+
+export async function getMyWallet(): Promise<Wallet> {
+  return apiRequest<Wallet>("/api/wallet/")
+}
+
+export async function depositFunds(amount: number, phoneNumber?: string): Promise<any> {
+  return apiRequest("/api/wallet/deposit/", {
+    method: "POST",
+    body: JSON.stringify({ amount, phone_number: phoneNumber }),
+  })
+}
+
+export async function withdrawFunds(amount: number, phoneNumber?: string): Promise<any> {
+  return apiRequest("/api/wallet/withdraw/", {
+    method: "POST",
+    body: JSON.stringify({ amount, phone_number: phoneNumber }),
+  })
+}
+
+// User Notifications
+export async function getUserNotifications(): Promise<AdminNotification[]> {
+  return apiRequest<AdminNotification[]>("/api/notifications/")
+}
+
+export async function updateUserNotification(id: number, data: Partial<AdminNotification>): Promise<AdminNotification> {
+  return apiRequest<AdminNotification>(`/api/notifications/${id}/`, {
+    method: "PATCH",
     body: JSON.stringify(data),
   })
 }
@@ -787,7 +851,7 @@ export interface RoadieStatusResponse {
 }
 
 export async function updateRoadieStatus(isOnline: boolean): Promise<RoadieStatusResponse> {
-  return apiRequest<RoadieStatusResponse>("/api/auth/roadie/status/", {
+  return apiRequest<RoadieStatusResponse>("/api/roadie/status/", {
     method: "POST",
     body: JSON.stringify({ is_online: isOnline }),
   })
@@ -883,6 +947,12 @@ export interface Rider {
     service_id: number
     service_name: string
   }>
+  device_type: string | null
+  is_online: boolean
+  lat: number | null
+  lng: number | null
+  is_active: boolean
+  is_deleted: boolean
 }
 
 export async function getRiders(): Promise<Rider[]> {
@@ -956,6 +1026,12 @@ export interface Roadie {
     service_id: number
     service_name: string
   }>
+  device_type: string | null
+  is_online: boolean
+  lat: number | null
+  lng: number | null
+  is_active: boolean
+  is_deleted: boolean
 }
 
 export async function getRoadies(): Promise<Roadie[]> {
@@ -1010,6 +1086,7 @@ export interface Service {
   id: number
   name: string
   code: string
+  fixed_price?: string
   is_active: boolean
   rodie_count?: number
   created_at: string
@@ -1028,6 +1105,8 @@ export async function createService(data: {
   name: string
   code?: string
   is_active?: boolean
+  fixed_price?: string
+  image?: string
 }): Promise<Service> {
   return apiRequest<Service>("/api/auth/admin/services/", {
     method: "POST",
@@ -1171,7 +1250,6 @@ export async function getServiceRequestById(id: number): Promise<ServiceRequest>
 export async function createServiceRequest(data: CreateServiceRequestData): Promise<ServiceRequest> {
   const requestData: any = { ...data }
 
-  // Convert lat/lng to strings if provided
   if (data.rider_lat !== undefined) requestData.rider_lat = String(data.rider_lat)
   if (data.rider_lng !== undefined) requestData.rider_lng = String(data.rider_lng)
 
@@ -1184,7 +1262,6 @@ export async function createServiceRequest(data: CreateServiceRequestData): Prom
 export async function updateServiceRequest(id: number, data: UpdateServiceRequestData): Promise<ServiceRequest> {
   const requestData: any = { ...data }
 
-  // Convert lat/lng to strings if provided
   if (data.rider_lat !== undefined) requestData.rider_lat = String(data.rider_lat)
   if (data.rider_lng !== undefined) requestData.rider_lng = String(data.rider_lng)
 
@@ -1200,7 +1277,13 @@ export async function deleteServiceRequest(id: number): Promise<void> {
   })
 }
 
-// Charge fees for completed requests
+export async function assignRoadieByAdmin(id: number, rodieId: number): Promise<any> {
+  return apiRequest(`/api/auth/admin/requests/${id}/assign/`, {
+    method: "POST",
+    body: JSON.stringify({ rodie_id: rodieId }),
+  })
+}
+
 export async function chargeCompletedRequestFees(requestIds: number[]): Promise<{
   message: string
   charged_count: number
@@ -1218,7 +1301,6 @@ export async function chargeCompletedRequestFees(requestIds: number[]): Promise<
   })
 }
 
-// Realtime Data (public - no auth required per documentation)
 export interface ActiveRiderLocation {
   request_id: number
   rider_id: number
@@ -1229,7 +1311,7 @@ export interface ActiveRiderLocation {
   lat: number
   lng: number
   status: string
-  service_type: string // Now a string (service name) instead of number
+  service_type: string
   updated_at: string
 }
 
@@ -1245,7 +1327,7 @@ export interface GeoJSONFeature {
     rider_username: string
     rider_external_id: string
     status: string
-    service_type: string // Now a string (service name) instead of number
+    service_type: string
   }
   geometry: {
     type: "Point"
@@ -1262,7 +1344,6 @@ export async function getMapData(): Promise<GeoJSONFeatureCollection> {
   return apiRequest<GeoJSONFeatureCollection>("/api/auth/admin/requests/realtime/map/")
 }
 
-// Combined Realtime Locations (public - no auth required per documentation)
 export interface RodieLocation {
   rodie_id: number
   rodie_external_id: string
@@ -1284,10 +1365,6 @@ export async function getCombinedRealtimeLocations(): Promise<CombinedRealtimeRe
 export async function getCombinedMapData(): Promise<GeoJSONFeatureCollection> {
   return apiRequest<GeoJSONFeatureCollection>("/api/auth/admin/locations/realtime/map/")
 }
-
-// ============================================
-// ADMIN NOTIFICATIONS
-// ============================================
 
 export interface AdminNotification {
   id: number
@@ -1325,10 +1402,6 @@ export async function deleteNotification(id: number): Promise<void> {
   })
 }
 
-// ============================================
-// REQUEST ROUTE INFO (Admin)
-// ============================================
-
 export interface RequestRouteInfo {
   request_id: number
   status: string
@@ -1360,20 +1433,18 @@ export async function getRequestRoute(id: number): Promise<RequestRouteInfo> {
   return apiRequest<RequestRouteInfo>(`/api/auth/admin/requests/${id}/route/`)
 }
 
-// Token refresh (optional - if needed)
 export async function refreshToken(): Promise<{ access: string }> {
   const refreshToken = getRefreshToken()
   if (!refreshToken) {
     throw new Error("No refresh token available")
   }
 
-  return apiRequest<{ access: string }>("/api/auth/token/refresh/", {
+  return apiRequest<{ access: string }>("/api/refresh/", {
     method: "POST",
     body: JSON.stringify({ refresh: refreshToken }),
   })
 }
 
-// Connection check
 export async function checkBackendConnection(): Promise<{ connected: boolean; error?: string }> {
   try {
     const controller = new AbortController()
@@ -1391,7 +1462,6 @@ export async function checkBackendConnection(): Promise<{ connected: boolean; er
 
     clearTimeout(timeoutId)
 
-    // OPTIONS should return 200 for CORS preflight; 405 means endpoint exists but OPTIONS not allowed
     if (response.status === 200 || response.status === 405) {
       return { connected: true }
     }
@@ -1415,6 +1485,7 @@ export async function checkBackendConnection(): Promise<{ connected: boolean; er
   }
 }
 
+// Local Permission Management (SQLite)
 // Local Permission Management (SQLite)
 export async function fetchLocalPermissions(userId: string | number): Promise<string[] | null> {
   try {
@@ -1483,7 +1554,8 @@ export const SERVICE_STATUSES = {
   EN_ROUTE: 'EN_ROUTE',
   STARTED: 'STARTED',
   COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED'
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED'
 } as const
 
 export type ServiceStatus = typeof SERVICE_STATUSES[keyof typeof SERVICE_STATUSES]
@@ -1496,6 +1568,7 @@ export function getStatusColor(status: ServiceStatus): string {
     case SERVICE_STATUSES.STARTED: return 'green'
     case SERVICE_STATUSES.COMPLETED: return 'teal'
     case SERVICE_STATUSES.CANCELLED: return 'red'
+    case SERVICE_STATUSES.EXPIRED: return 'gray'
     default: return 'gray'
   }
 }
@@ -1508,6 +1581,7 @@ export function getStatusLabel(status: ServiceStatus): string {
     case SERVICE_STATUSES.STARTED: return 'Started'
     case SERVICE_STATUSES.COMPLETED: return 'Completed'
     case SERVICE_STATUSES.CANCELLED: return 'Cancelled'
+    case SERVICE_STATUSES.EXPIRED: return 'Expired'
     default: return status
   }
 }
@@ -1577,27 +1651,22 @@ export function getUserServices(user: Rider | Roadie): Array<{ service_id: numbe
   return user.services || []
 }
 
-// Helper to check if user is approved
 export function isUserApproved(user: Rider | Roadie): boolean {
   return user.is_approved === true
 }
 
-// Helper to get user type label
 export function getUserTypeLabel(user: Rider | Roadie): string {
   return user.role === 'RIDER' ? 'Rider' : 'Roadie'
 }
 
-// Helper to get user external ID
 export function getUserExternalId(user: Rider | Roadie): string {
   return user.external_id || `USER${user.id}`
 }
 
-// Helper to get user referral code
 export function getUserReferralCode(user: Rider | Roadie): string {
   return user.referral_code || ''
 }
 
-// NIN validation helper
 export function isValidNIN(nin: string): boolean {
   return /^[A-Za-z0-9]{14}$/.test(nin)
 }

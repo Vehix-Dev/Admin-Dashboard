@@ -60,6 +60,12 @@ export function AdminHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <a href="/admin/my-account" className="flex items-center gap-2 cursor-pointer">
+                <User className="h-4 w-4" />
+                My Profile & Security
+              </a>
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={logout}
               className="gap-2 text-destructive"
