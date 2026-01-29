@@ -13,18 +13,44 @@ import { Card, CardContent } from "@/components/ui/card"
 import { format } from "date-fns"
 import { DiffViewer } from "@/components/admin/audit/diff-viewer"
 import { Input } from "@/components/ui/input"
-import { Search, Filter } from "lucide-react"
+import { Search, Filter, Trash2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export default function AuditLogsPage() {
     const [logs, setLogs] = useState<AuditLog[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const { toast } = useToast()
 
-    useEffect(() => {
-        // Load logs from service
+    const loadLogs = () => {
         const loadedLogs = AuditService.getLogs()
         setLogs(loadedLogs)
         setIsLoading(false)
+    }
+
+    useEffect(() => {
+        loadLogs()
     }, [])
+
+    const handleClearLogs = () => {
+        if (confirm("Are you sure you want to clear all audit logs? This cannot be undone.")) {
+            localStorage.removeItem('vehix_audit_logs')
+            loadLogs()
+            toast({
+                title: "Internal Logs Purged",
+                description: "The local audit trail has been reset.",
+            })
+        }
+    }
+
+    const safeString = (val: any) => {
+        if (typeof val === 'string') return val;
+        if (val === null || val === undefined) return "";
+        try {
+            return JSON.stringify(val);
+        } catch (e) {
+            return String(val);
+        }
+    }
 
     const columns: Column<AuditLog>[] = [
         {
@@ -66,10 +92,10 @@ export default function AuditLogsPage() {
                         ) : (
                             <div className="h-2 w-2 rounded-full bg-blue-500" />
                         )}
-                        <span className="font-bold text-foreground text-sm tracking-tight">{value}</span>
+                        <span className="font-bold text-foreground text-sm tracking-tight">{safeString(value)}</span>
                     </div>
                     <div className="text-[11px] font-medium text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded w-fit uppercase">
-                        {row.module || "System"}
+                        {safeString(row.module) || "System"}
                     </div>
                 </div>
             )
@@ -81,11 +107,11 @@ export default function AuditLogsPage() {
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-sm">
                         <User className="h-3 w-3 text-primary" />
-                        <span className="font-medium">{value}</span>
+                        <span className="font-medium">{safeString(value)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                         <ArrowLeft className="h-2.5 w-2.5 rotate-180" />
-                        <span>{row.target}</span>
+                        <span>{safeString(row.target)}</span>
                     </div>
                 </div>
             )
@@ -110,12 +136,18 @@ export default function AuditLogsPage() {
 
     const [search, setSearch] = useState("")
 
-    const filteredLogs = logs.filter(log =>
-        log.action.toLowerCase().includes(search.toLowerCase()) ||
-        log.module.toLowerCase().includes(search.toLowerCase()) ||
-        log.target.toLowerCase().includes(search.toLowerCase()) ||
-        log.actor.toLowerCase().includes(search.toLowerCase())
-    )
+    const filteredLogs = logs.filter(log => {
+        const sAction = safeString(log.action).toLowerCase()
+        const sModule = safeString(log.module).toLowerCase()
+        const sTarget = safeString(log.target).toLowerCase()
+        const sActor = safeString(log.actor).toLowerCase()
+        const sTerm = search.toLowerCase()
+
+        return sAction.includes(sTerm) ||
+            sModule.includes(sTerm) ||
+            sTarget.includes(sTerm) ||
+            sActor.includes(sTerm)
+    })
 
     return (
         <ProtectedRoute requiredPermissions={PERMISSIONS.ADMIN_USERS_VIEW}>
@@ -142,6 +174,16 @@ export default function AuditLogsPage() {
                             className="glass-card border-none pl-10 h-11 text-xs font-bold uppercase tracking-wider"
                         />
                     </div>
+
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleClearLogs}
+                        className="gap-2 h-11 px-4 glass-card border-none bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all font-bold uppercase tracking-widest text-[10px]"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Purge Logs
+                    </Button>
                 </div>
 
                 <Card className="border-border/40 overflow-hidden rounded-2xl shadow-2xl glass-card">

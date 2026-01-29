@@ -4,6 +4,18 @@ import { useState } from "react"
 import { Eye, ChevronRight, Hash, HashIcon } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
+const formatValue = (val: any) => {
+    if (val === undefined || val === null) return <span className="opacity-30 italic">null</span>;
+    if (typeof val === 'object') {
+        try {
+            return JSON.stringify(val, null, 2);
+        } catch (e) {
+            return String(val);
+        }
+    }
+    return String(val);
+};
+
 export function DiffViewer({ oldVal, newVal }: { oldVal: any; newVal: any }) {
     if (!oldVal && !newVal) return <span className="text-muted-foreground italic">No data</span>
 
@@ -37,14 +49,14 @@ export function DiffViewer({ oldVal, newVal }: { oldVal: any; newVal: any }) {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Previous</span>
-                                        <div className="bg-red-500/10 p-2 rounded border border-red-500/10 font-mono text-[10px] min-h-[32px]">
-                                            {ov !== undefined ? String(ov) : <span className="opacity-30 italic">null</span>}
+                                        <div className="bg-red-500/10 p-2 rounded border border-red-500/10 font-mono text-[10px] min-h-[32px] whitespace-pre-wrap break-all">
+                                            {formatValue(ov)}
                                         </div>
                                     </div>
                                     <div className="space-y-1">
                                         <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">New Value</span>
-                                        <div className="bg-emerald-500/10 p-2 rounded border border-emerald-500/10 font-mono text-[10px] min-h-[32px]">
-                                            {nv !== undefined ? String(nv) : <span className="opacity-30 italic">null</span>}
+                                        <div className="bg-emerald-500/10 p-2 rounded border border-emerald-500/10 font-mono text-[10px] min-h-[32px] whitespace-pre-wrap break-all">
+                                            {formatValue(nv)}
                                         </div>
                                     </div>
                                 </div>

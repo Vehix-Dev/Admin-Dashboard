@@ -113,9 +113,13 @@ export default function AdminUsersPage() {
             const currentUser = await getAdminProfile()
             AuditService.log(
                 "Delete User",
+                "Users",
                 `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
                 currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
-                { userId: admin.id, email: admin.email }
+                { userId: admin.id, email: admin.email },
+                undefined,
+                undefined,
+                'critical'
             )
 
             toast({
@@ -140,9 +144,11 @@ export default function AdminUsersPage() {
             const currentUser = await getAdminProfile()
             AuditService.log(
                 !admin.is_active ? "Enable User" : "Disable User",
+                "Users",
                 `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
                 currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
-                { userId: admin.id, newState: !admin.is_active }
+                { is_active: admin.is_active },
+                { is_active: !admin.is_active }
             )
 
             toast({
@@ -167,9 +173,11 @@ export default function AdminUsersPage() {
             const currentUser = await getAdminProfile()
             AuditService.log(
                 !admin.is_approved ? "Approve User" : "Unapprove User",
+                "Users",
                 `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
                 currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
-                { userId: admin.id, newState: !admin.is_approved }
+                { is_approved: admin.is_approved },
+                { is_approved: !admin.is_approved }
             )
 
             toast({

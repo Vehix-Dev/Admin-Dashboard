@@ -284,6 +284,7 @@ export default function EditRoadiePage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         "Reset Roadie Password",
+        "Roadies",
         `Roadie: ${roadie?.first_name} ${roadie?.last_name} (${roadie?.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { roadieId: params.id }
@@ -316,6 +317,7 @@ export default function EditRoadiePage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         "Update Roadie",
+        "Roadies",
         `Roadie: ${formData.first_name} ${formData.last_name} (${formData.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { roadieId: params.id, changes: formData }

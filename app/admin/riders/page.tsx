@@ -207,6 +207,7 @@ export default function RidersPage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         "Delete Rider",
+        "Riders",
         `Rider: ${rider.first_name} ${rider.last_name} (${rider.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { riderId: rider.id, externalId: rider.external_id }
@@ -233,6 +234,7 @@ export default function RidersPage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         "Bulk Delete Riders",
+        "Riders",
         `Deleted ${selectedRiders.length} riders`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { count: selectedRiders.length, riderIds: selectedRiders.map(r => r.id) }
@@ -262,6 +264,7 @@ export default function RidersPage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         newStatus ? "Approve Rider" : "Unapprove Rider",
+        "Riders",
         `Rider: ${rider.first_name} ${rider.last_name} (${rider.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { riderId: rider.id, externalId: rider.external_id, newStatus }

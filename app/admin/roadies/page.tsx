@@ -231,6 +231,7 @@ export default function RoadiesPage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         "Delete Roadie",
+        "Roadies",
         `Roadie: ${roadie.first_name} ${roadie.last_name} (${roadie.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { roadieId: roadie.id, externalId: roadie.external_id }
@@ -256,6 +257,7 @@ export default function RoadiesPage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         "Bulk Delete Roadies",
+        "Roadies",
         `Deleted ${selectedRoadies.length} roadies`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { count: selectedRoadies.length, roadieIds: selectedRoadies.map(r => r.id) }
@@ -285,6 +287,7 @@ export default function RoadiesPage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         newStatus ? "Approve Roadie" : "Unapprove Roadie",
+        "Roadies",
         `Roadie: ${roadie.first_name} ${roadie.last_name} (${roadie.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { roadieId: roadie.id, externalId: roadie.external_id, newStatus }

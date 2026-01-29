@@ -194,6 +194,7 @@ export default function EditRiderPage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         "Reset Rider Password",
+        "Riders",
         `Rider: ${rider?.first_name} ${rider?.last_name} (${rider?.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { riderId: params.id }
@@ -226,6 +227,7 @@ export default function EditRiderPage() {
       const currentUser = await getAdminProfile()
       AuditService.log(
         "Update Rider",
+        "Riders",
         `Rider: ${formData.first_name} ${formData.last_name} (${formData.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { riderId: params.id, changes: formData }
