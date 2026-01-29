@@ -10,7 +10,7 @@ function ProgressBarContent() {
 
     useEffect(() => {
         setIsLoading(true)
-        const timeout = setTimeout(() => setIsLoading(false), 900)
+        const timeout = setTimeout(() => setIsLoading(false), 1000)
         return () => clearTimeout(timeout)
     }, [pathname, searchParams])
 

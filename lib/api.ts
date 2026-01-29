@@ -17,6 +17,23 @@ export function clearAccessToken() {
   }
 }
 
+import { getAuthToken } from "./auth"
+
+// API Telemetry for Monitoring
+export const APITelemetry = {
+  metrics: [] as Array<{
+    endpoint: string;
+    method: string;
+    status: number;
+    duration: number;
+    timestamp: string;
+  }>,
+  log: (metric: any) => {
+    APITelemetry.metrics.unshift(metric);
+    if (APITelemetry.metrics.length > 50) APITelemetry.metrics.pop();
+  }
+}
+
 export function getAccessToken(): string | null {
   if (authToken) return authToken
   if (typeof window !== "undefined") {
@@ -44,13 +61,38 @@ export async function apiRequest<T>(endpoint: string, options?: RequestInit): Pr
       headers["Authorization"] = `Bearer ${token}`
     }
 
+    const startTime = performance.now()
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
     })
+    const duration = performance.now() - startTime
+
+    // Log telemetry
+    APITelemetry.log({
+      endpoint,
+      method: options?.method || "GET",
+      status: response.status,
+      duration,
+      timestamp: new Date().toISOString()
+    });
 
     if (!response.ok) {
       const errorText = await response.text()
+
+      // Handle the specific "Another device logged in" error
+      if (errorText.includes("This session is no longer valid. Another device has logged in.")) {
+        console.warn("Session invalidated: Another device logged in.")
+        if (typeof window !== "undefined") {
+          // We'll use logoutAdmin from auth.ts if possible, but api.ts is a low-level lib
+          // For now, clear tokens and redirect manually to avoid circular dependencies
+          localStorage.removeItem("admin_access_token")
+          localStorage.removeItem("admin_refresh_token")
+          localStorage.removeItem("admin_user_data")
+          window.location.href = "/login?message=session_invalid"
+        }
+      }
+
       throw new Error(`API Error (${response.status}): ${errorText}`)
     }
 

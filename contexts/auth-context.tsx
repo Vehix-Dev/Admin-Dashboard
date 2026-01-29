@@ -275,6 +275,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const login = async (userData: User, token: string) => {
+        setIsLoading(true)
         // Double check IP on login
         if (clientIp) {
             try {
@@ -308,6 +309,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
             console.error("[Auth] Login permission fetch failed", e)
             setLocalPermissions(Object.values(PERMISSIONS))
+        } finally {
+            setIsLoading(false)
         }
     }
 

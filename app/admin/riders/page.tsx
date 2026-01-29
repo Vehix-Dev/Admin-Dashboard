@@ -668,12 +668,7 @@ export default function RidersPage() {
       </div>
 
       <div className="bg-card rounded-lg border border-border shadow-sm min-h-[400px]">
-        {isLoading || isLoadingThumbnails ? (
-          <div className="p-12 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest animate-pulse">Synchronizing Data...</p>
-          </div>
-        ) : isSearching ? (
+        {isSearching ? (
           <div className="p-12 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest animate-pulse">Indexing Results...</p>

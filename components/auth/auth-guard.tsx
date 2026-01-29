@@ -9,24 +9,29 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isLoading } = useAuth()
     const router = useRouter()
     const pathname = usePathname()
-    const [isAuthorized, setIsAuthorized] = useState(false)
+    const isLoginPage = pathname === "/login"
 
     useEffect(() => {
         if (isLoading) return
-
-        const isLoginPage = pathname === "/login"
 
         if (!user && !isLoginPage) {
             router.push("/login")
         } else if (user && isLoginPage) {
             router.push("/admin")
-        } else {
-            setIsAuthorized(true)
         }
-    }, [user, isLoading, pathname, router])
+    }, [user, isLoading, isLoginPage, router])
 
-    if (isLoading || (!isAuthorized && pathname !== "/login")) {
-        return <PageLoader message="Authenticating..." />
+    if (isLoading) {
+        return <PageLoader message="Secure Authentication..." />
+    }
+
+    // Prevent flash of protected content during transition
+    if (!user && !isLoginPage) {
+        return <PageLoader message="Access verification required..." />
+    }
+
+    if (user && isLoginPage) {
+        return <PageLoader message="Entering Command Center..." />
     }
 
     return <>{children}</>

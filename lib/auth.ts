@@ -292,10 +292,11 @@ export function isAuthenticated(): boolean {
 }
 
 // Logout function
-export function logoutAdmin(): void {
+export function logoutAdmin(message?: string): void {
   removeAuthTokens()
   if (typeof window !== "undefined") {
-    window.location.href = "/login"
+    const redirectUrl = message ? `/login?message=${message}` : "/login"
+    window.location.href = redirectUrl
   }
 }
 
@@ -373,12 +374,23 @@ export async function authApiRequest<T>(
         } else if (errorData.message) {
           errorMessage = errorData.message
         }
+
+        // Handle specific session invalidation error
+        if (errorMessage.includes("This session is no longer valid. Another device has logged in.")) {
+          logoutAdmin("session_invalid")
+          throw new Error("This session is no longer valid. Another device has logged in. Please login again and change your password.")
+        }
       } catch {
         // If response is not JSON, try to get text
         try {
           const errorText = await response.text()
           if (errorText) {
             errorMessage = errorText
+
+            if (errorText.includes("This session is no longer valid. Another device has logged in.")) {
+              logoutAdmin("session_invalid")
+              throw new Error("This session is no longer valid. Another device has logged in. Please login again and change your password.")
+            }
           }
         } catch {
           // Ignore text parsing errors

@@ -11,6 +11,9 @@ import ProtectedRoute from "@/components/auth/protected-route"
 import { PERMISSIONS } from "@/lib/permissions"
 import { Card, CardContent } from "@/components/ui/card"
 import { format } from "date-fns"
+import { DiffViewer } from "@/components/admin/audit/diff-viewer"
+import { Input } from "@/components/ui/input"
+import { Search, Filter } from "lucide-react"
 
 export default function AuditLogsPage() {
     const [logs, setLogs] = useState<AuditLog[]>([])
@@ -28,14 +31,22 @@ export default function AuditLogsPage() {
             header: "Time",
             accessor: "timestamp",
             cell: (value: string) => (
-                <div className="flex items-center gap-2">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span>
+                <div className="flex flex-col">
+                    <span className="font-medium text-foreground">
                         {(() => {
                             try {
-                                return format(new Date(value), "MMM d, yyyy HH:mm:ss")
+                                return format(new Date(value), "HH:mm:ss")
                             } catch (e) {
                                 return value
+                            }
+                        })()}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                        {(() => {
+                            try {
+                                return format(new Date(value), "MMM d, yyyy")
+                            } catch (e) {
+                                return ""
                             }
                         })()}
                     </span>
@@ -45,72 +56,107 @@ export default function AuditLogsPage() {
         {
             header: "Action",
             accessor: "action",
-            cell: (value: string) => (
-                <div className="flex items-center gap-2">
-                    <Activity className="h-3 w-3 text-primary" />
-                    <span className="font-medium text-foreground">{value}</span>
+            cell: (value: string, row: AuditLog) => (
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        {row.severity === 'critical' ? (
+                            <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                        ) : row.severity === 'warning' ? (
+                            <div className="h-2 w-2 rounded-full bg-amber-500" />
+                        ) : (
+                            <div className="h-2 w-2 rounded-full bg-blue-500" />
+                        )}
+                        <span className="font-bold text-foreground text-sm tracking-tight">{value}</span>
+                    </div>
+                    <div className="text-[11px] font-medium text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded w-fit uppercase">
+                        {row.module || "System"}
+                    </div>
                 </div>
             )
         },
         {
-            header: "Actor",
+            header: "Actor & Target",
             accessor: "actor",
-            cell: (value: string) => (
-                <div className="flex items-center gap-2">
-                    <User className="h-3 w-3 text-blue-400" />
-                    <span>{value}</span>
+            cell: (value: string, row: AuditLog) => (
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-sm">
+                        <User className="h-3 w-3 text-primary" />
+                        <span className="font-medium">{value}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <ArrowLeft className="h-2.5 w-2.5 rotate-180" />
+                        <span>{row.target}</span>
+                    </div>
                 </div>
             )
         },
         {
-            header: "Target",
-            accessor: "target",
+            header: "Context",
+            accessor: "userAgent",
             cell: (value: string) => (
-                <div className="flex items-center gap-2">
-                    <FileText className="h-3 w-3 text-muted-foreground" />
-                    <span>{value}</span>
+                <div className="max-w-[150px] truncate text-[10px] text-muted-foreground font-mono" title={value}>
+                    {value || "No browser info"}
                 </div>
             )
         },
         {
-            header: "Details",
+            header: "Forensics",
             accessor: "details",
-            cell: (value: any) => (
-                <code className="text-[10px] bg-muted/50 p-1 rounded border border-border">
-                    {JSON.stringify(value)}
-                </code>
+            cell: (value: any, row: AuditLog) => (
+                <DiffViewer oldVal={row.oldValue} newVal={row.newValue} />
             )
         }
     ]
 
+    const [search, setSearch] = useState("")
+
+    const filteredLogs = logs.filter(log =>
+        log.action.toLowerCase().includes(search.toLowerCase()) ||
+        log.module.toLowerCase().includes(search.toLowerCase()) ||
+        log.target.toLowerCase().includes(search.toLowerCase()) ||
+        log.actor.toLowerCase().includes(search.toLowerCase())
+    )
+
     return (
         <ProtectedRoute requiredPermissions={PERMISSIONS.ADMIN_USERS_VIEW}>
             <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <Link href="/admin/users">
-                        <Button variant="ghost" size="icon">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                    </Link>
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground">Audit Logs</h2>
-                        <p className="text-sm text-muted-foreground mt-1">Track actions performed by administrators</p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <Link href="/admin/users">
+                            <Button variant="ghost" size="icon" className="glass-card hover:bg-muted font-bold h-10 w-10">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                        <div>
+                            <h2 className="text-3xl font-black tracking-tighter text-foreground uppercase">Audit Hub</h2>
+                            <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">Real-time administrator forensics</p>
+                        </div>
+                    </div>
+
+                    <div className="relative w-full md:w-96">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Deep search actions, modules, or actors..."
+                            className="glass-card border-none pl-10 h-11 text-xs font-bold uppercase tracking-wider"
+                        />
                     </div>
                 </div>
 
-                <Card className="border-border/40">
+                <Card className="border-border/40 overflow-hidden rounded-2xl shadow-2xl glass-card">
                     <CardContent className="p-0">
                         {isLoading ? (
-                            <div className="p-8 text-center text-muted-foreground">Loading logs...</div>
-                        ) : logs.length === 0 ? (
+                            <div className="p-20 text-center text-muted-foreground font-bold uppercase tracking-widest text-xs animate-pulse">Scanning Nodes...</div>
+                        ) : filteredLogs.length === 0 ? (
                             <EmptyState
-                                title="No audit logs found"
-                                description="Actions will appear here once administrators start managing users."
+                                title="No matching logs"
+                                description="Adjust your filters to scan broader data segments."
                                 icon={Activity}
                             />
                         ) : (
                             <DataTable
-                                data={logs}
+                                data={filteredLogs}
                                 columns={columns}
                                 initialSortColumn={0}
                                 initialSortDirection="desc"

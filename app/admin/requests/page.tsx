@@ -784,12 +784,7 @@ export default function RequestsPage() {
       </div>
 
       <div className="bg-card rounded-lg border border-border shadow-sm min-h-[400px]">
-        {isLoading ? (
-          <div className="p-8 flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground font-mono">Loading service requests...</p>
-          </div>
-        ) : isSearching ? (
+        {isSearching ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground font-mono">Searching for "{searchInput}"...</p>

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,6 +33,8 @@ export default function LoginPage() {
   const [isVerifying, setIsVerifying] = useState(false)
 
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const sessionInvalid = searchParams.get("message") === "session_invalid"
   const { toast } = useToast()
 
   useEffect(() => {
@@ -179,7 +181,7 @@ export default function LoginPage() {
     }
   }
 
-  const completeLogin = (user: any, tokens: { access: string }) => {
+  const completeLogin = async (user: any, tokens: { access: string }) => {
     const adaptedUser: User = {
       ...user,
       first_name: user.first_name || user.name?.split(' ')[0] || "",
@@ -191,13 +193,12 @@ export default function LoginPage() {
     singleLoginManager.setUser(adaptedUser.id)
     singleLoginManager.broadcastLogin(adaptedUser.id)
 
-    authLogin(adaptedUser as any, tokens.access)
+    await authLogin(adaptedUser as any, tokens.access)
 
     toast({
       title: "Login successful",
       description: `Welcome back, ${user.name}!`,
     })
-    router.push("/admin")
   }
 
   if (isCheckingConnection) {
@@ -207,7 +208,8 @@ export default function LoginPage() {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center space-y-4">
               <div className="relative">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <img src="/logo.png" alt="Logo" className="h-12 w-auto animate-pulse" />
+                <Loader2 className="absolute -top-2 -right-2 h-6 w-6 animate-spin text-primary" />
               </div>
               <p className="text-lg font-medium text-foreground">Checking server connection...</p>
               <p className="text-sm text-muted-foreground">Please wait while we connect to the backend</p>
@@ -229,11 +231,11 @@ export default function LoginPage() {
 
         <CardHeader className="space-y-6 text-center pb-6 pt-8">
           {/* Clean logo container */}
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-xl bg-muted p-2 elevation-2">
+          <div className="mx-auto flex h-24 w-auto items-center justify-center p-2">
             <img
-              src="/vehix-logo.jpg"
-              alt="Vehix logo"
-              className="h-full w-full rounded-lg object-cover"
+              src="/logo.png"
+              alt="Vehix Logo"
+              className="h-full w-auto object-contain"
             />
           </div>
 
@@ -248,6 +250,21 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {sessionInvalid && (
+            <Alert
+              className="border-amber-500/50 bg-amber-500/10"
+            >
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              <div className="space-y-1">
+                <p className="font-semibold text-amber-500">Security Alert</p>
+                <AlertDescription className="text-amber-200/80">
+                  This session is no longer valid because another device has logged in.
+                  For your protection, we recommend <b>changing your password</b> immediately after logging back in.
+                </AlertDescription>
+              </div>
+            </Alert>
+          )}
+
           {connectionError && (
             <Alert
               variant="destructive"

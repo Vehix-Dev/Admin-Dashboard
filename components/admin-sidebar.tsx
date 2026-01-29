@@ -29,7 +29,8 @@ import {
   DollarSign,
   Mail,
   FileText,
-  Clock
+  Clock,
+  Activity
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -174,6 +175,8 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         items: [
           { name: "Platform Settings", href: "/admin/settings", icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
           { name: "Security Settings", href: "/admin/settings/security", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
+          { name: "Firewall & Security", href: "/admin/security/firewall", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
+          { name: "API Health", href: "/admin/system/health", icon: Activity, permission: PERMISSIONS.SETTINGS_VIEW },
           { name: "Landing Page", href: "/admin/settings/landing", icon: Globe, permission: PERMISSIONS.SETTINGS_VIEW },
         ]
       },
@@ -250,18 +253,23 @@ export function AdminSidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-sidebar transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col shadow-lg border-r border-sidebar-border/30 overflow-hidden",
+        "fixed left-0 top-0 z-40 h-screen transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col shadow-2xl bg-sidebar border-r border-sidebar-border rounded-none",
         !sidebarOpen ? "w-19" : "w-64",
       )}
     >
       {/* Logo area */}
-      <div className="flex h-16 items-center justify-between border-b border-sidebar-border/30 px-4 bg-sidebar shrink-0">
+      <div className="flex h-16 items-center justify-between border-b border-border/30 px-4 shrink-0 bg-sidebar-accent/10">
         {sidebarOpen && (
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-md bg-sidebar-primary flex items-center justify-center">
-              <Wrench className="h-3.5 w-3.5 text-white" />
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 relative flex items-center justify-center">
+              <img src="/logo.png" alt="Vehix Logo" className="h-full w-auto object-contain" />
             </div>
-            <span className="font-bold text-sidebar-foreground text-sm tracking-tight">Vehix Ops</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-foreground text-sm tracking-tight leading-none">
+                VEHIX <span className="text-primary">OPS</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.2em]">Management</span>
+            </div>
           </div>
         )}
         <Button

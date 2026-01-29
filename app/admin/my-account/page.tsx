@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { generate2FA, enable2FA, get2FAStatus, GenerateResponse } from "@/lib/2fa-client"
-import { Loader2, CheckCircle, Smartphone } from "lucide-react"
+import { resetAdminUserPassword } from "@/lib/api"
+import { Loader2, CheckCircle, Smartphone, Lock, KeyRound } from "lucide-react"
 
 export default function MyAccountPage() {
     const { user } = useAuth()
@@ -18,6 +19,9 @@ export default function MyAccountPage() {
     const [setupData, setSetupData] = useState<GenerateResponse | null>(null)
     const [verificationCode, setVerificationCode] = useState("")
     const [verifying, setVerifying] = useState(false)
+    const [newPassword, setNewPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [isChangingPassword, setIsChangingPassword] = useState(false)
 
     useEffect(() => {
         console.log("MyAccountPage: User changed", user);
@@ -129,6 +133,49 @@ export default function MyAccountPage() {
         }
     }
 
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!user || !newPassword) return
+
+        if (newPassword !== confirmPassword) {
+            toast({
+                title: "Error",
+                description: "Passwords do not match",
+                variant: "destructive",
+            })
+            return
+        }
+
+        if (newPassword.length < 8) {
+            toast({
+                title: "Error",
+                description: "Password must be at least 8 characters long",
+                variant: "destructive",
+            })
+            return
+        }
+
+        setIsChangingPassword(true)
+        try {
+            await resetAdminUserPassword(Number(user.id), newPassword)
+            toast({
+                title: "Success",
+                description: "Password has been changed successfully",
+            })
+            setNewPassword("")
+            setConfirmPassword("")
+        } catch (error: any) {
+            console.error("Failed to change password:", error)
+            toast({
+                title: "Error",
+                description: error.message || "Failed to change password",
+                variant: "destructive",
+            })
+        } finally {
+            setIsChangingPassword(false)
+        }
+    }
+
     if (!user) return null
 
     return (
@@ -236,6 +283,58 @@ export default function MyAccountPage() {
                                 </div>
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Lock className="h-5 w-5" />
+                            Change Password
+                        </CardTitle>
+                        <CardDescription>Update your account password</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleChangePassword} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="new-password">New Password</Label>
+                                <Input
+                                    id="new-password"
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                                <Input
+                                    id="confirm-password"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                disabled={isChangingPassword || !newPassword || !confirmPassword}
+                            >
+                                {isChangingPassword ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Updating Password...
+                                    </>
+                                ) : (
+                                    <>
+                                        <KeyRound className="mr-2 h-4 w-4" />
+                                        Update Password
+                                    </>
+                                )}
+                            </Button>
+                        </form>
                     </CardContent>
                 </Card>
             </div>

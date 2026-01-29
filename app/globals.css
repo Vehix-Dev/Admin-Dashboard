@@ -4,28 +4,28 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Mantis-inspired Clean Backgrounds */
-  --background: oklch(97.5% 0.002 240);
-  --background-soft: oklch(0.99 0.002 240);
-  /* Clean light gray #f5f5f5 */
-  --foreground: oklch(0.2 0.01 260);
-  /* Dark text #212121 */
+  /* Mantis-inspired Clean Backgrounds - Enhanced for Contrast */
+  --background: oklch(0.94 0.01 240);
+  --background-soft: oklch(0.96 0.01 240);
+  /* Deeper base to make white cards pop */
+  --foreground: oklch(0.2 0.02 260);
+  /* Dark text #1a202c */
 
   --card: oklch(1 0 0);
   /* Pure white for cards */
-  --card-foreground: oklch(0.2 0.01 260);
+  --card-foreground: oklch(0.2 0.02 260);
 
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.01 260);
 
-  /* VEHIX BRAND COLORS (Preserved) */
+  /* VEHIX BRAND COLORS (Official Logo) */
   /* Logo Orange (#F05A28) */
-  --primary: oklch(0.65 0.23 45);
-  --primary-foreground: oklch(1 0 0);
+  --primary: #F05A28;
+  --primary-foreground: #FFFFFF;
 
   /* Logo Navy (#1F2A44) */
-  --secondary: oklch(0.22 0.08 260);
-  --secondary-foreground: oklch(1 0 0);
+  --secondary: #1F2A44;
+  --secondary-foreground: #FFFFFF;
 
   /* UI Neutrals - Mantis Style */
   --muted: oklch(0.96 0.002 240);
@@ -79,22 +79,21 @@
   --spacing-xl: 3rem;
   /* 48px */
 
-  /* SIDEBAR (Clean White/Navy) */
-  --sidebar: oklch(0.3 0.1 230);
-  /* Darker blue sidebar */
-  --sidebar-foreground: oklch(0.95 0.01 230);
-  /* Lighter foreground for contrast */
+  /* SIDEBAR (Official Brand Navy) */
+  --sidebar: #1F2A44;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #F05A28;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #2A3B5F;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #161E31;
+  --sidebar-ring: #F05A28;
 
-  --sidebar-primary: oklch(0.65 0.23 45);
-  --sidebar-primary-foreground: oklch(1 0 0);
-
-  --sidebar-accent: oklch(0.4 0.1 230);
-  /* Darker accent */
-  --sidebar-accent-foreground: oklch(1 0 0);
-  /* White foreground for accent */
-
-  --sidebar-border: oklch(0.4 0.1 230);
-  --sidebar-ring: oklch(0.65 0.23 45);
+  /* Glassmorphism Design Tokens - Enhanced Contrast */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-blur: 12px;
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
 }
 
 
@@ -131,19 +130,21 @@
   --input: oklch(0.2 0.015 260);
   --ring: oklch(0.68 0.24 45);
 
-  /* Sidebar - VS Code Blue Dark Mode */
-  --sidebar: 203 40% 12%;
-  /* Dark blue background */
-  --sidebar-foreground: oklch(0.96 0.002 240);
-  --sidebar-primary: oklch(0.68 0.24 45);
-  /* Vehix Orange */
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: 203 30% 18%;
-  /* Darker blue accent */
-  --sidebar-accent-foreground: oklch(0.96 0.002 240);
-  --sidebar-border: 203 25% 20%;
-  /* Subtle blue border */
-  --sidebar-ring: oklch(0.68 0.24 45);
+  /* Sidebar - Dark Mode Alignment */
+  --sidebar: #0F172A;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #F05A28;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1E293B;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #020617;
+  --sidebar-ring: #F05A28;
+
+  /* Dark Glassmorphism */
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-blur: 16px;
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 
@@ -505,21 +506,21 @@
 
 /* Mantis Card Styles */
 .mantis-card {
-  background: hsl(var(--card));
+  background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow-2);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mantis-card:hover {
   box-shadow: var(--shadow-4);
-  border-color: hsl(var(--primary) / 0.3);
+  border-color: rgba(240, 90, 40, 0.3);
 }
 
 .mantis-card-flat {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 
@@ -673,7 +674,7 @@
 }
 
 .mantis-table thead {
-  background: hsl(var(--muted));
+  background: var(--muted);
 }
 
 .mantis-table th {
@@ -681,13 +682,13 @@
   text-align: left;
   font-weight: 600;
   font-size: 0.875rem;
-  color: hsl(var(--foreground));
-  border-bottom: 1px solid hsl(var(--border));
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
 }
 
 .mantis-table td {
   padding: 12px 16px;
-  border-bottom: 1px solid hsl(var(--border));
+  border-bottom: 1px solid var(--border);
 }
 
 .mantis-table tbody tr {
@@ -695,7 +696,7 @@
 }
 
 .mantis-table tbody tr:hover {
-  background: hsl(var(--muted) / 0.5);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 /* Spacing Utilities */
@@ -737,4 +738,74 @@
 
 .gap-xl {
   gap: var(--spacing-xl);
+}
+
+/* Glassmorphism Utility Classes */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius);
+}
+
+.glass-header {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-sidebar {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-right: 1px solid var(--glass-border);
+}
+
+/* Elite Page Transitions */
+.animate-in-fade {
+  animation: fadeInElite 0.5s ease-out forwards;
+}
+
+@keyframes fadeInElite {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Background Enhancement for Glass Visibility */
+body {
+  position: relative;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(240, 90, 40, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 100% 0%, rgba(31, 42, 68, 0.05) 0%, transparent 40%),
+    var(--background);
+  pointer-events: none;
+}
+
+.dark body::before {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(240, 90, 40, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 100% 0%, rgba(31, 42, 68, 0.2) 0%, transparent 40%),
+    oklch(0.12 0.01 260);
 }

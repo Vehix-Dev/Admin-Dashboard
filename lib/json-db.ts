@@ -14,6 +14,7 @@ const FILES = {
     userPermissions: path.join(DATA_DIR, 'user_permissions.json'),
     roles: path.join(DATA_DIR, 'roles.json'),
     groups: path.join(DATA_DIR, 'groups.json'),
+    messages: path.join(DATA_DIR, 'messages.json'),
 };
 
 export interface Inquiry {
@@ -61,6 +62,15 @@ export interface Group {
     memberIds: string[]; // User IDs in this group
     created_at?: string;
     updated_at?: string;
+}
+
+export interface Message {
+    id: string;
+    senderId: string;
+    senderName: string;
+    content: string;
+    timestamp: number;
+    isStaff: boolean;
 }
 
 
@@ -134,6 +144,7 @@ function initializeDefaults() {
     }
 
     readJSON<Group[]>(FILES.groups, []);
+    readJSON<Message[]>(FILES.messages, []);
 }
 
 initializeDefaults();
@@ -374,6 +385,36 @@ export function saveUserPermissions(userId: string, perms: string[]): void {
     writeJSON(FILES.userPermissions, permissions);
 }
 
+// --- Messenger Functions ---
+
+export function cleanupMessages(): void {
+    const messages = readJSON<Message[]>(FILES.messages, []);
+    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+    const filtered = messages.filter(m => m.timestamp > twentyFourHoursAgo);
+
+    if (filtered.length !== messages.length) {
+        writeJSON(FILES.messages, filtered);
+    }
+}
+
+export function getMessages(): Message[] {
+    cleanupMessages(); // Auto-cleanup on read
+    return readJSON<Message[]>(FILES.messages, []);
+}
+
+export function addMessage(message: Omit<Message, 'id'>): Message {
+    const messages = readJSON<Message[]>(FILES.messages, []);
+    const newMessage: Message = {
+        ...message,
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    };
+
+    messages.push(newMessage);
+    writeJSON(FILES.messages, messages);
+    return newMessage;
+}
+
 const db = {
     getInquiries,
     addInquiry,
@@ -397,7 +438,11 @@ const db = {
     updateGroup,
     deleteGroup,
     getGroup,
-    getRole
+    getRole,
+    // Messenger
+    getMessages,
+    addMessage,
+    cleanupMessages
 };
 
 export default db;

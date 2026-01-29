@@ -21,7 +21,7 @@ export default function UnauthorizedPage() {
 
                 <div className="pt-6 flex flex-col sm:flex-row gap-4 justify-center">
                     <Button variant="outline" asChild className="gap-2">
-                        <Link href="/">
+                        <Link href="/admin">
                             <ArrowLeft className="h-4 w-4" />
                             Go Back
                         </Link>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { MarkerClusterer } from "@googlemaps/markerclusterer"
 import type { RoadieLocation } from "@/lib/api"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +20,7 @@ declare global {
 
 export function GoogleMap({ roadies }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
+  const clustererRef = useRef<MarkerClusterer | null>(null)
   const [map, setMap] = useState<any>(null)
   const [markers, setMarkers] = useState<any[]>([])
   const [selectedRoadie, setSelectedRoadie] = useState<RoadieLocation | null>(null)
@@ -66,7 +68,8 @@ export function GoogleMap({ roadies }: GoogleMapProps) {
   useEffect(() => {
     if (!map || !window.google) return
 
-    // Clear existing markers
+    // Clear existing markers and clusterer
+    clustererRef.current?.clearMarkers()
     markers.forEach((marker) => marker.setMap(null))
 
     if (roadies.length === 0) {
@@ -78,7 +81,6 @@ export function GoogleMap({ roadies }: GoogleMapProps) {
     const newMarkers = roadies.map((roadie) => {
       const marker = new window.google.maps.Marker({
         position: { lat: roadie.latitude, lng: roadie.longitude },
-        map,
         title: roadie.name,
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
@@ -99,6 +101,14 @@ export function GoogleMap({ roadies }: GoogleMapProps) {
 
     setMarkers(newMarkers)
 
+    // Initialize or update clusterer
+    if (!clustererRef.current) {
+      clustererRef.current = new MarkerClusterer({ map, markers: newMarkers })
+    } else {
+      clustererRef.current.clearMarkers()
+      clustererRef.current.addMarkers(newMarkers)
+    }
+
     // Fit bounds to show all markers
     const bounds = new window.google.maps.LatLngBounds()
     roadies.forEach((roadie) => {
@@ -110,7 +120,6 @@ export function GoogleMap({ roadies }: GoogleMapProps) {
   return (
     <div className="relative h-full w-full">
       <div ref={mapRef} className="h-full w-full rounded-lg" />
-
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-muted">
           <p className="text-muted-foreground">Loading map...</p>

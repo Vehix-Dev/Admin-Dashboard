@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { PageLoader } from "@/components/ui/page-loader"
 import { PERMISSIONS } from "@/lib/permissions"
 import { TwoFactorWarning } from "@/components/auth/two-factor-warning"
+import { CommandCenter } from "@/components/global/command-center"
+import { AdminMessenger } from "@/components/global/admin-messenger"
 
 // Map routes to required permissions
 const ROUTE_PERMISSIONS: Record<string, string> = {
@@ -38,24 +40,9 @@ export default function AdminLayout({
   const { isLoading: authLoading, user, sidebarOpen, hasPermission } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isAuthorized, setIsAuthorized] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // If auth context is still loading, wait
-    if (authLoading) return
-
-    // Check for valid token
-    const token = getAuthToken()
-
-    if (!token || !user) {
-      // Redirect to login if not authenticated
-      router.push('/login')
-      return
-    }
-
-    setIsAuthenticated(true)
+    if (authLoading || !user) return
 
     // Check authorization for current path
     const requiredPermission = Object.entries(ROUTE_PERMISSIONS).find(([path]) =>
@@ -66,28 +53,29 @@ export default function AdminLayout({
       // Allow access to dashboard and unauthorized page always
       if (pathname !== "/admin" && pathname !== "/admin/unauthorized") {
         router.push('/admin/unauthorized')
-        return
       }
     }
-
-    setIsAuthorized(true)
-    setIsLoading(false)
   }, [authLoading, user, router, pathname, hasPermission])
 
-  if (isLoading || authLoading || !isAuthenticated || !isAuthorized) {
-    return <PageLoader message="Verifying access..." />
+  if (authLoading) {
+    return <PageLoader message="Verifying credentials..." />
   }
+
+  // If user is null, AuthGuard in RootLayout will handle redirect to /login
+  if (!user) return null
 
   return (
     <div className="flex h-screen overflow-hidden">
       <TwoFactorWarning />
+      <CommandCenter />
+      <AdminMessenger />
       <AdminSidebar />
       <div
         className={`flex flex-1 flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-19'
           }`}
       >
         <AdminHeader />
-        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-background to-background-soft p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-transparent p-6 animate-in-fade">{children}</main>
       </div>
     </div>
   )

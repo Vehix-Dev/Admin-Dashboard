@@ -19,17 +19,19 @@ export function AdminHeader() {
   const { user, logout } = useAuth()
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-primary px-6 shadow-sm border-b border-primary/10">
+    <header className="glass-header z-30 flex h-16 items-center justify-between px-6">
 
       {/* Left: Logo / Brand */}
       <div className="flex items-center gap-3">
-        <img
-          src="/vehix-logo.jpg"
-          alt="Vehix logo"
-          className="h-8 w-auto"
-        />
-        <span className="hidden sm:inline text-lg font-semibold text-white">
-          Vehix Admin Panel
+        <div className="p-1 rounded-lg">
+          <img
+            src="/logo.png"
+            alt="Vehix Logo"
+            className="h-8 w-auto object-contain"
+          />
+        </div>
+        <span className="hidden sm:inline text-lg font-black text-foreground tracking-tight">
+          VEHIX <span className="text-primary uppercase">Ops</span>
         </span>
       </div>
 
@@ -40,14 +42,14 @@ export function AdminHeader() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="gap-2 text-white hover:bg-white/20"
+              className="gap-2 text-foreground hover:bg-muted font-medium transition-smooth"
             >
-              <Avatar className="h-8 w-8 bg-white/30">
-                <AvatarFallback className="bg-white/30 text-white">
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarFallback className="bg-muted text-muted-foreground">
                   <User className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden sm:inline text-sm font-medium">
+              <span className="hidden sm:inline text-sm">
                 {user ? (
                   user.first_name || user.last_name
                     ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
