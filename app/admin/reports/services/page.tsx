@@ -56,7 +56,7 @@ interface ServiceMetrics {
 const STATUS_COLORS = {
     COMPLETED: '#10b981',
     CANCELLED: '#ef4444',
-    ACCEPTED: '#3b82f6',
+    ACCEPTED: '#F05A28',
     PENDING: '#f59e0b'
 }
 
@@ -321,7 +321,7 @@ export default function ServicePerformancePage() {
                                             <XAxis dataKey="name" />
                                             <YAxis />
                                             <Tooltip />
-                                            <Bar dataKey="value" fill="#3b82f6" />
+                                            <Bar dataKey="value" fill="#F05A28" />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </CardContent>

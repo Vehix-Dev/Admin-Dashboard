@@ -417,8 +417,8 @@ export default function ReportsOverviewPage() {
                                         <AreaChart data={metrics.dailyActivity}>
                                             <defs>
                                                 <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                    <stop offset="5%" stopColor="#F05A28" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#F05A28" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -438,7 +438,7 @@ export default function ReportsOverviewPage() {
                                             <Area
                                                 type="monotone"
                                                 dataKey="requests"
-                                                stroke="#3b82f6"
+                                                stroke="#F05A28"
                                                 fillOpacity={1}
                                                 fill="url(#colorRequests)"
                                                 strokeWidth={2}

@@ -67,7 +67,7 @@ interface UserMetrics {
 }
 
 const COLORS = {
-    riders: '#3b82f6',
+    riders: '#F05A28',
     roadies: '#8b5cf6',
     admins: '#10b981',
     approved: '#10b981',

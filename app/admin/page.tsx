@@ -245,7 +245,7 @@ export default function AdminDashboardPage() {
         .map(([name, count], index) => ({
           name,
           count,
-          color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index]
+          color: ['#F05A28', '#1F2A44', '#10B981', '#F59E0B', '#8B5CF6'][index]
         }))
 
       // Realtime data
@@ -354,7 +354,7 @@ export default function AdminDashboardPage() {
       const requestTrends = calculateRequestTrends(safeRequestsData)
       const statusDistribution = [
         { name: "Pending", value: pendingRequests, color: "#F59E0B" },
-        { name: "Accepted", value: acceptedRequests, color: "#3B82F6" },
+        { name: "Accepted", value: acceptedRequests, color: "#F05A28" },
         { name: "Completed", value: completedRequests, color: "#10B981" },
         { name: "Cancelled", value: cancelledRequests, color: "#EF4444" },
       ].filter(item => item.value > 0)
@@ -803,7 +803,7 @@ export default function AdminDashboardPage() {
           {/* Charts Section */}
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Request Trends */}
-            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+            <div className="mantis-card-orange p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold text-foreground">Weekly Request Trends</h3>
                 <span className="text-sm text-muted-foreground">Last 7 days</span>
@@ -811,36 +811,45 @@ export default function AdminDashboardPage() {
               {stats.requestTrends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={stats.requestTrends}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis dataKey="day" stroke="#6B7280" fontSize={12} />
-                    <YAxis stroke="#6B7280" fontSize={12} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis
+                      dataKey="day"
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "var(--card)",
-                        border: "1px solid var(--border)",
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
-                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                        color: "var(--foreground)"
+                        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
                       }}
-                      itemStyle={{ color: "var(--foreground)" }}
                     />
                     <Line
                       type="monotone"
                       dataKey="requests"
-                      stroke="#3B82F6"
-                      strokeWidth={2}
+                      stroke="#F05A28"
+                      strokeWidth={3}
                       name="Total Requests"
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
+                      dot={{ r: 4, fill: "#F05A28", strokeWidth: 2, stroke: "#fff" }}
+                      activeDot={{ r: 6, fill: "#F05A28" }}
                     />
                     <Line
                       type="monotone"
                       dataKey="completed"
                       stroke="#10B981"
-                      strokeWidth={2}
+                      strokeWidth={3}
                       name="Completed"
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
+                      dot={{ r: 4, fill: "#10B981", strokeWidth: 2, stroke: "#fff" }}
+                      activeDot={{ r: 6, fill: "#10B981" }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -1231,38 +1240,49 @@ export default function AdminDashboardPage() {
                 <AreaChart data={stats.userGrowth}>
                   <defs>
                     <linearGradient id="colorRiders" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1} />
+                      <stop offset="5%" stopColor="#F05A28" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#F05A28" stopOpacity={0.05} />
                     </linearGradient>
                     <linearGradient id="colorRoadies" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1} />
+                      <stop offset="5%" stopColor="#1F2A44" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#1F2A44" stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
-                  <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis
+                    dataKey="month"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                      color: "var(--foreground)"
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
                     }}
-                    itemStyle={{ color: "var(--foreground)" }}
                   />
                   <Area
                     type="monotone"
                     dataKey="riders"
-                    stroke="#3B82F6"
+                    stroke="#F05A28"
+                    strokeWidth={2}
                     fill="url(#colorRiders)"
                     name="Customers"
                   />
                   <Area
                     type="monotone"
                     dataKey="roadies"
-                    stroke="#10B981"
+                    stroke="#1F2A44"
+                    strokeWidth={2}
                     fill="url(#colorRoadies)"
                     name="Providers"
                   />
@@ -1303,23 +1323,32 @@ const StatCard = ({
     return value.toLocaleString()
   }
 
+  // Extract color from iconBg class (e.g., "bg-blue-500" -> "blue")
+  const getIconColor = () => {
+    if (iconBg.includes('blue')) return 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
+    if (iconBg.includes('emerald') || iconBg.includes('green')) return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
+    if (iconBg.includes('amber') || iconBg.includes('yellow')) return 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
+    if (iconBg.includes('purple')) return 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400'
+    return 'bg-primary/10 text-primary'
+  }
+
   return (
-    <div className={cn("bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow", className)}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-          <p className="text-3xl font-bold text-foreground mb-2">
+    <div className={cn("mantis-card p-6", className)}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
+          <p className="text-3xl font-bold text-foreground mb-3 tracking-tight">
             {formatValue()}
           </p>
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">{subtext}</p>
-            <div className="flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-muted-foreground/50" />
-              <span className="text-xs text-muted-foreground/80">{trend}</span>
+          <div className="space-y-1.5">
+            <p className="text-sm text-muted-foreground">{subtext}</p>
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+              <span className="text-xs font-medium text-muted-foreground">{trend}</span>
             </div>
           </div>
         </div>
-        <div className={`p-3 rounded-lg ${iconBg} text-white`}>
+        <div className={cn("p-3 rounded-xl transition-transform hover:scale-105", getIconColor())}>
           {icon}
         </div>
       </div>
@@ -1337,32 +1366,36 @@ interface HealthMetricProps {
 
 const HealthMetric = ({ label, value, icon, color }: HealthMetricProps) => {
   const colorClasses = {
-    blue: 'bg-blue-100 text-blue-700',
-    green: 'bg-green-100 text-green-700',
-    amber: 'bg-amber-100 text-amber-700',
-    purple: 'bg-purple-100 text-purple-700',
-    red: 'bg-red-100 text-red-700'
+    blue: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400',
+    green: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400',
+    amber: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
+    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400',
+    red: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
+  }
+
+  const barColors = {
+    blue: 'bg-blue-500',
+    green: 'bg-emerald-500',
+    amber: 'bg-amber-500',
+    purple: 'bg-purple-500',
+    red: 'bg-red-500'
   }
 
   return (
-    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+    <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50 hover:border-border transition-colors">
       <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+        <div className={cn("p-2.5 rounded-lg", colorClasses[color])}>
           {icon}
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground">{label}</p>
-          <p className="text-2xl font-bold text-foreground">{value}%</p>
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">{label}</p>
+          <p className="text-2xl font-bold text-foreground tracking-tight">{value}%</p>
         </div>
       </div>
       <div className="w-24">
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full ${color === 'blue' ? 'bg-blue-500' :
-              color === 'green' ? 'bg-green-500' :
-                color === 'amber' ? 'bg-amber-500' :
-                  color === 'purple' ? 'bg-purple-500' : 'bg-red-500'
-              }`}
+            className={cn("h-full rounded-full transition-all duration-500", barColors[color])}
             style={{ width: `${value}%` }}
           />
         </div>

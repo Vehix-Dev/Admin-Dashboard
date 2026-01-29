@@ -67,7 +67,7 @@ interface FinancialMetrics {
     topEarners: Array<{ username: string; balance: number; role: string }>
 }
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6']
+const COLORS = ['#F05A28', '#1F2A44', '#10B981', '#F59E0B', '#EF4444']
 
 export default function FinancialReportPage() {
     const [metrics, setMetrics] = useState<FinancialMetrics | null>(null)
@@ -344,177 +344,196 @@ export default function FinancialReportPage() {
                     <>
                         {/* Key Metrics */}
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                            <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Wallet Balance</CardTitle>
-                                    <WalletIcon className="h-4 w-4 text-emerald-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-emerald-500">{formatCurrency(metrics.totalWalletBalance)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Net balance across all wallets</p>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card-emerald p-6">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-muted-foreground mb-2">Total Wallet Balance</p>
+                                        <div className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(metrics.totalWalletBalance)}</div>
+                                        <p className="text-sm text-muted-foreground mt-2">Net balance across all wallets</p>
+                                    </div>
+                                    <div className="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 p-3 rounded-xl">
+                                        <WalletIcon className="h-5 w-5" />
+                                    </div>
+                                </div>
+                            </div>
 
-                            <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Service Fees Collected</CardTitle>
-                                    <Receipt className="h-4 w-4 text-blue-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-blue-500">{formatCurrency(metrics.totalServiceFees)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">From {metrics.completedServices} completed services</p>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card-navy p-6">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-muted-foreground mb-2">Service Fees Collected</p>
+                                        <div className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(metrics.totalServiceFees)}</div>
+                                        <p className="text-sm text-muted-foreground mt-2">From {metrics.completedServices} completed services</p>
+                                    </div>
+                                    <div className="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 p-3 rounded-xl">
+                                        <Receipt className="h-5 w-5" />
+                                    </div>
+                                </div>
+                            </div>
 
-                            <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Projected Monthly Revenue</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-purple-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-purple-500">{formatCurrency(metrics.projectedMonthlyRevenue)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Based on current rate</p>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card-orange p-6">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-muted-foreground mb-2">Projected Monthly Revenue</p>
+                                        <div className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(metrics.projectedMonthlyRevenue)}</div>
+                                        <p className="text-sm text-muted-foreground mt-2">Based on current rate</p>
+                                    </div>
+                                    <div className="bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 p-3 rounded-xl">
+                                        <TrendingUp className="h-5 w-5" />
+                                    </div>
+                                </div>
+                            </div>
 
-                            <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-transparent">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Average Service Fee</CardTitle>
-                                    <Percent className="h-4 w-4 text-amber-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-amber-500">{formatCurrency(metrics.averageServiceFee)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Per completed service</p>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card-amber p-6">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-muted-foreground mb-2">Average Service Fee</p>
+                                        <div className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(metrics.averageServiceFee)}</div>
+                                        <p className="text-sm text-muted-foreground mt-2">Per completed service</p>
+                                    </div>
+                                    <div className="bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 p-3 rounded-xl">
+                                        <Percent className="h-5 w-5" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Balance Distribution */}
                         <div className="grid gap-6 md:grid-cols-3">
-                            <Card className="border-emerald-500/20">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <ArrowUpRight className="h-5 w-5 text-emerald-500" />
-                                        Positive Balances
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold text-emerald-500">{formatCurrency(metrics.positiveBalances)}</div>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        {metrics.walletDistribution[0].count} wallets
-                                    </p>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 p-2.5 rounded-lg">
+                                        <ArrowUpRight className="h-5 w-5" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-foreground">Positive Balances</h3>
+                                </div>
+                                <div className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(metrics.positiveBalances)}</div>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    {metrics.walletDistribution[0].count} wallets
+                                </p>
+                            </div>
 
-                            <Card className="border-muted">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <DollarSign className="h-5 w-5 text-muted-foreground" />
-                                        Zero Balances
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold text-muted-foreground">{formatCurrency(0)}</div>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        {metrics.walletDistribution[1].count} wallets
-                                    </p>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="bg-muted/50 text-muted-foreground p-2.5 rounded-lg">
+                                        <DollarSign className="h-5 w-5" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-foreground">Zero Balances</h3>
+                                </div>
+                                <div className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(0)}</div>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    {metrics.walletDistribution[1].count} wallets
+                                </p>
+                            </div>
 
-                            <Card className="border-destructive/20">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <ArrowDownRight className="h-5 w-5 text-destructive" />
-                                        Negative Balances
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold text-destructive">{formatCurrency(metrics.negativeBalances)}</div>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        {metrics.walletDistribution[2].count} wallets
-                                    </p>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 p-2.5 rounded-lg">
+                                        <ArrowDownRight className="h-5 w-5" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-foreground">Negative Balances</h3>
+                                </div>
+                                <div className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(metrics.negativeBalances)}</div>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    {metrics.walletDistribution[2].count} wallets
+                                </p>
+                            </div>
                         </div>
 
                         {/* Charts */}
                         <div className="grid gap-6 md:grid-cols-2">
                             {/* Daily Revenue Trend */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Daily Revenue Trend</CardTitle>
-                                    <CardDescription>Service fees collected per day</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <AreaChart data={metrics.dailyRevenue}>
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="date" />
-                                            <YAxis />
-                                            <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                                            <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card p-6">
+                                <div className="mb-6">
+                                    <h3 className="text-lg font-semibold text-foreground">Daily Revenue Trend</h3>
+                                    <p className="text-sm text-muted-foreground mt-1">Service fees collected per day</p>
+                                </div>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <AreaChart data={metrics.dailyRevenue}>
+                                        <defs>
+                                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#F05A28" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#F05A28" stopOpacity={0.05} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                                        <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                        <Tooltip
+                                            formatter={(value) => formatCurrency(Number(value))}
+                                            contentStyle={{
+                                                backgroundColor: "hsl(var(--card))",
+                                                border: "1px solid hsl(var(--border))",
+                                                borderRadius: "8px",
+                                                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+                                            }}
+                                        />
+                                        <Area type="monotone" dataKey="revenue" stroke="#F05A28" strokeWidth={2} fill="url(#colorRevenue)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
 
                             {/* Wallet Distribution */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Wallet Balance Distribution</CardTitle>
-                                    <CardDescription>Distribution by balance status</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <PieChart>
-                                            <Pie
-                                                data={metrics.walletDistribution}
-                                                cx="50%"
-                                                cy="50%"
-                                                labelLine={false}
-                                                label={(entry) => `${entry.name}: ${entry.count}`}
-                                                outerRadius={80}
-                                                fill="#8884d8"
-                                                dataKey="count"
-                                            >
-                                                {metrics.walletDistribution.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </CardContent>
-                            </Card>
+                            <div className="mantis-card p-6">
+                                <div className="mb-6">
+                                    <h3 className="text-lg font-semibold text-foreground">Wallet Balance Distribution</h3>
+                                    <p className="text-sm text-muted-foreground mt-1">Distribution by balance status</p>
+                                </div>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={metrics.walletDistribution}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            label={(entry) => `${entry.name}: ${entry.count}`}
+                                            outerRadius={90}
+                                            innerRadius={60}
+                                            paddingAngle={2}
+                                            fill="#8884d8"
+                                            dataKey="count"
+                                        >
+                                            {metrics.walletDistribution.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="#fff" strokeWidth={2} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: "hsl(var(--card))",
+                                                border: "1px solid hsl(var(--border))",
+                                                borderRadius: "8px",
+                                                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
 
                         {/* Top Earners */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Top 10 Earners</CardTitle>
-                                <CardDescription>Users with highest positive balances</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {metrics.topEarners.map((earner, index) => (
-                                        <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                                                    {index + 1}
-                                                </div>
-                                                <div>
-                                                    <div className="font-medium">{earner.username}</div>
-                                                    <div className="text-xs text-muted-foreground">{earner.role}</div>
-                                                </div>
+                        <div className="mantis-card p-6">
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold text-foreground">Top 10 Earners</h3>
+                                <p className="text-sm text-muted-foreground mt-1">Users with highest positive balances</p>
+                            </div>
+                            <div className="space-y-3">
+                                {metrics.topEarners.map((earner, index) => (
+                                    <div key={index} className="flex items-center justify-between p-4 rounded-xl bg-muted/20 hover:bg-muted/30 transition-colors border border-border/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                                                {index + 1}
                                             </div>
-                                            <div className="text-lg font-bold text-emerald-500">
-                                                {formatCurrency(earner.balance)}
+                                            <div>
+                                                <div className="font-semibold text-foreground">{earner.username}</div>
+                                                <div className="text-xs text-muted-foreground">{earner.role}</div>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        <div className="text-lg font-bold text-foreground">
+                                            {formatCurrency(earner.balance)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </>
                 ) : null}
             </div>

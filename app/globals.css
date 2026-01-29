@@ -4,103 +4,145 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Backgrounds */
-  --background: oklch(98.806% 0.00427 198.539);
-  --foreground: oklch(0.18 0.02 260);
+  /* Mantis-inspired Clean Backgrounds */
+  --background: oklch(97.5% 0.002 240);
+  --background-soft: oklch(0.99 0.002 240);
+  /* Clean light gray #f5f5f5 */
+  --foreground: oklch(0.2 0.01 260);
+  /* Dark text #212121 */
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 260);
+  /* Pure white for cards */
+  --card-foreground: oklch(0.2 0.01 260);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 260);
+  --popover-foreground: oklch(0.2 0.01 260);
 
-  /* BRAND COLORS */
+  /* VEHIX BRAND COLORS (Preserved) */
   /* Logo Orange (#F05A28) */
   --primary: oklch(0.65 0.23 45);
   --primary-foreground: oklch(1 0 0);
 
   /* Logo Navy (#1F2A44) */
-  --secondary: oklch(44.474% 0.07648 259.677);
+  --secondary: oklch(0.22 0.08 260);
   --secondary-foreground: oklch(1 0 0);
 
-  /* UI Neutrals */
-  --muted: oklch(0.95 0.005 95);
-  --muted-foreground: oklch(0.45 0.02 260);
+  /* UI Neutrals - Mantis Style */
+  --muted: oklch(0.96 0.002 240);
+  /* Lighter muted background */
+  --muted-foreground: oklch(0.5 0.01 260);
+  /* Medium gray text */
 
-  --accent: oklch(0.95 0.005 95);
-  --accent-foreground: oklch(0.18 0.02 260);
+  --accent: oklch(0.96 0.002 240);
+  --accent-foreground: oklch(0.2 0.01 260);
 
   --destructive: oklch(0.58 0.25 27);
   --destructive-foreground: oklch(1 0 0);
 
-  --border: oklch(88.045% 0.09963 82.719);
-  --input: oklch(0.94 0.005 95);
+  --border: oklch(0.88 0.002 240);
+  /* Clean light border #e0e0e0 */
+  --input: oklch(0.96 0.002 240);
   --ring: oklch(0.65 0.23 45);
+  /* Orange focus ring */
 
-  /* Charts */
+  /* Charts - Using Vehix colors */
   --chart-1: oklch(0.65 0.23 45);
   /* Orange */
-  --chart-2: oklch(0.25 0.04 260);
+  --chart-2: oklch(0.22 0.08 260);
   /* Navy */
   --chart-3: oklch(0.72 0.12 190);
+  /* Teal */
   --chart-4: oklch(0.6 0.2 30);
+  /* Red */
   --chart-5: oklch(0.5 0.1 260);
+  /* Purple */
 
-  --radius: 0.375rem;
+  --radius: 0.5rem;
+  /* 8px - Mantis uses slightly larger radius */
 
-  /* SIDEBAR (NAVY DOMINANT) */
-  --sidebar: oklch(0.18 0.04 260);
-  --sidebar-foreground: oklch(0.96 0.005 95);
+  /* Material-UI Elevation Shadows */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-2: 0 3px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
+  --shadow-4: 0 10px 20px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.10);
+  --shadow-8: 0 15px 25px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.05);
+  --shadow-16: 0 20px 40px rgba(0, 0, 0, 0.2);
+
+  /* Spacing System (8px base) */
+  --spacing-xs: 0.5rem;
+  /* 8px */
+  --spacing-sm: 1rem;
+  /* 16px */
+  --spacing-md: 1.5rem;
+  /* 24px */
+  --spacing-lg: 2rem;
+  /* 32px */
+  --spacing-xl: 3rem;
+  /* 48px */
+
+  /* SIDEBAR (Clean White/Navy) */
+  --sidebar: oklch(0.3 0.1 230);
+  /* Darker blue sidebar */
+  --sidebar-foreground: oklch(0.95 0.01 230);
+  /* Lighter foreground for contrast */
 
   --sidebar-primary: oklch(0.65 0.23 45);
   --sidebar-primary-foreground: oklch(1 0 0);
 
-  --sidebar-accent: oklch(0.22 0.04 260);
-  --sidebar-accent-foreground: oklch(0.96 0.005 95);
+  --sidebar-accent: oklch(0.4 0.1 230);
+  /* Darker accent */
+  --sidebar-accent-foreground: oklch(1 0 0);
+  /* White foreground for accent */
 
-  --sidebar-border: oklch(0.25 0.04 260);
+  --sidebar-border: oklch(0.4 0.1 230);
   --sidebar-ring: oklch(0.65 0.23 45);
 }
 
 
 .dark {
-  --background: oklch(0.14 0.03 260);
-  --foreground: oklch(0.96 0.005 95);
+  /* Clean dark backgrounds - Mantis style */
+  --background: oklch(0.12 0.01 260);
+  --background-soft: oklch(0.15 0.01 260);
+  /* Dark navy-tinted #1a1f2e */
+  --foreground: oklch(0.96 0.002 240);
+  /* Clean white text */
 
-  --card: oklch(0.18 0.04 260);
-  --card-foreground: oklch(0.96 0.005 95);
+  --card: oklch(0.16 0.015 260);
+  /* Slightly lighter surface */
+  --card-foreground: oklch(0.96 0.002 240);
 
-  --popover: oklch(0.18 0.04 260);
-  --popover-foreground: oklch(0.96 0.005 95);
+  --popover: oklch(0.16 0.015 260);
+  --popover-foreground: oklch(0.96 0.002 240);
 
-  /* Orange remains vivid */
+  /* Orange remains vivid in dark mode */
   --primary: oklch(0.68 0.24 45);
   --primary-foreground: oklch(1 0 0);
 
-  /* Navy stays structural */
-  --secondary: oklch(0.3 0.05 260);
+  /* Navy adjusted for dark mode */
+  --secondary: oklch(0.28 0.06 260);
   --secondary-foreground: oklch(1 0 0);
 
-  --muted: oklch(0.22 0.03 260);
-  --muted-foreground: oklch(0.65 0.02 260);
+  --muted: oklch(0.2 0.015 260);
+  --muted-foreground: oklch(0.65 0.01 260);
 
-  --accent: oklch(0.22 0.03 260);
-  --accent-foreground: oklch(0.96 0.005 95);
+  --accent: oklch(0.2 0.015 260);
+  --accent-foreground: oklch(0.96 0.002 240);
 
-  --border: oklch(0.3 0.04 260);
-  --input: oklch(0.3 0.04 260);
+  --border: oklch(0.28 0.02 260);
+  --input: oklch(0.2 0.015 260);
   --ring: oklch(0.68 0.24 45);
 
-  --sidebar: oklch(0.16 0.04 260);
-  --sidebar-foreground: oklch(0.96 0.005 95);
-
+  /* Sidebar - VS Code Blue Dark Mode */
+  --sidebar: 203 40% 12%;
+  /* Dark blue background */
+  --sidebar-foreground: oklch(0.96 0.002 240);
   --sidebar-primary: oklch(0.68 0.24 45);
+  /* Vehix Orange */
   --sidebar-primary-foreground: oklch(1 0 0);
-
-  --sidebar-accent: oklch(0.22 0.04 260);
-  --sidebar-accent-foreground: oklch(0.96 0.005 95);
-
-  --sidebar-border: oklch(0.3 0.04 260);
+  --sidebar-accent: 203 30% 18%;
+  /* Darker blue accent */
+  --sidebar-accent-foreground: oklch(0.96 0.002 240);
+  --sidebar-border: 203 25% 20%;
+  /* Subtle blue border */
   --sidebar-ring: oklch(0.68 0.24 45);
 }
 
@@ -109,6 +151,7 @@
   --font-sans: "Geist", "Geist Fallback";
   --font-mono: "Geist Mono", "Geist Mono Fallback";
   --color-background: var(--background);
+  --color-background-soft: var(--background-soft);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -435,9 +478,263 @@
   animation: slideUp 0.4s ease-out;
 }
 
-/* Smooth transitions for layout changes */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
+/* Mantis-Style Material-UI Elevation System */
+.elevation-0 {
+  box-shadow: none;
+}
+
+.elevation-1 {
+  box-shadow: var(--shadow-1);
+}
+
+.elevation-2 {
+  box-shadow: var(--shadow-2);
+}
+
+.elevation-4 {
+  box-shadow: var(--shadow-4);
+}
+
+.elevation-8 {
+  box-shadow: var(--shadow-8);
+}
+
+.elevation-16 {
+  box-shadow: var(--shadow-16);
+}
+
+/* Mantis Card Styles */
+.mantis-card {
+  background: hsl(var(--card));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  border: 1px solid hsl(var(--border));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mantis-card:hover {
+  box-shadow: var(--shadow-4);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.mantis-card-flat {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+}
+
+/* Colorful Card Border Variants */
+.mantis-card-orange {
+  background: hsl(var(--card));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  border-left: 4px solid #F05A28;
+  border-top: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mantis-card-orange:hover {
+  box-shadow: var(--shadow-4);
+  border-left-width: 5px;
+}
+
+.mantis-card-navy {
+  background: hsl(var(--card));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  border-left: 4px solid #1F2A44;
+  border-top: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mantis-card-navy:hover {
+  box-shadow: var(--shadow-4);
+  border-left-width: 5px;
+}
+
+.mantis-card-emerald {
+  background: hsl(var(--card));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  border-left: 4px solid #10B981;
+  border-top: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mantis-card-emerald:hover {
+  box-shadow: var(--shadow-4);
+  border-left-width: 5px;
+}
+
+.mantis-card-amber {
+  background: hsl(var(--card));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  border-left: 4px solid #F59E0B;
+  border-top: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mantis-card-amber:hover {
+  box-shadow: var(--shadow-4);
+  border-left-width: 5px;
+}
+
+/* Smooth Transitions - Mantis Standard */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-fast {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-slow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Top Progress Bar (Mantis-style) */
+@keyframes progress-indeterminate {
+  0% {
+    left: -35%;
+    right: 100%;
+  }
+
+  60% {
+    left: 100%;
+    right: -90%;
+  }
+
+  100% {
+    left: 100%;
+    right: -90%;
+  }
+}
+
+.top-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: transparent;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.top-progress-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #F05A28 0%, #FF7A50 50%, #F05A28 100%);
+  box-shadow: 0 0 10px rgba(240, 90, 40, 0.5);
+  animation: progress-indeterminate 1.5s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+}
+
+/* Remove heavy gradients and glassmorphism - Mantis clean style */
+.clean-bg {
+  background: hsl(var(--background));
+}
+
+.clean-card-bg {
+  background: hsl(var(--card));
+}
+
+/* Mantis-style hover effects */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Clean focus states */
+.focus-ring {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Mantis Table Styles */
+.mantis-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.mantis-table thead {
+  background: hsl(var(--muted));
+}
+
+.mantis-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: hsl(var(--foreground));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.mantis-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.mantis-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.mantis-table tbody tr:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+/* Spacing Utilities */
+.spacing-xs {
+  padding: var(--spacing-xs);
+}
+
+.spacing-sm {
+  padding: var(--spacing-sm);
+}
+
+.spacing-md {
+  padding: var(--spacing-md);
+}
+
+.spacing-lg {
+  padding: var(--spacing-lg);
+}
+
+.spacing-xl {
+  padding: var(--spacing-xl);
+}
+
+.gap-xs {
+  gap: var(--spacing-xs);
+}
+
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+
+.gap-md {
+  gap: var(--spacing-md);
+}
+
+.gap-lg {
+  gap: var(--spacing-lg);
+}
+
+.gap-xl {
+  gap: var(--spacing-xl);
 }

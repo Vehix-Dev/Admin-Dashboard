@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/contexts/auth-context"
 import { AuthGuard } from "@/components/auth/auth-guard"
 import { ThemeProvider } from "@/components/theme-provider"
+import { TopProgressBar } from "@/components/ui/top-progress-bar"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -48,6 +49,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <TopProgressBar />
           <AuthProvider>
             <AuthGuard>
               {children}

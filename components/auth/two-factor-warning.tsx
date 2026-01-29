@@ -11,34 +11,42 @@ export function TwoFactorWarning() {
     const [isVisible, setIsVisible] = useState(false)
 
     useEffect(() => {
-        if (!user) {
+        if (!user?.username) {
             setIsVisible(false)
             return
         }
 
-        // Check if 2FA is enabled
-        if (user.two_factor_enabled) {
-            setIsVisible(false)
-            return
+        const check2FAStatus = async () => {
+            try {
+                // Fetch fresh status from the specific endpoint
+                const response = await fetch(`/api/auth/2fa/status?username=${user.username}`)
+                if (response.ok) {
+                    const data = await response.json()
+
+                    // Show warning if 2FA is explicitly disabled (false)
+                    if (data.enabled === false) {
+                        setIsVisible(true)
+
+                        // Auto-hide after 10 seconds
+                        const timer = setTimeout(() => {
+                            setIsVisible(false)
+                        }, 10000)
+
+                        return () => clearTimeout(timer)
+                    } else {
+                        setIsVisible(false)
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to check 2FA status for warning:", error)
+            }
         }
 
-        // Show warning on every login when 2FA is disabled
-        setIsVisible(true)
+        check2FAStatus()
+    }, [user?.username])
 
-        // Auto-hide after 10 seconds
-        const timer = setTimeout(() => {
-            setIsVisible(false)
-        }, 10000)
-
-        return () => clearTimeout(timer)
-    }, [user?.id, user?.two_factor_enabled])
-
-    // If user enables 2FA while banner is visible (e.g. via another tab or real-time update), hide it
-    useEffect(() => {
-        if (user?.two_factor_enabled) {
-            setIsVisible(false)
-        }
-    }, [user?.two_factor_enabled])
+    // Re-check periodically or on window focus could be added here if needed
+    // For now, we rely on the initial check when the component mounts/user changes
 
     if (!isVisible) return null
 
@@ -65,7 +73,7 @@ export function TwoFactorWarning() {
                             <div className="p-4 bg-white/10 rounded-full ring-4 ring-white/5">
                                 <AlertTriangle className="h-12 w-12" />
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <h3 className="font-bold text-2xl tracking-tight">Security Warning</h3>
                                 <p className="text-base opacity-90 leading-relaxed">
@@ -74,7 +82,7 @@ export function TwoFactorWarning() {
                             </div>
 
                             <div className="w-full h-1 bg-black/10 rounded-full overflow-hidden">
-                                <motion.div 
+                                <motion.div
                                     className="h-full bg-white/50"
                                     initial={{ width: "100%" }}
                                     animate={{ width: "0%" }}

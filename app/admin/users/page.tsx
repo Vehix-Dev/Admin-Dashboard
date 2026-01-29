@@ -21,6 +21,51 @@ import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 
+function TwoFactorStatusCell({ username }: { username: string }) {
+    const [isEnabled, setIsEnabled] = useState<boolean | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const res = await fetch(`/api/auth/2fa/status?username=${username}`)
+                if (res.ok) {
+                    const data = await res.json()
+                    setIsEnabled(data.enabled)
+                }
+            } catch (e) {
+                console.error("Failed to fetch 2FA status for user", username, e)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchStatus()
+    }, [username])
+
+    if (loading) return <span className="text-muted-foreground text-xs">Checking...</span>
+
+    // If null/undefined (failed request), maybe show unknown or default to disabled? 
+    // Assuming disabled for safety or just hiding icon.
+    // Let's stick to the visual style we had:
+    const active = isEnabled === true
+
+    return (
+        <div className={`flex items-center gap-1.5 text-xs font-medium ${active ? "text-emerald-500" : "text-amber-500"}`}>
+            {active ? (
+                <>
+                    <Lock className="h-3 w-3" />
+                    Enabled
+                </>
+            ) : (
+                <>
+                    <Unlock className="h-3 w-3" />
+                    Disabled
+                </>
+            )}
+        </div>
+    )
+}
+
 export default function AdminUsersPage() {
     const [admins, setAdmins] = useState<AdminUser[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -176,22 +221,8 @@ export default function AdminUsersPage() {
         },
         {
             header: "2FA",
-            accessor: "two_factor_enabled" as const,
-            cell: (value: boolean) => (
-                <div className={`flex items-center gap-1.5 text-xs font-medium ${value ? "text-emerald-500" : "text-amber-500"}`}>
-                    {value ? (
-                        <>
-                            <Lock className="h-3 w-3" />
-                            Enabled
-                        </>
-                    ) : (
-                        <>
-                            <Unlock className="h-3 w-3" />
-                            Disabled
-                        </>
-                    )}
-                </div>
-            ),
+            accessor: (row: AdminUser) => row.username,
+            cell: (username: string) => <TwoFactorStatusCell username={username} />,
         },
         {
             header: "Active",

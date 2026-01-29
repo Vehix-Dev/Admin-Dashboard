@@ -87,7 +87,7 @@ export default function AdminLayout({
           }`}
       >
         <AdminHeader />
-        <main className="flex-1 overflow-y-auto bg-muted/30 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-background to-background-soft p-6">{children}</main>
       </div>
     </div>
   )
