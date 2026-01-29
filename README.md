@@ -1,228 +1,117 @@
-# Vehix Admin CRM
+# <img src="public/logo.png" height="40" alt="Vehix Logo" /> Vehix Admin OPS
 
-A comprehensive admin dashboard and CRM system for managing roadside assistance services, built with Next.js 16, React 19, and TypeScript.
+**Advanced Command & Intelligence Platform for Vehix Roadside Services.**
 
-![Next.js](https://img.shields.io/badge/Next.js-16.0.10-black)
-![React](https://img.shields.io/badge/React-19.2.0-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+Vehix Admin OPS is a high-performance, real-time administration dashboard built for the next generation of roadside assistance. It features a premium **Glassmorphism** design, real-time geolocation tracking, secure internal communications, and a multi-layered permission system.
 
-## 🚀 Features
+[![Next.js](https://img.shields.io/badge/Next.js-15.1.4-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4.x-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-F05A28?style=for-the-badge&logo=github)](LICENSE)
 
-### Core Management
-- **User Management**: Comprehensive user administration with role-based permissions
-- **Rider Management**: Track and manage riders with detailed profiles and activity history
-- **Roadie Management**: Manage service providers (roadies) with service tracking and performance metrics
-- **Service Requests**: Real-time tracking of service requests with status management
-- **Live Map**: Interactive map showing real-time locations of roadies and service requests
+---
 
-### Advanced Features
-- **Reports & Analytics**: Detailed analytics dashboard with revenue tracking, service distribution, and trend analysis
-- **Wallet Management**: Financial tracking for roadies with transaction history
-- **Media Moderation**: Review and moderate user-uploaded images
-- **Referral System**: Track and manage user referrals
-- **Notifications**: System-wide notification management
-- **Support Inbox**: Customer inquiry management system
+## ✨ Core Intelligence Modules
 
-### Landing Page CMS
-- **Dynamic Content Sections**: Create and manage page sections (Hero, Features, Text+Image, Banners)
-- **Video Support**: Background videos and in-page video playback
-- **Custom Role Cards**: Configurable Rider/Roadie selection cards with custom images and links
-- **Theme Customization**: Full color scheme customization
-- **SMTP Configuration**: Email settings management
+### 🚨 Command Center (Dashboard)
+- **Real-Time Visualization**: Instant overview of service requests, active providers, and platform health.
+- **Dynamic Metrics**: Data-driven calculations for acceptance rates, response times, and completion efficiency.
+- **Intelligent Trends**: 7-day trailing analytics based on live operational data.
 
-## 🛠️ Tech Stack
+### 🛡️ Security & Access
+- **Granular Permissions**: 4-tier action control (View, Add, Edit, Delete) for every module.
+- **Two-Factor Authentication (2FA)**: Mandatory security layer for all administrative access.
+- **System Audit Logs**: Complete trail of all administrative actions with side-by-side diff viewers.
+- **Firewall Management**: Advanced IP-based access control and security rules.
 
-### Frontend
-- **Framework**: Next.js 16 (App Router)
-- **UI Library**: React 19
-- **Styling**: Tailwind CSS 4.1
-- **UI Components**: Radix UI primitives
-- **Icons**: Lucide React
-- **Charts**: Recharts
-- **Maps**: React Leaflet
-- **Forms**: React Hook Form + Zod validation
+### 🗺️ Live Operations Map
+- **Geo-Tracking**: Real-time GPS tracking for active Roadies and service requests.
+- **Interactive Clusters**: High-performance rendering of dense service areas.
+- **Status Context**: Visual indicators for en-route, arrived, and pending assignments.
 
-### Backend
-- **Database**: SQLite with better-sqlite3
-- **File Storage**: Local file system (public/uploads)
-- **Real-time**: Socket.io client support
+### 💬 Admin Messenger (Internal)
+- **Secure Persistence**: Centralized message history storage with automatic 24-hour cleanup.
+- **Real-Time Sync**: Hybrid Polling + BroadcastChannel for instant communication across multiple tabs and users.
+- **Team Communications**: Dedicated "Encrypted Tunnel" for internal administrative coordination.
 
-### Development
-- **Language**: TypeScript 5
-- **Linting**: ESLint
-- **Package Manager**: npm
+---
 
-## 📋 Prerequisites
+## 🛠️ Technical Architecture
 
-- Node.js 18.x or higher
-- npm 9.x or higher
+### Frontend Ecosystem
+- **Framework**: Next.js 15+ (App Router, Turbopack)
+- **Design System**: Custom Glassmorphism built with **Tailwind CSS 4**
+- **Visualization**: Recharts for high-performance data rendering
+- **Mapping**: Leaflet with custom Google-style theme implementation
+
+### Backend & Data
+- **Engine**: Node.js via Next.js API Routes
+- **Persistence**: Hybrid SQLite + JSON Document Store (`json-db.ts`)
+- **Persistence Layer**: Custom state management for dashboard configurations
+
+---
 
 ## 🚀 Getting Started
 
+### Prerequisites
+- **Node.js**: 18.x or 20.x (Recommended)
+- **Package Manager**: npm
+
 ### Installation
+1. **Clone & Install**:
+   ```bash
+   git clone https://github.com/Vehix-Dev/Admin-Dashboard.git
+   cd Admin-Dashboard
+   npm install
+   ```
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/vehix-admin-crm.git
-cd vehix-admin-crm
-```
+2. **Environment Configuration**:
+   Create a `.env.local` file:
+   ```env
+   # Admin Credentials
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=your_secure_password
+   
+   # Email Gateway (Gmail)
+   GMAIL_USER=your_email@gmail.com
+   GMAIL_APP_PASSWORD=your_app_password
+   ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+3. **Launch Platform**:
+   ```bash
+   npm run dev
+   ```
 
-3. Create a `.env` file in the root directory:
-```env
-# Add your environment variables here
-```
+---
 
-4. Initialize the database:
-```bash
-# The database will be automatically initialized on first run
-```
+## 📁 System Blueprint
 
-### Development
+| Directory | Core Responsibility |
+| :--- | :--- |
+| `app/admin` | Core UI modules (Reports, Requests, Users, Wallet, etc.) |
+| `app/api` | REST endpoints for internal operations and CRM data |
+| `components/global` | Mission-critical platform components (Messenger, Command Center) |
+| `lib/` | Core logic engines (`auth.ts`, `api.ts`, `json-db.ts`) |
 
-Run the development server:
-```bash
-npm run dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## 🎨 Professional Design Philosophy
 
-### Production Build
+The platform utilizes a **Mantis-inspired design system** with specific brand alignment:
+- **Brand Navy (#1F2A44)**: Precision and Professionalism (used in Navigation & Core Borders)
+- **Brand Orange (#F05A28)**: Action and Urgency (used for Primary CTAs & Highlights)
+- **Glassmorphism**: Visual depth with `backdrop-filter` for a premium, modern feel.
 
-Build the application for production:
-```bash
-npm run build
-```
+---
 
-Start the production server:
-```bash
-npm start
-```
+## 🔐 Security Policy
 
-## 📁 Project Structure
-
-```
-vehix-admin-crm/
-├── app/                      # Next.js app directory
-│   ├── admin/               # Admin dashboard pages
-│   │   ├── live-map/       # Real-time map view
-│   │   ├── moderation/     # Media moderation
-│   │   ├── referrals/      # Referral management
-│   │   ├── reports/        # Analytics & reports
-│   │   ├── requests/       # Service requests
-│   │   ├── riders/         # Rider management
-│   │   ├── roadies/        # Roadie management
-│   │   ├── settings/       # System settings
-│   │   ├── support/        # Support inbox
-│   │   ├── users/          # User management
-│   │   └── wallet/         # Wallet management
-│   ├── api/                # API routes
-│   │   ├── contact/        # Contact form handler
-│   │   ├── inquiries/      # Inquiry management
-│   │   ├── settings/       # Settings API
-│   │   └── upload/         # File upload handler
-│   ├── login/              # Authentication
-│   └── page.tsx            # Public landing page
-├── components/             # React components
-│   ├── ui/                # Reusable UI components
-│   └── admin-sidebar.tsx  # Admin navigation
-├── contexts/              # React contexts
-├── hooks/                 # Custom React hooks
-├── lib/                   # Utility libraries
-│   ├── api.ts            # API client functions
-│   ├── db.ts             # Database initialization
-│   └── utils.ts          # Helper functions
-├── public/               # Static assets
-│   └── uploads/         # User-uploaded files
-└── styles/              # Global styles
-```
-
-## 🔐 Security
-
-For security concerns, please review our [SECURITY.md](SECURITY.md) file.
-
-## 🗄️ Database Schema
-
-The application uses SQLite with the following main tables:
-
-- `user_permissions`: User access control
-- `settings`: System-wide configuration
-- `landing_sections`: CMS content sections
-- `inquiries`: Customer support messages
-
-## 🎨 Customization
-
-### Theme Colors
-Navigate to **Admin → Settings → Landing Page → Design & Theme** to customize:
-- Primary color
-- Secondary color
-- Background color
-- Hero images and videos
-
-### Landing Page Content
-Use the CMS at **Admin → Settings → Landing Page** to:
-- Add/edit content sections
-- Configure role selection cards
-- Upload media files
-- Manage SMTP settings
-
-## 📊 Key Features Breakdown
-
-### Reports Center
-- Real revenue tracking from service fees
-- Daily request trends
-- Service type distribution
-- Status breakdown analytics
-- CSV export functionality
-
-### Live Map
-- Real-time roadie locations
-- Service request markers
-- Interactive clustering
-- Dark/light mode support
-
-### Media Moderation
-- Grouped by user
-- Bulk approval/rejection
-- Filter by status
-- Image preview
-
-### Roadie Management
-- Performance metrics
-- Service history
-- Wallet integration
-- Online status tracking
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Security is a primary pillar of the Vehix Admin platform. We utilize modern authentication standards and granular permission guards. For more details, see [SECURITY.md](SECURITY.md).
 
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- UI components from [Radix UI](https://www.radix-ui.com/)
-- Icons by [Lucide](https://lucide.dev/)
-- Maps powered by [Leaflet](https://leafletjs.com/)
-
-## 📧 Contact
-
-For questions or support, please open an issue on GitHub.
-
 ---
 
-Made with ❤️ for Vehix
+**Made with ❤️ for Vehix. Engineering Excellence in Roadside Operations.**
