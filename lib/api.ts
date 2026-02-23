@@ -1248,6 +1248,8 @@ export interface ServiceRequest {
   updated_at: string
   is_paid?: boolean
   fee_charged?: boolean
+  cancelled_by?: string | null
+  cancellation_reason?: string | null
   rider_username_input?: string
   rodie_username_input?: string
 }

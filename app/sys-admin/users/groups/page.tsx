@@ -162,7 +162,7 @@ export default function GroupsPage() {
                         <Card
                             key={group.id}
                             className="relative group cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => router.push(`/admin/users/groups/${group.id}`)}
+                            onClick={() => router.push(`/sys-admin/users/groups/${group.id}`)}
                         >
                             <CardHeader>
                                 <div className="flex justify-between items-start">

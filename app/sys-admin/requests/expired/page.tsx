@@ -172,7 +172,7 @@ export default function ExpiredRequestsPage() {
     }, [searchQuery, serviceTypeFilter, dateFilter, requests])
 
     const handleIdClick = (id: string) => {
-        router.push(`/admin/requests/${id}`)
+        router.push(`/sys-admin/requests/${id}`)
     }
 
     const handleExport = () => {

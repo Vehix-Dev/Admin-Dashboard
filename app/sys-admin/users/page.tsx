@@ -195,7 +195,7 @@ export default function AdminUsersPage() {
     }
 
     const handleEdit = (admin: AdminUser) => {
-        window.location.href = `/admin/users/${admin.id}`
+        window.location.href = `/sys-admin/users/${admin.id}`
     }
 
     const clearFilters = () => {

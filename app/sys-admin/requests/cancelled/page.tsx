@@ -48,7 +48,7 @@ import { debounce } from "lodash"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
-interface RequestRow extends ServiceRequest {
+interface RequestRow extends Omit<ServiceRequest, 'id' | 'rider_lat' | 'rider_lng'> {
     id: string
     rider_lat: string | number | null
     rider_lng: string | number | null
@@ -167,7 +167,7 @@ export default function CancelledRequestsPage() {
                     request.id.toLowerCase(),
                     request.rider_username?.toLowerCase() || "",
                     request.rodie_username?.toLowerCase() || "",
-                    request.service_type_name?.toLowerCase() || getServiceName(request).toLowerCase(),
+                    request.service_type_name?.toLowerCase() || getServiceName(request as any).toLowerCase(),
                     request.service_type_details?.name?.toLowerCase() || "",
                     request.service_type_details?.code?.toLowerCase() || "",
                     request.status?.toLowerCase() || "",
@@ -240,7 +240,7 @@ export default function CancelledRequestsPage() {
         }
     }
 
-    const handleDelete = async (request: RequestRow) => {
+    const handleDelete = async (request: any) => {
         try {
             await deleteServiceRequest(Number(request.id))
             toast({
@@ -267,12 +267,12 @@ export default function CancelledRequestsPage() {
         setIsBulkDeleteOpen(false)
     }
 
-    const handleEdit = (request: RequestRow) => {
-        router.push(`/admin/requests/${request.id}`)
+    const handleEdit = (request: any) => {
+        router.push(`/sys-admin/requests/${request.id}`)
     }
 
     const handleIdClick = (id: string) => {
-        router.push(`/admin/requests/${id}`)
+        router.push(`/sys-admin/requests/${id}`)
     }
 
     const handleExport = () => {
@@ -303,7 +303,7 @@ export default function CancelledRequestsPage() {
                 request.rodie || '',
                 `"${request.rodie_username || ''}"`,
                 request.service_type,
-                `"${request.service_type_name || getServiceName(request)}"`,
+                `"${request.service_type_name || getServiceName(request as any)}"`,
                 `"${request.service_type_details?.code || ''}"`,
                 `"${getStatusLabel(request.status as ServiceStatus)}"`,
                 `"${request.cancelled_by || 'unknown'}"`,
@@ -388,11 +388,11 @@ export default function CancelledRequestsPage() {
         }
     }
 
-    const getServiceDisplayName = (request: RequestRow): string => {
-        return request.service_type_name || getServiceName(request)
+    const getServiceDisplayName = (request: any): string => {
+        return request.service_type_name || getServiceName(request as any)
     }
 
-    const getCancelledByDisplay = (request: RequestRow): string => {
+    const getCancelledByDisplay = (request: any): string => {
         if (request.cancelled_by) {
             return request.cancelled_by.charAt(0).toUpperCase() + request.cancelled_by.slice(1)
         }
@@ -825,11 +825,7 @@ export default function CancelledRequestsPage() {
                                     </div>
                                 </div>
                             )}
-                            searchable={false}
-                            pagination={{
-                                pageSize: 10,
-                                pageSizeOptions: [5, 10, 20, 50],
-                            }}
+                            pageSize={10}
                         />
                     </div>
                 )}
@@ -843,7 +839,7 @@ export default function CancelledRequestsPage() {
                 riders={riders}
                 roadies={roadies}
                 services={services}
-                defaultStatus="CANCELLED"
+                defaultStatus="cancelled"
             />
 
             <ConfirmModal

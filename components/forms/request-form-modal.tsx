@@ -16,23 +16,24 @@ interface RequestFormModalProps {
     riders: Rider[]
     roadies: Roadie[]
     services: Service[]
+    defaultStatus?: string
 }
 
 export function RequestFormModal({
     isOpen,
     onClose,
     onSubmit,
-    riders = [],
     roadies = [],
     services = [],
+    defaultStatus = "pending",
 }: RequestFormModalProps) {
     const [formData, setFormData] = useState<Partial<ServiceRequest>>({
         rider: 0,
         rodie: null,
         service_type: 0,
         status: "pending",
-        rider_lat: 0,
-        rider_lng: 0,
+        rider_lat: "0",
+        rider_lng: "0",
     })
 
     // Initialize form data when modal opens or data changes
@@ -45,12 +46,12 @@ export function RequestFormModal({
                 rider: defaultRider,
                 rodie: null,
                 service_type: defaultService,
-                status: "pending",
-                rider_lat: 0,
-                rider_lng: 0,
+                status: defaultStatus,
+                rider_lat: "0",
+                rider_lng: "0",
             })
         }
-    }, [isOpen, riders, services])
+    }, [isOpen, riders, services, defaultStatus])
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -169,7 +170,7 @@ export function RequestFormModal({
                                 type="number"
                                 step="any"
                                 value={formData.rider_lat || ""}
-                                onChange={(e) => setFormData({ ...formData, rider_lat: parseFloat(e.target.value) || 0 })}
+                                onChange={(e) => setFormData({ ...formData, rider_lat: e.target.value })}
                                 placeholder="0.0"
                                 required
                             />
@@ -181,7 +182,7 @@ export function RequestFormModal({
                                 type="number"
                                 step="any"
                                 value={formData.rider_lng || ""}
-                                onChange={(e) => setFormData({ ...formData, rider_lng: parseFloat(e.target.value) || 0 })}
+                                onChange={(e) => setFormData({ ...formData, rider_lng: e.target.value })}
                                 placeholder="0.0"
                                 required
                             />

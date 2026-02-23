@@ -46,7 +46,7 @@ import { debounce } from "lodash"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
-interface RequestRow extends ServiceRequest {
+interface RequestRow extends Omit<ServiceRequest, 'id' | 'rider_lat' | 'rider_lng'> {
     id: string
     rider_lat: string | number | null
     rider_lng: string | number | null
@@ -162,7 +162,7 @@ export default function AcceptedRequestsPage() {
                     request.id.toLowerCase(),
                     request.rider_username?.toLowerCase() || "",
                     request.rodie_username?.toLowerCase() || "",
-                    request.service_type_name?.toLowerCase() || getServiceName(request).toLowerCase(),
+                    request.service_type_name?.toLowerCase() || getServiceName(request as any).toLowerCase(),
                     request.service_type_details?.name?.toLowerCase() || "",
                     request.service_type_details?.code?.toLowerCase() || "",
                     request.status?.toLowerCase() || "",
@@ -218,7 +218,7 @@ export default function AcceptedRequestsPage() {
         }
     }
 
-    const handleDelete = async (request: RequestRow) => {
+    const handleDelete = async (request: any) => {
         try {
             await deleteServiceRequest(Number(request.id))
             toast({
@@ -235,12 +235,12 @@ export default function AcceptedRequestsPage() {
         }
     }
 
-    const handleEdit = (request: RequestRow) => {
-        router.push(`/admin/requests/${request.id}`)
+    const handleEdit = (request: any) => {
+        router.push(`/sys-admin/requests/${request.id}`)
     }
 
     const handleIdClick = (id: string) => {
-        router.push(`/admin/requests/${id}`)
+        router.push(`/sys-admin/requests/${id}`)
     }
 
     const handleExport = () => {
@@ -267,8 +267,7 @@ export default function AcceptedRequestsPage() {
                 `"${request.rider_username || ''}"`,
                 request.rodie || '',
                 `"${request.rodie_username || ''}"`,
-                request.service_type,
-                `"${request.service_type_name || getServiceName(request)}"`,
+                `"${request.service_type_name || getServiceName(request as any)}"`,
                 `"${request.service_type_details?.code || ''}"`,
                 `"${getStatusLabel(request.status as ServiceStatus)}"`,
                 request.rider_lat,
@@ -711,27 +710,7 @@ export default function AcceptedRequestsPage() {
                             onDelete={handleDelete}
                             deleteConfirmTitle="Delete Accepted Request"
                             deleteConfirmDescription="Are you sure you want to delete this active service request? This may disrupt the current service flow."
-                            renderConfirmDetails={(request) => (
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Request ID:</span>
-                                        <span className="font-mono text-white">#{request.id}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Roadie:</span>
-                                        <span className="text-white">{request.rodie_username}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Service:</span>
-                                        <span className="font-medium text-primary">{getServiceDisplayName(request)}</span>
-                                    </div>
-                                </div>
-                            )}
-                            searchable={false}
-                            pagination={{
-                                pageSize: 10,
-                                pageSizeOptions: [5, 10, 20, 50],
-                            }}
+                            pageSize={10}
                         />
                     </div>
                 )}
@@ -745,7 +724,7 @@ export default function AcceptedRequestsPage() {
                 riders={riders}
                 roadies={roadies}
                 services={services}
-                defaultStatus="ACCEPTED"
+                defaultStatus="accepted"
             />
         </div>
     )

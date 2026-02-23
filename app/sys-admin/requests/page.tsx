@@ -318,11 +318,11 @@ export default function RequestsPage() {
   }
 
   const handleEdit = (request: RequestRow) => {
-    router.push(`/admin/requests/${request.id}`)
+    router.push(`/sys-admin/requests/${request.id}`)
   }
 
   const handleIdClick = (id: string) => {
-    router.push(`/admin/requests/${id}`)
+    router.push(`/sys-admin/requests/${id}`)
   }
 
   const handleExport = () => {

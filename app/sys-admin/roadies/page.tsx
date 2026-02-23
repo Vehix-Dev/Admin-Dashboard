@@ -329,11 +329,11 @@ export default function RoadiesPage() {
   }
 
   const handleEdit = (roadie: RoadieWithThumbnail) => {
-    router.push(`/admin/roadies/${roadie.id}/edit`)
+    router.push(`/sys-admin/roadies/${roadie.id}/edit`)
   }
 
   const handleIdClick = (roadie: RoadieWithThumbnail) => {
-    router.push(`/admin/roadies/${roadie.id}/edit`)
+    router.push(`/sys-admin/roadies/${roadie.id}/edit`)
   }
 
   const formatDate = (dateString: string) => {

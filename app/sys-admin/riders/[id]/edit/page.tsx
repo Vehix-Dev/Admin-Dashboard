@@ -1457,7 +1457,7 @@ export default function EditRiderPage() {
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2"
-                  onClick={() => window.open(`/admin/requests?search=${rider?.username}`, '_blank')}
+                  onClick={() => window.open(`/sys-admin/requests?search=${rider?.username}`, '_blank')}
                 >
                   <Check className="h-4 w-4" />
                   View All Requests

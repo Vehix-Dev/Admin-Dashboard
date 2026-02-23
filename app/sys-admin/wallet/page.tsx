@@ -216,7 +216,7 @@ export default function WalletsPage() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => router.push(`/admin/wallet/${value}`)}
+                        onClick={() => router.push(`/sys-admin/wallet/${value}`)}
                         className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         title="View Details"
                     >
@@ -339,7 +339,7 @@ export default function WalletsPage() {
                             <DataTable
                                 columns={columns}
                                 data={filteredWallets}
-                                onView={(row) => router.push(`/admin/wallet/${row.id}`)}
+                                onView={(row) => router.push(`/sys-admin/wallet/${row.id}`)}
                             />
                         )}
                     </div>
