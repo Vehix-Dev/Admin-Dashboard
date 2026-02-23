@@ -64,7 +64,7 @@ export function CommandCenter() {
             <CommandList className="glass-card border-none">
                 <CommandEmpty>No results found.</CommandEmpty>
                 <CommandGroup heading="Operations">
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin"))}>
                         <BarChart className="mr-2 h-4 w-4" />
                         <span>Dashboard</span>
                     </CommandItem>

@@ -17,7 +17,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         if (!user && !isLoginPage) {
             router.push("/login")
         } else if (user && isLoginPage) {
-            router.push("/admin")
+            router.push("/sys-admin")
         }
     }, [user, isLoading, isLoginPage, router])
 

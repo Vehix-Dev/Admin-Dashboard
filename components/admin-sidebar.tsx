@@ -42,22 +42,22 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
   {
     section: "OPERATIONS",
     items: [
-      { name: "Dashboard", href: "/admin", icon: LayoutDashboard, permission: PERMISSIONS.DASHBOARD_VIEW },
+      { name: "Dashboard", href: "/sys-admin", icon: LayoutDashboard, permission: PERMISSIONS.DASHBOARD_VIEW },
       {
         name: "Service Requests",
-        href: "/admin/requests",
+        href: "/sys-admin/requests",
         icon: Wrench,
         hasSubItems: true,
         permission: PERMISSIONS.REQUESTS_VIEW,
         items: [
-          { name: "All Requests", href: "/admin/requests", icon: List, permission: PERMISSIONS.REQUESTS_VIEW },
-          { name: "Accepted/On going", href: "/admin/requests/accepted", icon: UserCheck, permission: PERMISSIONS.REQUESTS_VIEW },
-          { name: "Completed", href: "/admin/requests/completed", icon: CheckCircle, permission: PERMISSIONS.REQUESTS_VIEW },
-          { name: "Cancelled", href: "/admin/requests/cancelled", icon: XCircle, permission: PERMISSIONS.REQUESTS_VIEW },
-          { name: "Expired", href: "/admin/requests/expired", icon: Clock, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "All Requests", href: "/sys-admin/requests", icon: List, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Accepted/On going", href: "/sys-admin/requests/accepted", icon: UserCheck, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Completed", href: "/sys-admin/requests/completed", icon: CheckCircle, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Cancelled", href: "/sys-admin/requests/cancelled", icon: XCircle, permission: PERMISSIONS.REQUESTS_VIEW },
+          { name: "Expired", href: "/sys-admin/requests/expired", icon: Clock, permission: PERMISSIONS.REQUESTS_VIEW },
         ]
       },
-      { name: "Live Map", href: "/admin/live-map", icon: Map, permission: PERMISSIONS.MAP_VIEW },
+      { name: "Live Map", href: "/sys-admin/live-map", icon: Map, permission: PERMISSIONS.MAP_VIEW },
     ],
   },
   {
@@ -65,99 +65,99 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
     items: [
       {
         name: "Roadies",
-        href: "/admin/roadies",
+        href: "/sys-admin/roadies",
         icon: UserCheck,
         hasSubItems: true,
         permission: PERMISSIONS.ROADIES_VIEW,
         items: [
-          { name: "All Roadies", href: "/admin/roadies", icon: List, permission: PERMISSIONS.ROADIES_VIEW },
-          { name: "Add New", href: "/admin/roadies/add", icon: Plus, permission: PERMISSIONS.ROADIES_ADD },
-          { name: "Drivers Total Assists", href: "/admin/roadies/total-services", icon: BarChart, permission: PERMISSIONS.RODIE_SERVICES_VIEW },
-          { name: "Deleted", href: "/admin/roadies/deleted", icon: Trash2, permission: PERMISSIONS.ROADIES_DELETE },
+          { name: "All Roadies", href: "/sys-admin/roadies", icon: List, permission: PERMISSIONS.ROADIES_VIEW },
+          { name: "Add New", href: "/sys-admin/roadies/add", icon: Plus, permission: PERMISSIONS.ROADIES_ADD },
+          { name: "Drivers Total Assists", href: "/sys-admin/roadies/total-services", icon: BarChart, permission: PERMISSIONS.RODIE_SERVICES_VIEW },
+          { name: "Deleted", href: "/sys-admin/roadies/deleted", icon: Trash2, permission: PERMISSIONS.ROADIES_DELETE },
         ]
       },
       {
         name: "Riders",
-        href: "/admin/riders",
+        href: "/sys-admin/riders",
         icon: Users,
         hasSubItems: true,
         permission: PERMISSIONS.RIDERS_VIEW,
         items: [
-          { name: "All Riders", href: "/admin/riders", icon: List, permission: PERMISSIONS.RIDERS_VIEW },
-          { name: "Add New", href: "/admin/riders/add", icon: Plus, permission: PERMISSIONS.RIDERS_ADD },
-          { name: "Deleted", href: "/admin/riders/deleted", icon: Trash2, permission: PERMISSIONS.RIDERS_DELETE },
+          { name: "All Riders", href: "/sys-admin/riders", icon: List, permission: PERMISSIONS.RIDERS_VIEW },
+          { name: "Add New", href: "/sys-admin/riders/add", icon: Plus, permission: PERMISSIONS.RIDERS_ADD },
+          { name: "Deleted", href: "/sys-admin/riders/deleted", icon: Trash2, permission: PERMISSIONS.RIDERS_DELETE },
         ]
       },
       {
         name: "Services",
-        href: "/admin/services",
+        href: "/sys-admin/services",
         icon: Wrench,
         permission: PERMISSIONS.SERVICES_VIEW,
       },
       {
         name: "Wallets",
-        href: "/admin/wallet",
+        href: "/sys-admin/wallet",
         icon: Wallet,
         permission: PERMISSIONS.WALLET_VIEW,
       },
       {
         name: "Referrals",
-        href: "/admin/referrals",
+        href: "/sys-admin/referrals",
         icon: Gift,
         permission: PERMISSIONS.REFERRALS_VIEW,
       },
       {
         name: "Admin Users",
-        href: "/admin/users",
+        href: "/sys-admin/users",
         icon: Shield,
         hasSubItems: true,
         permission: PERMISSIONS.ADMIN_USERS_VIEW,
         items: [
-          { name: "All Admins", href: "/admin/users", icon: List, permission: PERMISSIONS.ADMIN_USERS_VIEW },
-          { name: "Add Admin", href: "/admin/users/add", icon: Plus, permission: PERMISSIONS.ADMIN_USERS_ADD },
-          { name: "Roles", href: "/admin/users/roles", icon: Shield, permission: PERMISSIONS.ADMIN_USERS_VIEW },
-          { name: "Groups", href: "/admin/users/groups", icon: Users, permission: PERMISSIONS.ADMIN_USERS_VIEW },
-          { name: "Deleted Users", href: "/admin/users/deleted", icon: Trash2, permission: PERMISSIONS.ADMIN_USERS_VIEW },
-          { name: "Audit Logs", href: "/admin/users/audit", icon: FileText, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "All Admins", href: "/sys-admin/users", icon: List, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "Add Admin", href: "/sys-admin/users/add", icon: Plus, permission: PERMISSIONS.ADMIN_USERS_ADD },
+          { name: "Roles", href: "/sys-admin/users/roles", icon: Shield, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "Groups", href: "/sys-admin/users/groups", icon: Users, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "Deleted Users", href: "/sys-admin/users/deleted", icon: Trash2, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "Audit Logs", href: "/sys-admin/users/audit", icon: FileText, permission: PERMISSIONS.ADMIN_USERS_VIEW },
         ]
       },
       {
         name: "Moderation",
-        href: "/admin/moderation/media",
+        href: "/sys-admin/moderation/media",
         icon: CheckCircle,
         hasSubItems: true,
         permission: PERMISSIONS.MEDIA_VIEW,
         items: [
-          { name: "Media", href: "/admin/moderation/media", icon: Image, permission: PERMISSIONS.MEDIA_VIEW },
+          { name: "Media", href: "/sys-admin/moderation/media", icon: Image, permission: PERMISSIONS.MEDIA_VIEW },
         ]
       },
       {
         name: "Notifications",
-        href: "/admin/notifications",
+        href: "/sys-admin/notifications",
         icon: Bell,
         hasSubItems: true,
         permission: PERMISSIONS.NOTIFICATIONS_VIEW,
         items: [
-          { name: "All Notifications", href: "/admin/notifications", icon: Bell, permission: PERMISSIONS.NOTIFICATIONS_VIEW },
-          { name: "Send Email", href: "/admin/notifications/email", icon: Mail, permission: PERMISSIONS.EMAIL_SEND },
+          { name: "All Notifications", href: "/sys-admin/notifications", icon: Bell, permission: PERMISSIONS.NOTIFICATIONS_VIEW },
+          { name: "Send Email", href: "/sys-admin/notifications/email", icon: Mail, permission: PERMISSIONS.EMAIL_SEND },
         ]
       },
       {
         name: "Reports",
-        href: "/admin/reports",
+        href: "/sys-admin/reports",
         icon: BarChart,
         hasSubItems: true,
         permission: PERMISSIONS.REPORTS_VIEW,
         items: [
-          { name: "Overview", href: "/admin/reports", icon: BarChart, permission: PERMISSIONS.REPORTS_VIEW },
-          { name: "Financial Report", href: "/admin/reports/financial", icon: DollarSign, permission: PERMISSIONS.REPORTS_VIEW },
-          { name: "User Analytics", href: "/admin/reports/users", icon: Users, permission: PERMISSIONS.REPORTS_VIEW },
-          { name: "Service Performance", href: "/admin/reports/services", icon: Wrench, permission: PERMISSIONS.REPORTS_VIEW },
+          { name: "Overview", href: "/sys-admin/reports", icon: BarChart, permission: PERMISSIONS.REPORTS_VIEW },
+          { name: "Financial Report", href: "/sys-admin/reports/financial", icon: DollarSign, permission: PERMISSIONS.REPORTS_VIEW },
+          { name: "User Analytics", href: "/sys-admin/reports/users", icon: Users, permission: PERMISSIONS.REPORTS_VIEW },
+          { name: "Service Performance", href: "/sys-admin/reports/services", icon: Wrench, permission: PERMISSIONS.REPORTS_VIEW },
         ]
       },
       {
         name: "Support & Inquiries",
-        href: "/admin/support",
+        href: "/sys-admin/support",
         icon: Headphones,
         permission: PERMISSIONS.SUPPORT_VIEW,
       },
@@ -168,16 +168,16 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
     items: [
       {
         name: "Settings",
-        href: "/admin/settings",
+        href: "/sys-admin/settings",
         icon: Settings,
         hasSubItems: true,
         permission: PERMISSIONS.SETTINGS_VIEW,
         items: [
-          { name: "Platform Settings", href: "/admin/settings", icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
-          { name: "Security Settings", href: "/admin/settings/security", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
-          { name: "Firewall & Security", href: "/admin/security/firewall", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
-          { name: "API Health", href: "/admin/system/health", icon: Activity, permission: PERMISSIONS.SETTINGS_VIEW },
-          { name: "Landing Page", href: "/admin/settings/landing", icon: Globe, permission: PERMISSIONS.SETTINGS_VIEW },
+          { name: "Platform Settings", href: "/sys-admin/settings", icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
+          { name: "Security Settings", href: "/sys-admin/settings/security", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
+          { name: "Firewall & Security", href: "/sys-admin/security/firewall", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
+          { name: "API Health", href: "/sys-admin/system/health", icon: Activity, permission: PERMISSIONS.SETTINGS_VIEW },
+          { name: "Landing Page", href: "/sys-admin/settings/landing", icon: Globe, permission: PERMISSIONS.SETTINGS_VIEW },
         ]
       },
     ],
@@ -231,7 +231,7 @@ export function AdminSidebar() {
   })).filter(section => section.items.length > 0)
 
   const isItemActive = (item: NavItem) => {
-    const baseActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
+    const baseActive = pathname === item.href || (item.href !== "/sys-admin" && pathname.startsWith(item.href))
     if (item.hasSubItems && item.items) {
       return baseActive || item.items.some(subItem => pathname === subItem.href || pathname.startsWith(subItem.href))
     }
