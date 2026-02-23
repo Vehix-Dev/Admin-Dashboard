@@ -48,7 +48,7 @@ export function TopCustomers({ riders }: { riders: any[] }) {
                     </Link>
                 ))}
             </div>
-            <Link href="/admin/riders">
+            <Link href="/sys-admin/riders">
                 <Button variant="ghost" size="sm" className="w-full mt-6 h-10 border border-border/40 hover:bg-muted font-bold text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">
                     Explorer All
                 </Button>

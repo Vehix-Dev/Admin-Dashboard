@@ -68,42 +68,42 @@ export function CommandCenter() {
                         <BarChart className="mr-2 h-4 w-4" />
                         <span>Dashboard</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin/requests"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin/requests"))}>
                         <Wrench className="mr-2 h-4 w-4" />
                         <span>Service Requests</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin/live-map"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin/live-map"))}>
                         <MapIcon className="mr-2 h-4 w-4" />
                         <span>Live Map</span>
                     </CommandItem>
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Management">
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin/roadies"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin/roadies"))}>
                         <UserCheck className="mr-2 h-4 w-4" />
                         <span>Roadies (Providers)</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin/riders"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin/riders"))}>
                         <Users className="mr-2 h-4 w-4" />
                         <span>Riders (Customers)</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin/wallet"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin/wallet"))}>
                         <Wallet className="mr-2 h-4 w-4" />
                         <span>Wallets & Transactions</span>
                     </CommandItem>
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin/users"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin/users"))}>
                         <Shield className="mr-2 h-4 w-4" />
                         <span>Admin Users</span>
                     </CommandItem>
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="System">
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin/settings"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin/settings"))}>
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Platform Settings</span>
                         <CommandShortcut>⌘S</CommandShortcut>
                     </CommandItem>
-                    <CommandItem onSelect={() => runCommand(() => router.push("/admin/reports"))}>
+                    <CommandItem onSelect={() => runCommand(() => router.push("/sys-admin/reports"))}>
                         <BarChart className="mr-2 h-4 w-4" />
                         <span>Advanced Reports</span>
                     </CommandItem>

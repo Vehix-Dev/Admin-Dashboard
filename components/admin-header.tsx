@@ -63,7 +63,7 @@ export function AdminHeader() {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href="/admin/my-account" className="flex items-center gap-2 cursor-pointer">
+              <a href="/sys-admin/my-account" className="flex items-center gap-2 cursor-pointer">
                 <User className="h-4 w-4" />
                 My Profile & Security
               </a>

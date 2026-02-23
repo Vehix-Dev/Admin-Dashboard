@@ -22,7 +22,7 @@ export function PopularServices({ services, totalRequests }: { services: any[], 
             </div>
             <div className="space-y-5">
                 {services.map((service, index) => (
-                    <Link key={service.name} href="/admin/services" className="block group">
+                    <Link key={service.name} href="/sys-admin/services" className="block group">
                         <div className="space-y-2 cursor-pointer">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">

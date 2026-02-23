@@ -268,7 +268,7 @@ export default function Home() {
                             <h2 className="text-4xl font-bold mb-12">Choose Your Role</h2>
                             <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
 
-                                <Link href={settings.rider_link || "/admin/riders/add?role=rider"} className="group">
+                                <Link href={settings.rider_link || "/sys-admin/riders/add?role=rider"} className="group">
                                     <div className="h-full bg-white p-8 rounded-2xl shadow-lg border hover:border-blue-500 transition-all overflow-hidden relative">
                                         {settings.rider_image ? (
                                             <div className="absolute inset-0 z-0">
@@ -286,7 +286,7 @@ export default function Home() {
                                     </div>
                                 </Link>
 
-                                <Link href={settings.roadie_link || "/admin/roadies/add?role=roadie"} className="group">
+                                <Link href={settings.roadie_link || "/sys-admin/roadies/add?role=roadie"} className="group">
                                     <div className="h-full bg-white p-8 rounded-2xl shadow-lg border hover:border-green-500 transition-all overflow-hidden relative">
                                         {settings.roadie_image ? (
                                             <div className="absolute inset-0 z-0">

@@ -64,7 +64,7 @@ export function StatsOverview({ stats }: { stats: any }) {
     return (
         <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/admin/requests" className="block">
+                <Link href="/sys-admin/requests" className="block">
                     <StatCard
                         title="Total Service Requests"
                         value={stats.totalRequests}
@@ -75,7 +75,7 @@ export function StatsOverview({ stats }: { stats: any }) {
                     />
                 </Link>
 
-                <Link href="/admin/reports/users" className="block">
+                <Link href="/sys-admin/reports/users" className="block">
                     <StatCard
                         title="Active Users"
                         value={stats.activeRiders + stats.activeRoadies}
@@ -86,7 +86,7 @@ export function StatsOverview({ stats }: { stats: any }) {
                     />
                 </Link>
 
-                <Link href="/admin/reports" className="block">
+                <Link href="/sys-admin/reports" className="block">
                     <StatCard
                         title="Platform Health"
                         value={stats.platformHealth.satisfaction}
@@ -98,7 +98,7 @@ export function StatsOverview({ stats }: { stats: any }) {
                     />
                 </Link>
 
-                <Link href="/admin/live-map" className="block">
+                <Link href="/sys-admin/live-map" className="block">
                     <StatCard
                         title="Realtime Activity"
                         value={stats.activeLocations}
@@ -111,7 +111,7 @@ export function StatsOverview({ stats }: { stats: any }) {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/admin/riders" className="block group">
+                <Link href="/sys-admin/riders" className="block group">
                     <div className="glass-card p-6 shadow-sm hover:border-blue-500/30 transition-all cursor-pointer">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-semibold text-foreground">Total Customers</h3>
@@ -132,7 +132,7 @@ export function StatsOverview({ stats }: { stats: any }) {
                     </div>
                 </Link>
 
-                <Link href="/admin/roadies" className="block group">
+                <Link href="/sys-admin/roadies" className="block group">
                     <div className="glass-card p-6 shadow-sm hover:border-emerald-500/30 transition-all cursor-pointer">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-semibold text-foreground">Total Providers</h3>
@@ -153,7 +153,7 @@ export function StatsOverview({ stats }: { stats: any }) {
                     </div>
                 </Link>
 
-                <Link href="/admin/services" className="block group">
+                <Link href="/sys-admin/services" className="block group">
                     <div className="glass-card p-6 shadow-sm hover:border-purple-500/30 transition-all cursor-pointer">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-semibold text-foreground">Service Status</h3>
@@ -180,13 +180,13 @@ export function StatsOverview({ stats }: { stats: any }) {
                         <Zap className="h-5 w-5 text-amber-500" />
                     </div>
                     <div className="space-y-2">
-                        <Link href="/admin/requests/create" className="block">
+                        <Link href="/sys-admin/requests/create" className="block">
                             <Button size="sm" className="w-full justify-start h-9 bg-primary/10 hover:bg-primary text-primary hover:text-white border-none transition-all duration-300">
                                 <Wrench className="mr-2 h-4 w-4" />
                                 New Request
                             </Button>
                         </Link>
-                        <Link href="/admin/live-map" className="block">
+                        <Link href="/sys-admin/live-map" className="block">
                             <Button variant="ghost" size="sm" className="w-full justify-start h-9 hover:bg-muted font-medium transition-all duration-300">
                                 <MapPin className="mr-2 h-4 w-4" />
                                 Live Map
