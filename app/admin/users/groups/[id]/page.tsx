@@ -58,8 +58,8 @@ export default function GroupDetailsPage() {
         setIsLoading(true)
         try {
             const [groupRes, rolesRes] = await Promise.all([
-                fetch(`/api/admin/groups/${groupId}`),
-                fetch('/api/admin/roles')
+                fetch(`/sys-api/admin/groups/${groupId}`),
+                fetch('/sys-api/admin/roles')
             ])
 
             if (!groupRes.ok) throw new Error("Failed to fetch group")
@@ -100,7 +100,7 @@ export default function GroupDetailsPage() {
         if (!group) return
         setIsSaving(true)
         try {
-            const res = await fetch(`/api/admin/groups/${groupId}`, {
+            const res = await fetch(`/sys-api/admin/groups/${groupId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roleIds: group.roleIds })
@@ -119,7 +119,7 @@ export default function GroupDetailsPage() {
 
     const handleAddMember = async (userId: string) => {
         try {
-            const res = await fetch(`/api/admin/groups/${groupId}/members`, {
+            const res = await fetch(`/sys-api/admin/groups/${groupId}/members`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'add', userId })
@@ -141,7 +141,7 @@ export default function GroupDetailsPage() {
     const confirmRemoveMember = async () => {
         if (!pendingRemoveUserId) return
         try {
-            const res = await fetch(`/api/admin/groups/${groupId}/members`, {
+            const res = await fetch(`/sys-api/admin/groups/${groupId}/members`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'remove', userId: pendingRemoveUserId })

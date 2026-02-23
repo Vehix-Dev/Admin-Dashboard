@@ -28,7 +28,7 @@ function TwoFactorStatusCell({ username }: { username: string }) {
     useEffect(() => {
         const fetchStatus = async () => {
             try {
-                const res = await fetch(`/api/auth/2fa/status?username=${username}`)
+                const res = await fetch(`/sys-api/auth/2fa/status?username=${username}`)
                 if (res.ok) {
                     const data = await res.json()
                     setIsEnabled(data.enabled)

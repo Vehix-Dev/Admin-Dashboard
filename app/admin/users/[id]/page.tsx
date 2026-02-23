@@ -64,7 +64,7 @@ export default function EditAdminPage() {
                 })
 
                 // Load User Groups
-                const groupRes = await fetch(`/api/admin/users/${userId}/groups`)
+                const groupRes = await fetch(`/sys-api/admin/users/${userId}/groups`)
                 if (groupRes.ok) {
                     const groupData = await groupRes.json()
                     setSelectedGroupIds(groupData.groupIds || [])
@@ -155,7 +155,7 @@ export default function EditAdminPage() {
             })
 
             // 2. Update User Groups (JSON DB)
-            const groupsRes = await fetch(`/api/admin/users/${params.id}/groups`, {
+            const groupsRes = await fetch(`/sys-api/admin/users/${params.id}/groups`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ groupIds: selectedGroupIds })

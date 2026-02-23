@@ -128,7 +128,7 @@ export default function AddAdminPage() {
             if (response && response.id) {
                 const userId = String(response.id);
                 // Assign permissions/groups
-                const groupsRes = await fetch(`/api/admin/users/${userId}/groups`, {
+                const groupsRes = await fetch(`/sys-api/admin/users/${userId}/groups`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ groupIds: selectedGroupIds })

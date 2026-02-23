@@ -295,7 +295,7 @@ export default function RoadiesPage() {
 
       if (newStatus) {
         try {
-          await fetch('/api/admin/email/send', {
+          await fetch('/sys-api/admin/email/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

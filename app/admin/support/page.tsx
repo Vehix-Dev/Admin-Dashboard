@@ -39,7 +39,7 @@ export default function SupportPage() {
     const fetchInquiries = async () => {
         setIsLoading(true)
         try {
-            const res = await fetch("/api/inquiries")
+            const res = await fetch("/sys-api/inquiries")
             if (res.ok) {
                 const data = await res.json()
                 setInquiries(data)
@@ -67,7 +67,7 @@ export default function SupportPage() {
         if (!pendingDeleteInquiry) return
 
         try {
-            const res = await fetch(`/api/inquiries?id=${pendingDeleteInquiry.id}`, { method: 'DELETE' });
+            const res = await fetch(`/sys-api/inquiries?id=${pendingDeleteInquiry.id}`, { method: 'DELETE' });
             if (res.ok) {
                 setInquiries(prev => prev.filter(i => i.id !== pendingDeleteInquiry.id));
                 toast({ title: "Deleted", description: "Message removed successfully" })

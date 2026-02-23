@@ -47,7 +47,7 @@ export default function RolesPage() {
     const fetchRoles = async () => {
         try {
             setIsLoading(true)
-            const res = await fetch('/api/admin/roles')
+            const res = await fetch('/sys-api/admin/roles')
             if (res.ok) {
                 const data = await res.json()
                 setRoles(data)
@@ -100,8 +100,8 @@ export default function RolesPage() {
         setIsSubmitting(true)
         try {
             const url = editingRole
-                ? `/api/admin/roles/${editingRole.id}`
-                : '/api/admin/roles'
+                ? `/sys-api/admin/roles/${editingRole.id}`
+                : '/sys-api/admin/roles'
 
             const method = editingRole ? 'PUT' : 'POST'
 
@@ -149,7 +149,7 @@ export default function RolesPage() {
         if (!pendingDeleteRole) return
 
         try {
-            const res = await fetch(`/api/admin/roles/${pendingDeleteRole.id}`, { method: 'DELETE' })
+            const res = await fetch(`/sys-api/admin/roles/${pendingDeleteRole.id}`, { method: 'DELETE' })
             if (!res.ok) throw new Error("Failed to delete")
 
             toast({ title: "Success", description: "Role deleted" })

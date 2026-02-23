@@ -44,7 +44,7 @@ export default function GroupsPage() {
     const fetchGroups = async () => {
         try {
             setIsLoading(true)
-            const res = await fetch('/api/admin/groups')
+            const res = await fetch('/sys-api/admin/groups')
             if (res.ok) {
                 const data = await res.json()
                 setGroups(data)
@@ -87,8 +87,8 @@ export default function GroupsPage() {
         setIsSubmitting(true)
         try {
             const url = editingGroup
-                ? `/api/admin/groups/${editingGroup.id}`
-                : '/api/admin/groups'
+                ? `/sys-api/admin/groups/${editingGroup.id}`
+                : '/sys-api/admin/groups'
 
             const method = editingGroup ? 'PUT' : 'POST'
 
@@ -131,7 +131,7 @@ export default function GroupsPage() {
         if (!pendingDeleteGroup) return
 
         try {
-            const res = await fetch(`/api/admin/groups/${pendingDeleteGroup.id}`, { method: 'DELETE' })
+            const res = await fetch(`/sys-api/admin/groups/${pendingDeleteGroup.id}`, { method: 'DELETE' })
             if (!res.ok) throw new Error("Failed to delete")
 
             toast({ title: "Success", description: "Group deleted" })

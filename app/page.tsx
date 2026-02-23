@@ -41,8 +41,8 @@ export default function Home() {
         const loadData = async () => {
             try {
                 const [setRes, secRes] = await Promise.all([
-                    fetch("/api/settings/landing", { cache: "no-store" }),
-                    fetch("/api/settings/landing/sections", { cache: "no-store" })
+                    fetch("/sys-api/settings/landing", { cache: "no-store" }),
+                    fetch("/sys-api/settings/landing/sections", { cache: "no-store" })
                 ])
                 if (setRes.ok) {
                     const s = await setRes.json()
@@ -71,7 +71,7 @@ export default function Home() {
         e.preventDefault()
         setIsSubmitting(true)
         try {
-            const res = await fetch("/api/contact", {
+            const res = await fetch("/sys-api/contact", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(contactForm)

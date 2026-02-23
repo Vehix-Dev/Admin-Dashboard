@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000"
+const API_BASE_URL = "https://backend.vehix.ug"
 
 export interface AdminUser {
   id: string

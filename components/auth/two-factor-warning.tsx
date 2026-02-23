@@ -19,7 +19,7 @@ export function TwoFactorWarning() {
         const check2FAStatus = async () => {
             try {
                 // Fetch fresh status from the specific endpoint
-                const response = await fetch(`/api/auth/2fa/status?username=${user.username}`)
+                const response = await fetch(`/sys-api/auth/2fa/status?username=${user.username}`)
                 if (response.ok) {
                     const data = await response.json()
 

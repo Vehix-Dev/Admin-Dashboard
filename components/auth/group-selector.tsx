@@ -24,7 +24,7 @@ export function GroupSelector({ selectedGroupIds, onChange }: GroupSelectorProps
     useEffect(() => {
         const fetchGroups = async () => {
             try {
-                const res = await fetch('/api/admin/groups')
+                const res = await fetch('/sys-api/admin/groups')
                 if (res.ok) {
                     const data = await res.json()
                     setGroups(data)

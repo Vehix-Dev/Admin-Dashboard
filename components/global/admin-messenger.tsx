@@ -29,7 +29,7 @@ export function AdminMessenger() {
         // Initial load from API
         const loadInitialMessages = async () => {
             try {
-                const res = await fetch('/api/admin/messenger')
+                const res = await fetch('/sys-api/admin/messenger')
                 if (res.ok) {
                     const data = await res.json()
                     setMessages(data)
@@ -57,7 +57,7 @@ export function AdminMessenger() {
         // Set up polling for cross-user updates (every 5 seconds)
         const pollInterval = setInterval(async () => {
             try {
-                const res = await fetch('/api/admin/messenger')
+                const res = await fetch('/sys-api/admin/messenger')
                 if (res.ok) {
                     const data = await res.json()
                     // Deduplicate by ID
@@ -96,7 +96,7 @@ export function AdminMessenger() {
         }
 
         try {
-            const res = await fetch('/api/admin/messenger', {
+            const res = await fetch('/sys-api/admin/messenger', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(messageData)

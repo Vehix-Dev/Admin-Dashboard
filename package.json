@@ -79,6 +79,12 @@
     "vaul": "^1.1.2",
     "zod": "3.25.76"
   },
+  "overrides": {
+    "react-quill": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
     "@types/lodash": "^4.17.23",

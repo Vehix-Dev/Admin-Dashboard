@@ -12,7 +12,7 @@ export interface GenerateResponse {
 export async function get2FAStatus(username: string): Promise<TwoFAStatus> {
     console.log("get2FAStatus: fetching for", username);
     try {
-        const res = await fetch(`/api/auth/2fa/status?username=${username}`);
+        const res = await fetch(`/sys-api/auth/2fa/status?username=${username}`);
         console.log("get2FAStatus: response status", res.status);
         const data = await res.json();
         console.log("get2FAStatus: data", data);
@@ -26,7 +26,7 @@ export async function get2FAStatus(username: string): Promise<TwoFAStatus> {
 export async function generate2FA(username: string): Promise<GenerateResponse> {
     console.log("generate2FA: initiating for", username);
     try {
-        const res = await fetch('/api/auth/2fa/generate', {
+        const res = await fetch('/sys-api/auth/2fa/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username }),
@@ -44,7 +44,7 @@ export async function generate2FA(username: string): Promise<GenerateResponse> {
 export async function enable2FA(username: string, token: string): Promise<{ success: boolean; error?: string }> {
     console.log("enable2FA: initiating for", username);
     try {
-        const res = await fetch('/api/auth/2fa/enable', {
+        const res = await fetch('/sys-api/auth/2fa/enable', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, token }),
@@ -62,7 +62,7 @@ export async function enable2FA(username: string, token: string): Promise<{ succ
 export async function verify2FA(username: string, token: string): Promise<{ valid: boolean; error?: string }> {
     console.log("verify2FA: initiating for", username);
     try {
-        const res = await fetch('/api/auth/2fa/verify', {
+        const res = await fetch('/sys-api/auth/2fa/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, token }),

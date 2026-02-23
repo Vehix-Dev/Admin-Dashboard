@@ -76,8 +76,8 @@ export default function LandingSettingsPage() {
         try {
             // Parallel fetch
             const [settingsRes, sectionsRes] = await Promise.all([
-                fetch("/api/settings/landing", { cache: "no-store" }),
-                fetch("/api/settings/landing/sections", { cache: "no-store" })
+                fetch("/sys-api/settings/landing", { cache: "no-store" }),
+                fetch("/sys-api/settings/landing/sections", { cache: "no-store" })
             ])
 
             if (settingsRes.ok) setSettings(await settingsRes.json())
@@ -105,7 +105,7 @@ export default function LandingSettingsPage() {
     const handleSaveSettings = async () => {
         setIsSaving(true)
         try {
-            const response = await fetch("/api/settings/landing", {
+            const response = await fetch("/sys-api/settings/landing", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -153,7 +153,7 @@ export default function LandingSettingsPage() {
         formData.append('file', e.target.files[0])
 
         try {
-            const res = await fetch("/api/upload", {
+            const res = await fetch("/sys-api/upload", {
                 method: 'POST',
                 body: formData
             })
@@ -218,7 +218,7 @@ export default function LandingSettingsPage() {
 
         try {
             const method = currentSection.id ? "PUT" : "POST"
-            const res = await fetch("/api/settings/landing/sections", {
+            const res = await fetch("/sys-api/settings/landing/sections", {
                 method,
                 headers: {
                     "Content-Type": "application/json"
@@ -253,7 +253,7 @@ export default function LandingSettingsPage() {
     const confirmDeleteSection = async () => {
         if (!pendingDeleteSectionId) return
         try {
-            const res = await fetch(`/api/settings/landing/sections?id=${pendingDeleteSectionId}`, {
+            const res = await fetch(`/sys-api/settings/landing/sections?id=${pendingDeleteSectionId}`, {
                 method: "DELETE"
             })
 
@@ -299,7 +299,7 @@ export default function LandingSettingsPage() {
         // Save new order for all sections
         try {
             const updatePromises = newSections.map(section =>
-                fetch("/api/settings/landing/sections", {
+                fetch("/sys-api/settings/landing/sections", {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json"
