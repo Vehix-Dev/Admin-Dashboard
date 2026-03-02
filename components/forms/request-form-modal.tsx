@@ -23,6 +23,7 @@ export function RequestFormModal({
     isOpen,
     onClose,
     onSubmit,
+    riders = [],
     roadies = [],
     services = [],
     defaultStatus = "pending",
