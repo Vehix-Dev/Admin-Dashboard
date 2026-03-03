@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/sys-admin/layout,_N_T_/sys-admin/live-map/layout,_N_T_/sys-admin/live-map/page,_N_T_/sys-admin/live-map"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/sys-admin/live-map/__PAGE__",
+    "/sys-admin/live-map",
+    "/sys-admin",
+    "/_index",
+    "/_head"
+  ]
+}

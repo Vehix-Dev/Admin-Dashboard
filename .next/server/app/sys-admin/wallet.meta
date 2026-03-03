@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/sys-admin/layout,_N_T_/sys-admin/wallet/layout,_N_T_/sys-admin/wallet/page,_N_T_/sys-admin/wallet"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/sys-admin/wallet/__PAGE__",
+    "/sys-admin/wallet",
+    "/sys-admin",
+    "/_index",
+    "/_head"
+  ]
+}

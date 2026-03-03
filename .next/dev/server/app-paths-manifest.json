@@ -1,0 +1,13 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/sys-admin/page": "app/sys-admin/page.js",
+  "/sys-admin/requests/[id]/page": "app/sys-admin/requests/[id]/page.js",
+  "/sys-admin/requests/completed/page": "app/sys-admin/requests/completed/page.js",
+  "/sys-admin/requests/expired/page": "app/sys-admin/requests/expired/page.js",
+  "/sys-admin/requests/page": "app/sys-admin/requests/page.js",
+  "/sys-admin/users/page": "app/sys-admin/users/page.js",
+  "/sys-admin/users/roles/page": "app/sys-admin/users/roles/page.js",
+  "/sys-api/admin/messenger/route": "app/sys-api/admin/messenger/route.js",
+  "/sys-api/admin/roles/route": "app/sys-api/admin/roles/route.js",
+  "/sys-api/auth/2fa/status/route": "app/sys-api/auth/2fa/status/route.js"
+}

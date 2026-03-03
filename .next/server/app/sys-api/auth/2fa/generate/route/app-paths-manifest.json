@@ -1,0 +1,3 @@
+{
+  "/sys-api/auth/2fa/generate/route": "app/sys-api/auth/2fa/generate/route.js"
+}

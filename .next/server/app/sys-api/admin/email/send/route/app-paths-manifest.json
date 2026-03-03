@@ -1,0 +1,3 @@
+{
+  "/sys-api/admin/email/send/route": "app/sys-api/admin/email/send/route.js"
+}

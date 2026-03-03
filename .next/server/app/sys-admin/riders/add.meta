@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/sys-admin/layout,_N_T_/sys-admin/riders/layout,_N_T_/sys-admin/riders/add/layout,_N_T_/sys-admin/riders/add/page,_N_T_/sys-admin/riders/add"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/sys-admin/riders/add/__PAGE__",
+    "/sys-admin/riders/add",
+    "/sys-admin/riders",
+    "/sys-admin",
+    "/_index",
+    "/_head"
+  ]
+}

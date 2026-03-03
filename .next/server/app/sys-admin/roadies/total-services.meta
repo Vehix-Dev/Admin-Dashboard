@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/sys-admin/layout,_N_T_/sys-admin/roadies/layout,_N_T_/sys-admin/roadies/total-services/layout,_N_T_/sys-admin/roadies/total-services/page,_N_T_/sys-admin/roadies/total-services"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/sys-admin/roadies/total-services/__PAGE__",
+    "/sys-admin/roadies/total-services",
+    "/sys-admin/roadies",
+    "/sys-admin",
+    "/_index",
+    "/_head"
+  ]
+}

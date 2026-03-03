@@ -1,0 +1,3 @@
+{
+  "/sys-api/admin/groups/[id]/members/route": "app/sys-api/admin/groups/[id]/members/route.js"
+}

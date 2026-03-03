@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/sys-admin/layout,_N_T_/sys-admin/security/layout,_N_T_/sys-admin/security/firewall/layout,_N_T_/sys-admin/security/firewall/page,_N_T_/sys-admin/security/firewall"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/sys-admin/security/firewall/__PAGE__",
+    "/sys-admin/security/firewall",
+    "/sys-admin/security",
+    "/sys-admin",
+    "/_index",
+    "/_head"
+  ]
+}

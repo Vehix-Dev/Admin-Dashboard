@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/sys-admin/layout,_N_T_/sys-admin/system/layout,_N_T_/sys-admin/system/health/layout,_N_T_/sys-admin/system/health/page,_N_T_/sys-admin/system/health"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/sys-admin/system/health/__PAGE__",
+    "/sys-admin/system/health",
+    "/sys-admin/system",
+    "/sys-admin",
+    "/_index",
+    "/_head"
+  ]
+}
