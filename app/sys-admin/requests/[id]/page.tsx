@@ -149,16 +149,20 @@ export default function RequestDetailPage() {
   const getStatusBadgeStyles = (status: string) => {
     const s = status.toLowerCase()
     switch (s) {
-      case "pending":
-        return "border-amber-500/20 bg-amber-500/10 text-amber-500"
+      case "requested":
+        return "border-blue-500/20 bg-blue-500/10 text-blue-500"
       case "accepted":
         return "border-orange-500/20 bg-orange-500/10 text-orange-500"
-      case "completed":
+      case "en_route":
+        return "border-purple-500/20 bg-purple-500/10 text-purple-500"
+      case "started":
         return "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+      case "completed":
+        return "border-teal-500/20 bg-teal-500/10 text-teal-500"
       case "cancelled":
         return "border-destructive/20 bg-destructive/10 text-destructive"
       default:
-        return ""
+        return "border-border bg-muted/30 text-muted-foreground"
     }
   }
 
@@ -304,17 +308,19 @@ export default function RequestDetailPage() {
                   <Label htmlFor="status">Status</Label>
                   {isEditing ? (
                     <Select
-                      value={formData.status || "pending"}
+                      value={formData.status || "REQUESTED"}
                       onValueChange={(value) => setFormData({ ...formData, status: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="accepted">Accepted</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="REQUESTED">Requested</SelectItem>
+                        <SelectItem value="ACCEPTED">Accepted</SelectItem>
+                        <SelectItem value="EN_ROUTE">En Route</SelectItem>
+                        <SelectItem value="STARTED">Started</SelectItem>
+                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                        <SelectItem value="CANCELLED">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (

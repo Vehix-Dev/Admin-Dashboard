@@ -192,14 +192,14 @@ export default function ServicesPage() {
     setFilteredServices(filtered)
   }, [searchQuery, statusFilter, startDate, endDate, services])
 
-  const handleCreate = async (data: Partial<Service> & { image?: File }) => {
+  const handleCreate = async (data: Omit<Partial<Service>, "image"> & { image?: File | string | null }) => {
     try {
       const serviceData = {
         name: data.name || "",
         code: data.code || "",
         fixed_price: data.fixed_price,
         is_active: data.is_active !== undefined ? data.is_active : true,
-        image: data.image,
+        image: data.image ?? null,
       }
 
       await createService(serviceData)
@@ -222,7 +222,10 @@ export default function ServicesPage() {
     if (!editingService) return
 
     try {
-      await updateService(editingService.id, data)
+      const payload = { ...data }
+      if (payload.image === null) delete payload.image // Handle explicit removal
+      
+      await updateService(editingService.id, payload as any)
       toast({
         title: "Success",
         description: "Service updated successfully"
@@ -468,8 +471,8 @@ export default function ServicesPage() {
   const columns = [
     {
       header: "Image",
-      accessor: (row: Service) => row,
-      cell: (value: Service) => <ServiceImageCell service={value} />,
+      accessor: "id" as const,
+      cell: (_: unknown, row: Service) => <ServiceImageCell service={row} />,
       width: "80px",
     },
     {
@@ -500,7 +503,7 @@ export default function ServicesPage() {
       )
     },
     {
-      header: "Fixed Price",
+      header: "Service Fee",
       accessor: "fixed_price" as const,
       cell: (value: string) => (
         <div className="flex items-center gap-1.5 font-mono font-medium text-foreground">
@@ -587,7 +590,7 @@ export default function ServicesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Services</h1>
           <p className="text-sm text-muted-foreground mt-1 font-mono">
-            Manage roadside assistance categories and roadie coverage
+            Manage Emergency Roadside Service(s)
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -612,8 +615,7 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
         <Card className="border-border/50 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
@@ -638,17 +640,7 @@ export default function ServicesPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">With Images</p>
-              <p className="text-2xl font-bold mt-1 text-blue-500">{stats.withImages}</p>
-            </div>
-            <div className="bg-blue-500/10 p-2.5 rounded-xl">
-              <ImageIcon className="h-5 w-5 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
+
 
         <Card className="border-border/50 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">

@@ -79,10 +79,8 @@ export default function AdminUsersPage() {
     const canDelete = useCan(PERMISSIONS.ADMIN_USERS_DELETE)
     const canAdd = useCan(PERMISSIONS.ADMIN_USERS_ADD)
     const canDisable = useCan(PERMISSIONS.ADMIN_USERS_DISABLE)
-    const canApprove = useCan(PERMISSIONS.ADMIN_USERS_APPROVE)
-
     // Approval implies Disable permission
-    const hasDisablePermission = canDisable || canApprove
+    const hasDisablePermission = canDisable
 
     const fetchAdmins = async () => {
         setIsLoading(true)
@@ -165,34 +163,7 @@ export default function AdminUsersPage() {
         }
     }
 
-    const handleApprovalToggle = async (admin: AdminUser) => {
-        try {
-            await updateAdminUser(admin.id, { is_approved: !admin.is_approved })
-
-            // Audit Log
-            const currentUser = await getAdminProfile()
-            AuditService.log(
-                !admin.is_approved ? "Approve User" : "Unapprove User",
-                "Users",
-                `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
-                currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
-                { is_approved: admin.is_approved },
-                { is_approved: !admin.is_approved }
-            )
-
-            toast({
-                title: "Success",
-                description: `Admin user ${!admin.is_approved ? "approved" : "unapproved"} successfully`
-            })
-            fetchAdmins()
-        } catch (err: any) {
-            toast({
-                title: "Error",
-                description: err.message || "Failed to update admin user approval",
-                variant: "destructive"
-            })
-        }
-    }
+    // Removed handleApprovalToggle as admins are auto-approved
 
     const handleEdit = (admin: AdminUser) => {
         window.location.href = `/sys-admin/users/${admin.id}`
@@ -253,33 +224,6 @@ export default function AdminUsersPage() {
                             <div className="flex items-center gap-1">
                                 <EyeOff className="h-3 w-3" />
                                 Disabled
-                            </div>
-                        )}
-                    </span>
-                </div>
-            ),
-        },
-        {
-            header: "Approved",
-            accessor: (row: AdminUser) => row.is_approved,
-            cell: (value: boolean, row: AdminUser) => (
-                <div className="flex items-center gap-2">
-                    <Switch
-                        checked={value}
-                        onCheckedChange={() => handleApprovalToggle(row)}
-                        disabled={!canApprove}
-                        className="data-[state=checked]:bg-green-600"
-                    />
-                    <span className={`text-xs font-medium ${value ? "text-emerald-500" : "text-amber-500"}`}>
-                        {value ? (
-                            <div className="flex items-center gap-1">
-                                <Shield className="h-3 w-3" />
-                                Approved
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1">
-                                <ShieldOff className="h-3 w-3" />
-                                Pending
                             </div>
                         )}
                     </span>

@@ -29,18 +29,15 @@ export default function EditAdminPage() {
         email: "",
         phone: "",
         username: "",
-        is_active: true,
-        is_approved: true
+        is_active: true
     })
     const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
     // const [authUserId, setAuthUserId] = useState<string | null>(null) 
 
     // Permissions
     const canDisable = useCan(PERMISSIONS.ADMIN_USERS_DISABLE)
-    const canApprove = useCan(PERMISSIONS.ADMIN_USERS_APPROVE)
-
     // Approval implies Disable permission
-    const hasDisablePermission = canDisable || canApprove
+    const hasDisablePermission = canDisable
 
     const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -59,8 +56,7 @@ export default function EditAdminPage() {
                     email: adminData.email,
                     phone: adminData.phone,
                     username: adminData.username,
-                    is_active: adminData.is_active,
-                    is_approved: adminData.is_approved
+                    is_active: adminData.is_active
                 })
 
                 // Load User Groups
@@ -150,8 +146,7 @@ export default function EditAdminPage() {
                 email: formData.email,
                 phone: formData.phone,
                 // username: formData.username, // Username updates might be restricted
-                is_active: formData.is_active,
-                is_approved: formData.is_approved
+                is_active: formData.is_active
             })
 
             // 2. Update User Groups (JSON DB)
@@ -274,18 +269,6 @@ export default function EditAdminPage() {
                                 checked={formData.is_active}
                                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
                                 disabled={!hasDisablePermission}
-                            />
-                        </div>
-
-                        <div className="flex justify-between items-center py-2 border-t">
-                            <div className="space-y-0.5">
-                                <Label className="text-base">Approval Status</Label>
-                                <p className="text-sm text-muted-foreground">User has been approved by an administrator</p>
-                            </div>
-                            <Switch
-                                checked={formData.is_approved}
-                                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_approved: checked }))}
-                                disabled={!canApprove}
                             />
                         </div>
                     </CardContent>

@@ -24,10 +24,8 @@ export default function AddAdminPage() {
 
     // Permissions
     const canDisable = useCan(PERMISSIONS.ADMIN_USERS_DISABLE)
-    const canApprove = useCan(PERMISSIONS.ADMIN_USERS_APPROVE)
-
     // Approval implies Disable permission
-    const hasDisablePermission = canDisable || canApprove
+    const hasDisablePermission = canDisable
 
     const [formData, setFormData] = useState({
         first_name: "",
@@ -37,8 +35,7 @@ export default function AddAdminPage() {
         username: "",
         password: "",
         confirmPassword: "",
-        is_active: true,
-        is_approved: canApprove // Default to true only if they have permission, otherwise false (pending)
+        is_active: true
     })
     const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([])
 
@@ -120,8 +117,7 @@ export default function AddAdminPage() {
                 phone: formData.phone,
                 username: formData.username,
                 password: formData.password,
-                is_active: formData.is_active,
-                is_approved: formData.is_approved
+                is_active: formData.is_active
             })
 
             // 2. Assign Groups (JSON DB)
@@ -282,7 +278,7 @@ export default function AddAdminPage() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-8 py-4 border-y">
+                        <div className="grid grid-cols-1 gap-8 py-4 border-y">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-0.5">
                                     <Label>Active Status</Label>
@@ -292,18 +288,6 @@ export default function AddAdminPage() {
                                     checked={formData.is_active}
                                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
                                     disabled={!hasDisablePermission}
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label>Approval Status</Label>
-                                    <div className="text-[0.8rem] text-muted-foreground">User is approved</div>
-                                </div>
-                                <Switch
-                                    checked={formData.is_approved}
-                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_approved: checked }))}
-                                    disabled={!canApprove}
                                 />
                             </div>
                         </div>

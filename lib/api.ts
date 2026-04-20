@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://127.0.0.1:8000"
+const API_BASE_URL = ""
 
 let authToken: string | null = null
 
@@ -51,8 +51,9 @@ function getRefreshToken(): string | null {
 
 export async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
+    const isFormData = options?.body instanceof FormData
     const headers: any = {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...options?.headers,
     }
 
@@ -762,11 +763,13 @@ export interface Referral {
   id: number
   referrer: ReferralUser
   referrer_username?: string
-  referred: ReferralUser
+  referred?: ReferralUser // Keep for legacy/UI compatibility if needed
+  referred_user: ReferralUser // Matches backend serializer
   referee_username?: string
   amount: string
   reward_amount?: string
   status: string
+  is_credited: boolean
   created_at: string
   updated_at?: string
 }
@@ -1129,6 +1132,7 @@ export interface Service {
   name: string
   code: string
   fixed_price?: string
+  image?: string
   is_active: boolean
   rodie_count?: number
   created_at: string
@@ -1143,23 +1147,43 @@ export async function getServiceById(id: number): Promise<Service> {
   return apiRequest<Service>(`/api/auth/admin/services/${id}/`)
 }
 
-export async function createService(data: {
-  name: string
-  code?: string
-  is_active?: boolean
-  fixed_price?: string
-  image?: string
-}): Promise<Service> {
+export async function createService(data: Omit<Service, "id" | "created_at" | "updated_at" | "image"> & { image: File | string | null }): Promise<Service> {
+  let body: BodyInit
+  if (data.image && typeof data.image !== "string") {
+    const formData = new FormData()
+    formData.append("name", data.name)
+    if (data.code) formData.append("code", data.code)
+    if (data.is_active !== undefined) formData.append("is_active", String(data.is_active))
+    if (data.fixed_price) formData.append("fixed_price", data.fixed_price)
+    formData.append("image", data.image)
+    body = formData
+  } else {
+    body = JSON.stringify(data)
+  }
+
   return apiRequest<Service>("/api/auth/admin/services/", {
     method: "POST",
-    body: JSON.stringify(data),
+    body,
   })
 }
 
-export async function updateService(id: number, data: Partial<Service>): Promise<Service> {
+export async function updateService(id: number, data: Omit<Partial<Service>, "image"> & { image?: File | string | null }): Promise<Service> {
+  let body: BodyInit
+  if (data.image && typeof data.image !== "string") {
+    const formData = new FormData()
+    if (data.name) formData.append("name", data.name)
+    if (data.code) formData.append("code", data.code)
+    if (data.is_active !== undefined) formData.append("is_active", String(data.is_active))
+    if (data.fixed_price) formData.append("fixed_price", data.fixed_price)
+    formData.append("image", data.image)
+    body = formData
+  } else {
+    body = JSON.stringify(data)
+  }
+
   return apiRequest<Service>(`/api/auth/admin/services/${id}/`, {
     method: "PATCH",
-    body: JSON.stringify(data),
+    body,
   })
 }
 
@@ -1408,6 +1432,29 @@ export async function getCombinedRealtimeLocations(): Promise<CombinedRealtimeRe
 
 export async function getCombinedMapData(): Promise<GeoJSONFeatureCollection> {
   return apiRequest<GeoJSONFeatureCollection>("/api/auth/admin/locations/realtime/map/")
+}
+
+export interface Dispute {
+  id: number
+  request: number
+  request_details?: ServiceRequest
+  raised_by: number
+  raised_by_username?: string
+  reason: string
+  status: 'PENDING' | 'RESOLVED'
+  created_at: string
+  updated_at: string
+}
+
+export async function getDisputes(): Promise<Dispute[]> {
+  return apiRequest<Dispute[]>("/api/auth/admin/disputes/")
+}
+
+export async function updateDispute(id: number, data: Partial<Dispute>): Promise<Dispute> {
+  return apiRequest<Dispute>(`/api/auth/admin/disputes/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  })
 }
 
 export interface AdminNotification {

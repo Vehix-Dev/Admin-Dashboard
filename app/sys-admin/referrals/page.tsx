@@ -84,10 +84,16 @@ export default function ReferralsPage() {
 
     // Stats based on filtered data
     const totalReferrals = filteredReferrals.length
-    const totalPaid = filteredReferrals
-        .filter(r => r.status === 'PAID' || r.status === 'COMPLETED')
-        .reduce((acc, curr) => acc + parseFloat(curr.reward_amount || '0'), 0)
-    const pendingCount = filteredReferrals.filter(r => r.status === 'PENDING').length
+    const successfulReferrals = filteredReferrals.filter(r => r.is_credited).length
+    const pendingReferrals = filteredReferrals.filter(r => !r.is_credited).length
+    
+    const totalRewardsPaid = filteredReferrals
+        .filter(r => r.is_credited)
+        .reduce((acc, curr) => acc + parseFloat(curr.reward_amount || curr.amount || '0'), 0)
+        
+    const pendingRewardsAmount = filteredReferrals
+        .filter(r => !r.is_credited)
+        .reduce((acc, curr) => acc + parseFloat(curr.reward_amount || curr.amount || '0'), 0)
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-UG', {
@@ -100,7 +106,7 @@ export default function ReferralsPage() {
     const columns: Column<Referral>[] = [
         {
             header: "Referrer",
-            accessor: "referrer.username",
+            accessor: "referrer_username",
             cell: (_: unknown, row: Referral) => (
                 <div className="flex flex-col">
                     <span className="font-medium">{row.referrer?.username || row.referrer_username}</span>
@@ -115,11 +121,11 @@ export default function ReferralsPage() {
         },
         {
             header: "Referee",
-            accessor: "referred.username",
+            accessor: "referee_username",
             cell: (_: unknown, row: Referral) => (
                 <div className="flex flex-col">
-                    <span className="font-medium">{row.referred?.username || row.referee_username}</span>
-                    <span className="text-xs text-muted-foreground">{row.referred?.phone}</span>
+                    <span className="font-medium">{row.referred_user?.username || row.referee_username}</span>
+                    <span className="text-xs text-muted-foreground">{row.referred_user?.phone}</span>
                 </div>
             )
         },
@@ -130,17 +136,16 @@ export default function ReferralsPage() {
         },
         {
             header: "Status",
-            accessor: "status",
-            cell: (value: string) => {
-                const colors: Record<string, string> = {
-                    'PENDING': 'border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/30 dark:bg-yellow-900/20 dark:text-yellow-400',
-                    'PAID': 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/30 dark:bg-green-900/20 dark:text-green-400',
-                    'COMPLETED': 'border-green-200 bg-green-50 text-green-700 dark:border-green-900/30 dark:bg-green-900/20 dark:text-green-400',
-                    'REJECTED': 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-400'
-                }
+            accessor: "is_credited",
+            cell: (value: boolean) => {
                 return (
-                    <Badge variant="outline" className={`capitalize font-medium border-2 ${colors[value] || 'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-800/20 dark:text-gray-400'}`}>
-                        {value}
+                    <Badge variant="outline" className={cn(
+                        "capitalize font-medium border-2",
+                        value 
+                            ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/30 dark:bg-green-900/20 dark:text-green-400"
+                            : "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/30 dark:bg-yellow-900/20 dark:text-yellow-400"
+                    )}>
+                        {value ? 'Credited' : 'Pending'}
                     </Badge>
                 )
             }
@@ -149,20 +154,6 @@ export default function ReferralsPage() {
             header: "Date",
             accessor: "created_at",
             cell: (value: string) => new Date(value).toLocaleDateString()
-        },
-        {
-            header: "Actions",
-            accessor: "id",
-            cell: (_: any, row: Referral) => canManage ? (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(row)}
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            ) : null,
         },
     ]
 
@@ -255,35 +246,45 @@ export default function ReferralsPage() {
                 </Card>
             )}
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-5">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Referrals</CardTitle>
-                        <UserPlus className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-xs font-medium text-foreground/70 uppercase tracking-wider">Total Referrals</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{totalReferrals}</div>
-                        <p className="text-xs text-muted-foreground">{startDate || endDate ? 'In selected range' : 'All time referrals'}</p>
+                        <div className="text-xl font-bold">{totalReferrals}</div>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Paid Out</CardTitle>
-                        <Gift className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-xs font-medium text-foreground/70 uppercase tracking-wider">Successful Referrals</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(totalPaid)}</div>
-                        <p className="text-xs text-muted-foreground">{startDate || endDate ? 'In selected range' : 'Rewards distributed'}</p>
+                        <div className="text-xl font-bold text-green-600">{successfulReferrals}</div>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Rewards</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-xs font-medium text-foreground/70 uppercase tracking-wider">Pending Referrals</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{pendingCount}</div>
-                        <p className="text-xs text-muted-foreground">{startDate || endDate ? 'In selected range' : 'Referrals awaiting payout'}</p>
+                        <div className="text-xl font-bold text-yellow-600">{pendingReferrals}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs font-medium text-foreground/70 uppercase tracking-wider">Total Rewards Paid</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-lg font-bold">{formatCurrency(totalRewardsPaid)}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs font-medium text-foreground/70 uppercase tracking-wider">Pending Reward</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-lg font-bold">{formatCurrency(pendingRewardsAmount)}</div>
                     </CardContent>
                 </Card>
             </div>

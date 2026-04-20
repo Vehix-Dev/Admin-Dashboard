@@ -185,12 +185,16 @@ export default function LiveServiceMap() {
           <Marker
             key={`rider-${r.request_id}`}
             position={[r.lat, r.lng]}
-            icon={r.status?.toLowerCase() === "pending" ? pendingIcon : riderIcon}
+            icon={
+              ["pending", "requested"].includes(r.status?.toLowerCase())
+                ? pendingIcon
+                : riderIcon
+            }
           >
             <Popup>
               <div className="min-w-[220px] space-y-1">
                 <h3 className="font-semibold text-foreground">
-                  {r.rider_first_name} {r.rider_last_name}
+                  {r.rider_username}
                 </h3>
                 <p className="text-xs text-muted-foreground">@{r.rider_username}</p>
 

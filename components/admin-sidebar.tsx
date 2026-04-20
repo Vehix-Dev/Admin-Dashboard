@@ -44,7 +44,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
     items: [
       { name: "Dashboard", href: "/sys-admin", icon: LayoutDashboard, permission: PERMISSIONS.DASHBOARD_VIEW },
       {
-        name: "Service Requests",
+        name: "Jobs & Assists",
         href: "/sys-admin/requests",
         icon: Wrench,
         hasSubItems: true,
@@ -139,7 +139,6 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         permission: PERMISSIONS.NOTIFICATIONS_VIEW,
         items: [
           { name: "All Notifications", href: "/sys-admin/notifications", icon: Bell, permission: PERMISSIONS.NOTIFICATIONS_VIEW },
-          { name: "Send Email", href: "/sys-admin/notifications/email", icon: Mail, permission: PERMISSIONS.EMAIL_SEND },
         ]
       },
       {
@@ -262,7 +261,7 @@ export function AdminSidebar() {
         {sidebarOpen && (
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 relative flex items-center justify-center">
-              <img src="/logo.png" alt="Vehix Logo" className="h-full w-auto object-contain" />
+              <img src="/vehix-logo.jpg" alt="Vehix Logo" className="h-full w-auto object-contain" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-foreground text-sm tracking-tight leading-none">

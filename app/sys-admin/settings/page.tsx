@@ -191,30 +191,7 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="serviceFee">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    Service Fee
-                  </div>
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">UGX</span>
-                  <Input
-                    id="serviceFee"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={serviceFee}
-                    onChange={(e) => setServiceFee(e.target.value)}
-                    className="pl-12"
-                    placeholder="30000.00"
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Fixed fee charged to Roadies when a service is completed.
-                </p>
-              </div>
+
 
               <div className="space-y-2">
                 <Label htmlFor="trialDays">
@@ -246,10 +223,7 @@ export default function SettingsPage() {
                   <span className="text-muted-foreground">Max Negative Balance:</span>
                   <span className="font-medium ml-2 text-foreground">UGX {platformConfig?.max_negative_balance}</span>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Service Fee:</span>
-                  <span className="font-medium ml-2 text-foreground">UGX {platformConfig?.service_fee}</span>
-                </div>
+
                 <div>
                   <span className="text-muted-foreground">Trial Period:</span>
                   <span className="font-medium ml-2 text-foreground">{platformConfig?.trial_days || 0} Days</span>

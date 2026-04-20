@@ -23,7 +23,7 @@ export default function NotificationsPage() {
     const [riders, setRiders] = useState<Rider[]>([])
     const [roadies, setRoadies] = useState<Roadie[]>([])
     const [fetchingUsers, setFetchingUsers] = useState(false)
-    const [audienceType, setAudienceType] = useState<"driver" | "user">("driver")
+    const [audienceType, setAudienceType] = useState<"roadie" | "rider">("roadie")
     const [selectionMode, setSelectionMode] = useState<"manual" | "audience">("manual")
     const [deliveryType, setDeliveryType] = useState<"single" | "broadcast">("single")
     const [selectedUserId, setSelectedUserId] = useState<string>("")
@@ -55,7 +55,7 @@ export default function NotificationsPage() {
     }
 
     const currentSelectionOptions = useMemo(() => {
-        if (audienceType === "driver") {
+        if (audienceType === "roadie") {
             return roadies.map(r => ({ value: String(r.id), label: `${r.first_name} ${r.last_name} (${r.username})` }))
         }
         return riders.map(r => ({ value: String(r.id), label: `${r.first_name} ${r.last_name} (${r.username})` }))
@@ -63,7 +63,7 @@ export default function NotificationsPage() {
 
     const selectedLabel = useMemo(() => {
         const found = currentSelectionOptions.find(opt => opt.value === selectedUserId)
-        return found ? found.label : `Select ${audienceType === "driver" ? "Drivers" : "Users"}`
+        return found ? found.label : `Select ${audienceType === "roadie" ? "Roadies" : "Riders"}`
     }, [selectedUserId, currentSelectionOptions, audienceType])
 
     async function handleCreate(e: React.FormEvent) {
@@ -85,7 +85,7 @@ export default function NotificationsPage() {
                 if (selectionMode === "manual" && selectedUserId) {
                     payload.user = parseInt(selectedUserId)
                 } else if (selectionMode === "audience") {
-                    payload.target_role = audienceType === "driver" ? "RODIE" : "RIDER"
+                    payload.target_role = audienceType === "roadie" ? "RODIE" : "RIDER"
                 }
             } else {
                 payload.broadcast = true
@@ -142,12 +142,12 @@ export default function NotificationsPage() {
                                 className="flex gap-8"
                             >
                                 <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="driver" id="driver" />
-                                    <Label htmlFor="driver" className="font-normal cursor-pointer">Driver</Label>
+                                    <RadioGroupItem value="roadie" id="roadie" />
+                                    <Label htmlFor="roadie" className="font-normal cursor-pointer">Roadie</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="user" id="user" />
-                                    <Label htmlFor="user" className="font-normal cursor-pointer">User</Label>
+                                    <RadioGroupItem value="rider" id="rider" />
+                                    <Label htmlFor="rider" className="font-normal cursor-pointer">Rider</Label>
                                 </div>
                             </RadioGroup>
 
@@ -186,7 +186,7 @@ export default function NotificationsPage() {
 
                             {selectionMode === "manual" && (
                                 <div className="space-y-3">
-                                    <Label className="text-sm font-medium">Select {audienceType === "driver" ? "Drivers" : "Users"}</Label>
+                                    <Label className="text-sm font-medium">Select {audienceType === "roadie" ? "Roadies" : "Riders"}</Label>
                                     <Popover open={open} onOpenChange={setOpen}>
                                         <PopoverTrigger asChild>
                                             <Button
@@ -202,9 +202,9 @@ export default function NotificationsPage() {
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                             <Command>
-                                                <CommandInput placeholder={`Search ${audienceType === "driver" ? "drivers" : "users"}...`} />
+                                                <CommandInput placeholder={`Search ${audienceType === "roadie" ? "roadies" : "riders"}...`} />
                                                 <CommandList>
-                                                    <CommandEmpty>No {audienceType === "driver" ? "driver" : "user"} found.</CommandEmpty>
+                                                    <CommandEmpty>No {audienceType === "roadie" ? "roadie" : "rider"} found.</CommandEmpty>
                                                     <CommandGroup>
                                                         {currentSelectionOptions.map((option) => (
                                                             <CommandItem

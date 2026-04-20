@@ -28,3 +28,5 @@ vehix.db-wal
 
 # public files
 public/uploads/*
+.next/*
+.next

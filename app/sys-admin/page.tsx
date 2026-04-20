@@ -116,9 +116,9 @@ export default function AdminDashboardPage() {
       totalServices: services.length,
       requestTrends,
       statusDistribution: [
-        { name: 'Pending', value: requests.filter(r => r.status?.toUpperCase() === 'PENDING').length, color: '#F59E0B' },
+        { name: 'Requested', value: requests.filter(r => r.status?.toUpperCase() === 'REQUESTED').length, color: '#F59E0B' },
         { name: 'Accepted', value: requests.filter(r => r.status?.toUpperCase() === 'ACCEPTED').length, color: '#F05A28' },
-        { name: 'Completed', value: completed, color: '#10B981' },
+        { name: 'Completed', value: requests.filter(r => r.status?.toUpperCase() === 'COMPLETED').length, color: '#10B981' },
       ].filter(v => v.value > 0),
       popularServices,
       topRiders: riders.slice(0, 5).map(r => ({ ...r, firstName: r.first_name, lastName: r.last_name, completedRequests: requests.filter(req => req.rider === r.id && req.status?.toUpperCase() === 'COMPLETED').length })),
@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
       platformHealth: {
         activeUsers: (riders.filter(r => r.is_online).length || 0) + (roadies.filter(r => r.is_online).length || 0),
         serviceAvailability: 100,
-        responseRate: requests.length > 0 ? Math.round((requests.filter(r => r.status !== 'PENDING').length / totalRequests) * 100) : 0,
+        responseRate: requests.length > 0 ? Math.round((requests.filter(r => r.status?.toUpperCase() !== 'REQUESTED').length / totalRequests) * 100) : 0,
         satisfaction: 98
       },
       userGrowth

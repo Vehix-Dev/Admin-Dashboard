@@ -218,7 +218,7 @@ export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: Ser
 
               <div className="space-y-2">
                 <Label htmlFor="fixed_price" className="text-xs font-mono uppercase tracking-wider">
-                  Fixed Price (UGX)
+                  Service Fee (UGX)
                 </Label>
                 <Input
                   id="fixed_price"
