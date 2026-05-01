@@ -110,7 +110,7 @@ export default function AdminDashboardPage() {
       activeRoadies: roadies.filter(r => r.is_online).length || roadies.length,
       completionRate: totalRequests > 0 ? Math.round((completed / totalRequests) * 100) : 0,
       acceptanceRate: requests.length > 0 ? Math.round((requests.filter(r => r.status !== 'PENDING').length / totalRequests) * 100) : 0,
-      averageResponseTime: 8, // Derived if timings exist
+      averageResponseTime: 8, 
       activeLocations: (locations?.riders?.length || 0) + (locations?.rodies?.length || 0),
       enRouteAssignments: requests.filter(r => r.status?.toUpperCase() === 'EN_ROUTE').length,
       totalServices: services.length,

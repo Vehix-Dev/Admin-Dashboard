@@ -406,21 +406,20 @@ export default function LoginPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
-                  Ensure Django backend is running:{" "}
-                  <code className="ml-1 rounded bg-muted px-2 py-0.5 font-mono text-xs">python manage.py runserver</code>
+                  Ensure you have an active internet connection
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
-                  Check server accessibility at:{" "}
-                  <code className="ml-1 rounded bg-muted px-2 py-0.5 font-mono text-xs">http://localhost:8000</code>
+                  Check the backend service status at:{" "}
+                  <code className="ml-1 rounded bg-muted px-2 py-0.5 font-mono text-xs">backend.vehix.ug</code>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
-                  Verify CORS configuration in Django settings
+                  Verify your account has administrator privileges
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
-                  Check browser console for detailed error messages
+                  Contact system support if the error persists
                 </li>
               </ul>
             </div>
