@@ -28,7 +28,10 @@ import {
     ArrowDownRight,
     Calendar,
     BarChart3,
-    CheckCircle
+    CheckCircle,
+    Filter,
+    X,
+    Calendar as CalendarIcon
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -44,7 +47,10 @@ import {
     AreaChart,
     Area
 } from "recharts"
-import { format, subDays, startOfMonth, subMonths, isSameMonth } from "date-fns"
+import { format, subDays, startOfMonth, subMonths, isSameMonth, isWithinInterval, startOfDay, endOfDay, endOfMonth } from "date-fns"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarPicker } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
 import ProtectedRoute from "@/components/auth/protected-route"
 import Link from "next/link"
 
@@ -88,6 +94,9 @@ export default function ReportsOverviewPage() {
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [config, setConfig] = useState<PlatformConfig | null>(null)
+    const [startDate, setStartDate] = useState<Date | undefined>(startOfMonth(new Date()))
+    const [endDate, setEndDate] = useState<Date | undefined>(endOfMonth(new Date()))
+    const [showFilters, setShowFilters] = useState(false)
 
     const { toast } = useToast()
     const canView = useCan(PERMISSIONS.REPORTS_VIEW)
@@ -106,11 +115,23 @@ export default function ReportsOverviewPage() {
             setConfig(platformConfig)
             const serviceFee = parseFloat(platformConfig.service_fee || '0')
 
+            // Filter by date range
+            const inRange = (date: string) => {
+                if (!startDate || !endDate) return true
+                return isWithinInterval(new Date(date), {
+                    start: startOfDay(startDate),
+                    end: endOfDay(endDate)
+                })
+            }
+            const filteredRequests = requests.filter(r => inRange(r.created_at))
+            const filteredRiders = riders.filter(r => inRange(r.created_at))
+            const filteredRoadies = roadies.filter(r => inRange(r.created_at))
+
             // --- Revenue Metrics ---
             const currentMonth = new Date()
             const lastMonth = subMonths(new Date(), 1)
 
-            const completedRequests = requests.filter(r => r.status === 'COMPLETED')
+            const completedRequests = filteredRequests.filter(r => r.status === 'COMPLETED')
             const totalRevenue = completedRequests.length * serviceFee
 
             const revenueThisMonth = completedRequests
@@ -126,7 +147,7 @@ export default function ReportsOverviewPage() {
                 : revenueThisMonth > 0 ? 100 : 0
 
             // --- User Metrics ---
-            const allUsers = [...riders.map(r => ({ ...r, type: 'rider' })), ...roadies.map(r => ({ ...r, type: 'roadie' }))]
+            const allUsers = [...filteredRiders.map(r => ({ ...r, type: 'rider' })), ...filteredRoadies.map(r => ({ ...r, type: 'roadie' }))]
             const totalUsers = allUsers.length
 
             const newUsersThisMonth = allUsers.filter(u =>
@@ -142,11 +163,11 @@ export default function ReportsOverviewPage() {
                 : newUsersThisMonth > 0 ? 100 : 0
 
             // --- Service Metrics ---
-            const requestsThisMonth = requests.filter(r =>
+            const requestsThisMonth = filteredRequests.filter(r =>
                 isSameMonth(new Date(r.created_at), currentMonth)
             ).length
 
-            const requestsLastMonth = requests.filter(r =>
+            const requestsLastMonth = filteredRequests.filter(r =>
                 isSameMonth(new Date(r.created_at), lastMonth)
             ).length
 
@@ -154,18 +175,21 @@ export default function ReportsOverviewPage() {
                 ? ((requestsThisMonth - requestsLastMonth) / requestsLastMonth) * 100
                 : requestsThisMonth > 0 ? 100 : 0
 
-            const completionRate = requests.length > 0
-                ? (completedRequests.length / requests.length) * 100
+            const completionRate = filteredRequests.length > 0
+                ? (completedRequests.length / filteredRequests.length) * 100
                 : 0
 
-            // --- Daily Activity (Last 14 days) ---
-            const last14Days = Array.from({ length: 14 }, (_, i) => {
-                const d = subDays(new Date(), 13 - i)
+            // --- Daily Activity (within date range, max 14 days shown) ---
+            const rangeDays = startDate && endDate
+                ? Math.min(Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1, 30)
+                : 14
+            const last14Days = Array.from({ length: rangeDays }, (_, i) => {
+                const d = subDays(endDate ?? new Date(), rangeDays - 1 - i)
                 return format(d, 'MMM dd')
             })
 
             const dailyActivity = last14Days.map(dateStr => {
-                const dayRequests = requests.filter(r =>
+                const dayRequests = filteredRequests.filter(r =>
                     format(new Date(r.created_at), 'MMM dd') === dateStr
                 )
                 return {
@@ -191,7 +215,7 @@ export default function ReportsOverviewPage() {
 
             // --- Top Services ---
             const serviceCounts: Record<string, number> = {}
-            requests.forEach(r => {
+            filteredRequests.forEach(r => {
                 const name = r.service_type_name || `Service ${r.service_type}`
                 serviceCounts[name] = (serviceCounts[name] || 0) + 1
             })
@@ -213,7 +237,7 @@ export default function ReportsOverviewPage() {
                     trend: userGrowth >= 0 ? 'up' : 'down'
                 },
                 services: {
-                    total: requests.length,
+                    total: filteredRequests.length,
                     completed: completedRequests.length,
                     completionRate,
                     growth: serviceGrowth,
@@ -227,8 +251,8 @@ export default function ReportsOverviewPage() {
                 },
                 topServices,
                 arpu: totalUsers > 0 ? totalRevenue / totalUsers : 0,
-                serviceSuccessRate: completionRate, // For now simplified, but could be more complex
-                arpr: requests.length > 0 ? totalRevenue / requests.length : 0
+                serviceSuccessRate: completionRate,
+                arpr: filteredRequests.length > 0 ? totalRevenue / filteredRequests.length : 0
             })
 
         } catch (err: any) {
@@ -245,7 +269,12 @@ export default function ReportsOverviewPage() {
 
     useEffect(() => {
         fetchDashboardData()
-    }, [])
+    }, [startDate, endDate])
+
+    const clearFilters = () => {
+        setStartDate(startOfMonth(new Date()))
+        setEndDate(endOfMonth(new Date()))
+    }
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-UG', {
@@ -267,11 +296,63 @@ export default function ReportsOverviewPage() {
                             High-level performance metrics and system health
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-md border border-border/50">
-                        <Calendar className="h-4 w-4" />
-                        <span>{format(new Date(), 'MMMM d, yyyy')}</span>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant={showFilters ? "default" : "outline"}
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="gap-2 h-9 font-mono text-sm"
+                        >
+                            <Filter className="h-4 w-4" />
+                            {showFilters ? "Hide Filters" : "Filter by Date"}
+                        </Button>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-md border border-border/50">
+                            <Calendar className="h-4 w-4" />
+                            <span>{format(new Date(), 'MMMM d, yyyy')}</span>
+                        </div>
                     </div>
                 </div>
+
+                {/* Date Filters */}
+                {showFilters && (
+                    <Card className="border-primary/20 bg-primary/5">
+                        <CardContent className="p-4 flex flex-wrap items-end gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1 font-mono">From</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-[160px] justify-start text-left font-mono text-xs h-10", !startDate && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                            {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <CalendarPicker mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1 font-mono">To</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-[160px] justify-start text-left font-mono text-xs h-10", !endDate && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                            {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <CalendarPicker mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="flex items-center gap-2 ml-auto">
+                                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground h-10 px-4 font-mono text-xs">
+                                    <X className="h-4 w-4 mr-2" />
+                                    Reset Range
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {isLoading ? (
                     <div className="grid gap-6 md:grid-cols-3">

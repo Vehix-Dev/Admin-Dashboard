@@ -19,7 +19,10 @@ import {
     Clock,
     TrendingUp,
     BarChart3,
-    DollarSign
+    DollarSign,
+    Filter,
+    X,
+    Calendar as CalendarIcon
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -36,7 +39,10 @@ import {
     Pie,
     Cell
 } from "recharts"
-import { format } from "date-fns"
+import { format, isWithinInterval, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
 import ProtectedRoute from "@/components/auth/protected-route"
 
 interface ServiceMetrics {
@@ -63,6 +69,9 @@ const STATUS_COLORS = {
 export default function ServicePerformancePage() {
     const [metrics, setMetrics] = useState<ServiceMetrics | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [startDate, setStartDate] = useState<Date | undefined>(startOfMonth(new Date()))
+    const [endDate, setEndDate] = useState<Date | undefined>(endOfMonth(new Date()))
+    const [showFilters, setShowFilters] = useState(false)
 
     const { toast } = useToast()
     const canView = useCan(PERMISSIONS.REPORTS_VIEW)
@@ -70,10 +79,19 @@ export default function ServicePerformancePage() {
     const fetchServiceData = async () => {
         setIsLoading(true)
         try {
-            const [requests, services] = await Promise.all([
+            const [allRequests, services] = await Promise.all([
                 getServiceRequests(),
                 getServices()
             ])
+
+            // Filter requests by date range
+            const requests = allRequests.filter(req => {
+                if (!startDate || !endDate) return true
+                return isWithinInterval(new Date(req.created_at), {
+                    start: startOfDay(startDate),
+                    end: endOfDay(endDate)
+                })
+            })
 
             const completed = requests.filter(r => r.status === 'COMPLETED').length
             const cancelled = requests.filter(r => r.status === 'CANCELLED').length
@@ -143,7 +161,12 @@ export default function ServicePerformancePage() {
 
     useEffect(() => {
         fetchServiceData()
-    }, [])
+    }, [startDate, endDate])
+
+    const clearFilters = () => {
+        setStartDate(startOfMonth(new Date()))
+        setEndDate(endOfMonth(new Date()))
+    }
 
     const handleExport = () => {
         if (!metrics) return
@@ -187,16 +210,80 @@ export default function ServicePerformancePage() {
                             Service request metrics and completion analysis
                         </p>
                     </div>
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        className="gap-2 h-10 font-mono"
-                        disabled={!metrics}
-                    >
-                        <Download className="h-4 w-4" />
-                        Export CSV
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant={showFilters ? "default" : "outline"}
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="gap-2 h-10 font-mono"
+                        >
+                            <Filter className="h-4 w-4" />
+                            {showFilters ? "Hide Filters" : "Filter by Date"}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleExport}
+                            className="gap-2 h-10 font-mono"
+                            disabled={!metrics}
+                        >
+                            <Download className="h-4 w-4" />
+                            Export CSV
+                        </Button>
+                    </div>
                 </div>
+
+                {/* Date Filters */}
+                {showFilters && (
+                    <Card className="border-primary/20 bg-primary/5">
+                        <CardContent className="p-4 flex flex-wrap items-end gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1 font-mono">From</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-[160px] justify-start text-left font-mono text-xs h-10",
+                                                !startDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                            {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1 font-mono">To</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-[160px] justify-start text-left font-mono text-xs h-10",
+                                                !endDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                            {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="flex items-center gap-2 ml-auto">
+                                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground h-10 px-4 font-mono text-xs">
+                                    <X className="h-4 w-4 mr-2" />
+                                    Reset Range
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {isLoading ? (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

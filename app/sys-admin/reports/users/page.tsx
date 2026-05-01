@@ -45,7 +45,7 @@ import {
     LineChart,
     Line
 } from "recharts"
-import { format, subDays, parse, eachMonthOfInterval, startOfYear, endOfYear, startOfMonth } from "date-fns"
+import { format, subDays, parse, eachMonthOfInterval, startOfYear, endOfYear, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
@@ -78,6 +78,8 @@ export default function UserAnalyticsPage() {
     const [metrics, setMetrics] = useState<UserMetrics | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [showFilters, setShowFilters] = useState(false)
+    const [startDate, setStartDate] = useState<Date | undefined>(startOfMonth(new Date()))
+    const [endDate, setEndDate] = useState<Date | undefined>(endOfMonth(new Date()))
 
     const { toast } = useToast()
     const canView = useCan(PERMISSIONS.REPORTS_VIEW)
@@ -85,12 +87,23 @@ export default function UserAnalyticsPage() {
     const fetchUserData = async () => {
         setIsLoading(true)
         try {
-            const [riders, roadies, admins, requests] = await Promise.all([
+            const [allRiders, allRoadies, admins, requests] = await Promise.all([
                 getRiders(),
                 getRoadies(),
                 getAdminUsers(),
                 getServiceRequests()
             ])
+
+            // Filter riders/roadies by registration date range
+            const inRange = (date: string) => {
+                if (!startDate || !endDate) return true
+                return isWithinInterval(new Date(date), {
+                    start: startOfDay(startDate),
+                    end: endOfDay(endDate)
+                })
+            }
+            const riders = allRiders.filter(r => inRange(r.created_at))
+            const roadies = allRoadies.filter(r => inRange(r.created_at))
 
             const totalUsers = riders.length + roadies.length + admins.length
             const approvedRiders = riders.filter(r => r.is_approved).length
@@ -171,7 +184,12 @@ export default function UserAnalyticsPage() {
 
     useEffect(() => {
         fetchUserData()
-    }, [])
+    }, [startDate, endDate])
+
+    const clearFilters = () => {
+        setStartDate(startOfMonth(new Date()))
+        setEndDate(endOfMonth(new Date()))
+    }
 
     const handleExport = () => {
         if (!metrics) return
@@ -216,16 +234,68 @@ export default function UserAnalyticsPage() {
                             Comprehensive user metrics and growth analysis
                         </p>
                     </div>
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        className="gap-2 h-10 font-mono"
-                        disabled={!metrics}
-                    >
-                        <Download className="h-4 w-4" />
-                        Export CSV
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant={showFilters ? "default" : "outline"}
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="gap-2 h-10 font-mono"
+                        >
+                            <Filter className="h-4 w-4" />
+                            {showFilters ? "Hide Filters" : "Filter by Date"}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleExport}
+                            className="gap-2 h-10 font-mono"
+                            disabled={!metrics}
+                        >
+                            <Download className="h-4 w-4" />
+                            Export CSV
+                        </Button>
+                    </div>
                 </div>
+
+                {/* Date Filters */}
+                {showFilters && (
+                    <Card className="border-primary/20 bg-primary/5">
+                        <CardContent className="p-4 flex flex-wrap items-end gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1 font-mono">From</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-[160px] justify-start text-left font-mono text-xs h-10", !startDate && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                            {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1 font-mono">To</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-[160px] justify-start text-left font-mono text-xs h-10", !endDate && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                            {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="flex items-center gap-2 ml-auto">
+                                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground h-10 px-4 font-mono text-xs">
+                                    <X className="h-4 w-4 mr-2" />
+                                    Reset Range
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {isLoading ? (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

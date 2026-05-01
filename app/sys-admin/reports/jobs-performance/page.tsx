@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { format, startOfDay, endOfDay, isWithinInterval } from "date-fns"
-import { Loader2, Filter, Calendar as CalendarIcon, TrendingUp, CheckCircle, AlertCircle, Clock, BarChart3 } from "lucide-react"
+import { Loader2, Filter, Calendar as CalendarIcon, TrendingUp, CheckCircle, AlertCircle, Clock, BarChart3, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -114,84 +114,62 @@ export default function JobsPerformanceReportPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Jobs/Assists Performance Report</h1>
-                <p className="text-gray-500">Operational insights into platform request performance</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Jobs/Assists Performance</h1>
+                    <p className="text-sm text-muted-foreground mt-1 font-mono">Operational insights into platform request performance</p>
+                </div>
+                <Button
+                    variant={showFilters ? "default" : "outline"}
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="gap-2 h-10 font-mono"
+                >
+                    <Filter className="h-4 w-4" />
+                    {showFilters ? "Hide Filters" : "Filter by Date"}
+                </Button>
             </div>
 
-            {/* Filters */}
-            <Card>
-                <CardContent className="pt-6">
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="gap-2"
-                        >
-                            <Filter className="h-4 w-4" />
-                            Filters
-                        </Button>
-                    </div>
-
-                    {showFilters && (
-                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <Label>From Date</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start">
-                                                <CalendarIcon className="h-4 w-4 mr-2" />
-                                                {startDate ? format(startDate, "MMM d, yyyy") : "Select date"}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={startDate}
-                                                onSelect={setStartDate}
-                                                disabled={(date) => endDate ? date > endDate : false}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                                <div>
-                                    <Label>To Date</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start">
-                                                <CalendarIcon className="h-4 w-4 mr-2" />
-                                                {endDate ? format(endDate, "MMM d, yyyy") : "Select date"}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={endDate}
-                                                onSelect={setEndDate}
-                                                disabled={(date) => startDate ? date < startDate : false}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                            </div>
-                            <div className="flex gap-2 mt-4">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        setStartDate(undefined)
-                                        setEndDate(undefined)
-                                    }}
-                                >
-                                    Clear Filters
-                                </Button>
-                            </div>
+            {/* Date Filters */}
+            {showFilters && (
+                <Card className="border-primary/20 bg-primary/5">
+                    <CardContent className="p-4 flex flex-wrap items-end gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1 font-mono">From</label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={`w-[160px] justify-start text-left font-mono text-xs h-10 ${!startDate ? 'text-muted-foreground' : ''}`}>
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                        {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={startDate} onSelect={setStartDate} disabled={(date) => endDate ? date > endDate : false} initialFocus />
+                                </PopoverContent>
+                            </Popover>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1 font-mono">To</label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={`w-[160px] justify-start text-left font-mono text-xs h-10 ${!endDate ? 'text-muted-foreground' : ''}`}>
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                                        {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={endDate} onSelect={setEndDate} disabled={(date) => startDate ? date < startDate : false} initialFocus />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="flex items-center gap-2 ml-auto">
+                            <Button variant="ghost" size="sm" onClick={() => { setStartDate(undefined); setEndDate(undefined) }} className="text-muted-foreground hover:text-foreground h-10 px-4 font-mono text-xs">
+                                <X className="h-4 w-4 mr-2" />
+                                Clear
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
