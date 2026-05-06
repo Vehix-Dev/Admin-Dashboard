@@ -57,16 +57,12 @@ export default function RidersPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [statusToggling, setStatusToggling] = useState<number[]>([])
   const { toast } = useToast()
-
   const canAdd = useCan(PERMISSIONS.RIDERS_ADD)
   const canChange = useCan(PERMISSIONS.RIDERS_CHANGE)
   const canDelete = useCan(PERMISSIONS.RIDERS_DELETE)
   const canApprove = useCan(PERMISSIONS.RIDERS_APPROVE)
   const canDisable = useCan(PERMISSIONS.RIDERS_DISABLE)
-
-  // Approval implies Disable permission
   const hasDisablePermission = canDisable || canApprove
-
   const debouncedSearch = useCallback(
     debounce((query: string) => {
       if (query !== searchQuery) {
@@ -270,29 +266,12 @@ export default function RidersPage() {
         { riderId: rider.id, externalId: rider.external_id, newStatus }
       )
 
-      if (newStatus) {
-        try {
-          await fetch('/sys-api/admin/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: rider.email,
-              type: 'WELCOME_APPROVAL',
-              data: {
-                userName: rider.first_name,
-                role: 'Rider'
-              }
-            })
-          })
-        } catch (e) {
-          console.error("Failed to send welcome email", e)
-        }
-      }
-
       toast({
         title: "Success",
         description: `Rider ${newStatus ? "approved" : "unapproved"} successfully`
       })
+      
+      // Refresh the list to show updated status
       fetchRiders()
     } catch (err) {
       toast({

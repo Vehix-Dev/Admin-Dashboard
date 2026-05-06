@@ -49,8 +49,6 @@ export default function RoadiesPage() {
   const [isLoadingThumbnails, setIsLoadingThumbnails] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [onlineRoadies, setOnlineRoadies] = useState<Set<number>>(new Set())
-
-  // Filter states
   const [searchQuery, setSearchQuery] = useState("")
   const [searchInput, setSearchInput] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -58,20 +56,13 @@ export default function RoadiesPage() {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [showFilters, setShowFilters] = useState(false)
   const [statusToggling, setStatusToggling] = useState<number[]>([])
-
   const { toast } = useToast()
-
-  // Permission checks
   const canAdd = useCan(PERMISSIONS.ROADIES_ADD)
   const canChange = useCan(PERMISSIONS.ROADIES_CHANGE)
   const canDelete = useCan(PERMISSIONS.ROADIES_DELETE)
   const canApprove = useCan(PERMISSIONS.ROADIES_APPROVE)
   const canDisable = useCan(PERMISSIONS.ROADIES_DISABLE)
-
-  // Approval implies Disable permission
   const hasDisablePermission = canDisable || canApprove
-
-  // Debounced search function
   const debouncedSearch = useCallback(
     debounce((query: string) => {
       if (query !== searchQuery) {
@@ -293,29 +284,12 @@ export default function RoadiesPage() {
         { roadieId: roadie.id, externalId: roadie.external_id, newStatus }
       )
 
-      if (newStatus) {
-        try {
-          await fetch('/sys-api/admin/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: roadie.email,
-              type: 'WELCOME_APPROVAL',
-              data: {
-                userName: roadie.first_name,
-                role: 'Roadie'
-              }
-            })
-          })
-        } catch (e) {
-          console.error("Failed to send welcome email", e)
-        }
-      }
-
       toast({
         title: "Success",
         description: `Roadie ${newStatus ? "approved" : "unapproved"} successfully`
       })
+      
+      // Refresh the list to show updated status
       fetchRoadies()
     } catch (err) {
       toast({
