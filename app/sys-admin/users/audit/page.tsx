@@ -70,6 +70,9 @@ interface MappedAuditLog {
   ipAddress: string
 }
 
+// Get API base URL from environment variables
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || "http://localhost:3000"
+
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<MappedAuditLog[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -95,7 +98,10 @@ export default function AuditLogsPage() {
         params.append("search", searchTerm)
       }
 
-      const response = await fetch(`/auth/admin/audit-logs/?${params.toString()}`, {
+      const url = `${API_BASE_URL}/auth/admin/audit-logs/?${params.toString()}`
+      console.log("Fetching audit logs from:", url)
+
+      const response = await fetch(url, {
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -192,7 +198,9 @@ export default function AuditLogsPage() {
     setIsClearing(true)
     try {
       const token = localStorage.getItem("access_token")
-      const response = await fetch("/auth/admin/audit-logs/clear", {
+      const url = `${API_BASE_URL}/auth/admin/audit-logs/clear`
+      
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -407,7 +415,7 @@ export default function AuditLogsPage() {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between px-6 py-4 border-t border-border/40">
                     <div className="text-xs text-muted-foreground">
-                      Page {currentPage} of {totalPages}
+                      Page {currentPage} of {totalPages} ({totalCount.toLocaleString()} total)
                     </div>
                     <div className="flex gap-2">
                       <Button
