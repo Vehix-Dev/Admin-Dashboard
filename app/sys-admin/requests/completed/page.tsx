@@ -38,7 +38,8 @@ import {
     Filter,
     CalendarIcon,
     ExternalLink,
-    CheckCircle
+    CheckCircle,
+    Clock
 } from "lucide-react"
 import { RequestFormModal } from "@/components/forms/request-form-modal"
 import { debounce } from "lodash"
@@ -164,6 +165,7 @@ export default function CompletedRequestsPage() {
                     request.service_type_details?.code?.toLowerCase() || "",
                     request.status?.toLowerCase() || "",
                     formatLocation(request.rider_lat, request.rider_lng).toLowerCase(),
+                    calculateServiceTime(request.created_at, request.updated_at)
                 ]
                 return searchFields.some(field => field.includes(query))
             })
@@ -185,6 +187,55 @@ export default function CompletedRequestsPage() {
 
         setFilteredRequests(filtered)
     }, [searchQuery, serviceTypeFilter, dateFilter, requests])
+
+    // Helper function to calculate service time
+    const calculateServiceTime = (createdAt: string, updatedAt: string): string => {
+        try {
+            const created = new Date(createdAt)
+            const updated = new Date(updatedAt)
+            
+            if (isNaN(created.getTime()) || isNaN(updated.getTime())) {
+                return "Invalid date"
+            }
+            
+            const diffMs = Math.abs(updated.getTime() - created.getTime())
+            const diffSeconds = Math.floor(diffMs / 1000)
+            
+            if (diffSeconds < 60) {
+                return `${diffSeconds} sec`
+            }
+            
+            const diffMinutes = Math.floor(diffSeconds / 60)
+            const remainingSeconds = diffSeconds % 60
+            
+            if (diffMinutes < 60) {
+                if (remainingSeconds > 0) {
+                    return `${diffMinutes} min ${remainingSeconds} sec`
+                }
+                return `${diffMinutes} min`
+            }
+            
+            const diffHours = Math.floor(diffMinutes / 60)
+            const remainingMinutes = diffMinutes % 60
+            
+            if (diffHours < 24) {
+                if (remainingMinutes > 0) {
+                    return `${diffHours} hr ${remainingMinutes} min`
+                }
+                return `${diffHours} hr`
+            }
+            
+            const diffDays = Math.floor(diffHours / 24)
+            const remainingHours = diffHours % 24
+            
+            if (remainingHours > 0) {
+                return `${diffDays} day${diffDays > 1 ? 's' : ''} ${remainingHours} hr`
+            }
+            return `${diffDays} day${diffDays > 1 ? 's' : ''}`
+        } catch (error) {
+            return "N/A"
+        }
+    }
 
     const handleCreate = async (data: Partial<ServiceRequest>) => {
         try {
@@ -252,6 +303,7 @@ export default function CompletedRequestsPage() {
                 'Service Type Name',
                 'Service Code',
                 'Status',
+                'Service Time',
                 'Latitude',
                 'Longitude',
                 'Created At',
@@ -268,6 +320,7 @@ export default function CompletedRequestsPage() {
                 `"${request.service_type_name || getServiceName(request as any)}"`,
                 `"${request.service_type_details?.code || ''}"`,
                 `"${getStatusLabel(request.status as ServiceStatus)}"`,
+                `"${calculateServiceTime(request.created_at, request.updated_at)}"`,
                 request.rider_lat,
                 request.rider_lng,
                 `"${formatDateForExport(request.created_at)}"`,
@@ -409,6 +462,38 @@ export default function CompletedRequestsPage() {
             },
         },
         {
+            header: "Service Time",
+            accessor: (row: RequestRow) => calculateServiceTime(row.created_at, row.updated_at),
+            cell: (value: string, row: RequestRow) => {
+                const serviceTime = calculateServiceTime(row.created_at, row.updated_at)
+                // Parse the time to determine color based on duration
+                let colorClass = "text-emerald-600 bg-emerald-500/10"
+                let icon = <Clock className="h-3 w-3 mr-1" />
+                
+                if (serviceTime.includes("min")) {
+                    const minutes = parseInt(serviceTime)
+                    if (minutes > 30) {
+                        colorClass = "text-amber-600 bg-amber-500/10"
+                    } else if (minutes > 15) {
+                        colorClass = "text-blue-600 bg-blue-500/10"
+                    } else {
+                        colorClass = "text-emerald-600 bg-emerald-500/10"
+                    }
+                } else if (serviceTime.includes("hr")) {
+                    colorClass = "text-red-600 bg-red-500/10"
+                } else if (serviceTime.includes("day")) {
+                    colorClass = "text-red-600 bg-red-500/10"
+                }
+                
+                return (
+                    <Badge variant="outline" className={`${colorClass} border-current/20 font-mono text-xs px-2 py-1`}>
+                        {icon}
+                        {serviceTime}
+                    </Badge>
+                )
+            },
+        },
+        {
             header: "Status",
             accessor: "status" as const,
             cell: (value: string) => {
@@ -445,6 +530,55 @@ export default function CompletedRequestsPage() {
     const searchActive = searchQuery.trim() !== ""
     const filtersActive = serviceTypeFilter !== "all" || dateFilter !== undefined
 
+    // Calculate average service time for statistics
+    const averageServiceTime = () => {
+        if (requests.length === 0) return "N/A"
+        
+        let totalSeconds = 0
+        let validCount = 0
+        
+        requests.forEach(request => {
+            try {
+                const created = new Date(request.created_at)
+                const updated = new Date(request.updated_at)
+                
+                if (!isNaN(created.getTime()) && !isNaN(updated.getTime())) {
+                    const diffMs = Math.abs(updated.getTime() - created.getTime())
+                    totalSeconds += Math.floor(diffMs / 1000)
+                    validCount++
+                }
+            } catch (error) {
+                // Skip invalid dates
+            }
+        })
+        
+        if (validCount === 0) return "N/A"
+        
+        const avgSeconds = Math.floor(totalSeconds / validCount)
+        
+        if (avgSeconds < 60) {
+            return `${avgSeconds} sec`
+        }
+        
+        const avgMinutes = Math.floor(avgSeconds / 60)
+        const remainingSeconds = avgSeconds % 60
+        
+        if (avgMinutes < 60) {
+            if (remainingSeconds > 0) {
+                return `${avgMinutes} min ${remainingSeconds} sec`
+            }
+            return `${avgMinutes} min`
+        }
+        
+        const avgHours = Math.floor(avgMinutes / 60)
+        const remainingMinutes = avgMinutes % 60
+        
+        if (remainingMinutes > 0) {
+            return `${avgHours} hr ${remainingMinutes} min`
+        }
+        return `${avgHours} hr`
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -478,6 +612,100 @@ export default function CompletedRequestsPage() {
                 </div>
             </div>
 
+            {/* Stats Cards with Service Time */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-card rounded-lg border p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Completed</p>
+                            <p className="text-2xl font-bold mt-1">{totalRequests}</p>
+                        </div>
+                        <div className="bg-emerald-500/10 p-2 rounded-lg">
+                            <CheckCircle className="h-5 w-5 text-emerald-500" />
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="bg-card rounded-lg border p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Average Service Time</p>
+                            <p className="text-2xl font-bold mt-1">{averageServiceTime()}</p>
+                        </div>
+                        <div className="bg-blue-500/10 p-2 rounded-lg">
+                            <Clock className="h-5 w-5 text-blue-500" />
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="bg-card rounded-lg border p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fastest Service</p>
+                            <p className="text-2xl font-bold mt-1">
+                                {(() => {
+                                    let fastest = Infinity
+                                    requests.forEach(request => {
+                                        try {
+                                            const created = new Date(request.created_at)
+                                            const updated = new Date(request.updated_at)
+                                            if (!isNaN(created.getTime()) && !isNaN(updated.getTime())) {
+                                                const diffSeconds = Math.abs(updated.getTime() - created.getTime()) / 1000
+                                                if (diffSeconds < fastest) fastest = diffSeconds
+                                            }
+                                        } catch (error) {}
+                                    })
+                                    if (fastest === Infinity) return "N/A"
+                                    if (fastest < 60) return `${Math.floor(fastest)} sec`
+                                    const minutes = Math.floor(fastest / 60)
+                                    const seconds = Math.floor(fastest % 60)
+                                    return seconds > 0 ? `${minutes} min ${seconds} sec` : `${minutes} min`
+                                })()}
+                            </p>
+                        </div>
+                        <div className="bg-emerald-500/10 p-2 rounded-lg">
+                            <Clock className="h-5 w-5 text-emerald-500" />
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="bg-card rounded-lg border p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Slowest Service</p>
+                            <p className="text-2xl font-bold mt-1">
+                                {(() => {
+                                    let slowest = 0
+                                    requests.forEach(request => {
+                                        try {
+                                            const created = new Date(request.created_at)
+                                            const updated = new Date(request.updated_at)
+                                            if (!isNaN(created.getTime()) && !isNaN(updated.getTime())) {
+                                                const diffSeconds = Math.abs(updated.getTime() - created.getTime()) / 1000
+                                                if (diffSeconds > slowest) slowest = diffSeconds
+                                            }
+                                        } catch (error) {}
+                                    })
+                                    if (slowest === 0) return "N/A"
+                                    if (slowest < 60) return `${Math.floor(slowest)} sec`
+                                    const minutes = Math.floor(slowest / 60)
+                                    const seconds = Math.floor(slowest % 60)
+                                    if (minutes < 60) {
+                                        return seconds > 0 ? `${minutes} min ${seconds} sec` : `${minutes} min`
+                                    }
+                                    const hours = Math.floor(minutes / 60)
+                                    const remainingMinutes = minutes % 60
+                                    return remainingMinutes > 0 ? `${hours} hr ${remainingMinutes} min` : `${hours} hr`
+                                })()}
+                            </p>
+                        </div>
+                        <div className="bg-red-500/10 p-2 rounded-lg">
+                            <Clock className="h-5 w-5 text-red-500" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Search and Filters Bar */}
             <div className="bg-card rounded-lg border shadow-sm p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -486,7 +714,7 @@ export default function CompletedRequestsPage() {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="text"
-                                placeholder="Search completed requests by ID, rider, roadie, service, or location..."
+                                placeholder="Search completed requests by ID, rider, roadie, service, location, or service time..."
                                 value={searchInput}
                                 onChange={handleSearchChange}
                                 className="pl-10 pr-20"
@@ -625,6 +853,7 @@ export default function CompletedRequestsPage() {
                             <li>Roadie username</li>
                             <li>Service name (e.g., BATTERY)</li>
                             <li>Service code</li>
+                            <li>Service time (e.g., "5 min", "1 hr")</li>
                             <li>Location coordinates</li>
                         </ul>
                     </div>
@@ -729,6 +958,10 @@ export default function CompletedRequestsPage() {
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Service:</span>
                                         <span className="font-medium text-primary">{getServiceDisplayName(request)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Service Time:</span>
+                                        <span className="font-mono text-white">{calculateServiceTime(request.created_at, request.updated_at)}</span>
                                     </div>
                                 </div>
                             )}
