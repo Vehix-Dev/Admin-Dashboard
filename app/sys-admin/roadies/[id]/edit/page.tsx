@@ -935,12 +935,15 @@ export default function EditRoadiePage() {
                       </CardHeader>
                       <CardContent>
                         <ActivityHeatmap
-                          points={roadie.summary.recent_assignments.slice(0, 50).map((assignment: any) => ({
-                            lat: 0.3476 + (Math.random() * 0.1 - 0.05),
-                            lng: 32.5825 + (Math.random() * 0.1 - 0.05),
-                            timestamp: assignment.created_at,
-                            intensity: 0.5 + (Math.random() * 0.5)
-                          }))}
+                          points={roadie.summary.recent_assignments
+                            .slice(0, 50)
+                            .filter((assignment: any) => assignment.pickup_lat && assignment.pickup_lng) // Only include valid coordinates
+                            .map((assignment: any) => ({
+                              lat: parseFloat(assignment.pickup_lat),
+                              lng: parseFloat(assignment.pickup_lng),
+                              timestamp: assignment.created_at,
+                              intensity: 0.8 // Default intensity
+                            }))}
                           center={[0.3476, 32.5825]}
                           zoom={12}
                           mapStyle="light"
@@ -973,13 +976,13 @@ export default function EditRoadiePage() {
                                   {new Date(assignment.created_at).toLocaleString()}
                                 </p>
                               </div>
-                              <Badge 
+                              <Badge
                                 variant="outline"
-                                className={assignment.status === 'COMPLETED' 
+                                className={assignment.status === 'COMPLETED'
                                   ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
                                   : assignment.status === 'CANCELLED'
-                                  ? 'border-destructive/20 bg-destructive/10 text-destructive'
-                                  : 'border-blue-500/20 bg-blue-500/10 text-blue-600'
+                                    ? 'border-destructive/20 bg-destructive/10 text-destructive'
+                                    : 'border-blue-500/20 bg-blue-500/10 text-blue-600'
                                 }
                               >
                                 {assignment.status}
