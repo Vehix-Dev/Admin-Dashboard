@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { DataTable, Column } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getDeletedAdminUsers, restoreAdminUser, type DeletedAdminUser } from "@/lib/api"
+import { getDeletedAdminUsers, restoreAdminUser, permanentlyDeleteUser, type DeletedAdminUser } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import ProtectedRoute from "@/components/auth/protected-route"
@@ -81,6 +81,24 @@ export default function DeletedUsersPage() {
             toast({
                 title: "Error",
                 description: "Failed to restore admin user. Please try again.",
+                variant: "destructive",
+            })
+        }
+    }
+
+    const handlePermanentDelete = async (admin: DeletedAdminUser) => {
+        try {
+            await permanentlyDeleteUser(Number(admin.id), admin.role)
+            toast({
+                title: "Success",
+                description: `Admin user ${admin.username} has been permanently deleted.`,
+            })
+            fetchDeletedAdmins()
+        } catch (err: any) {
+            console.error("Permanent delete error:", err)
+            toast({
+                title: "Error",
+                description: err.message || "Failed to permanently delete admin user.",
                 variant: "destructive",
             })
         }
@@ -327,8 +345,11 @@ export default function DeletedUsersPage() {
                             initialSortColumn={6}
                             initialSortDirection="desc"
                             onRestore={handleRestore}
+                            onDelete={handlePermanentDelete}
                             restoreConfirmTitle={(admin) => `Restore Admin: ${admin.username}?`}
                             restoreConfirmDescription={(admin) => `This action will restore ${admin.first_name} ${admin.last_name}'s administrator account with all previous permissions and data.`}
+                            deleteConfirmTitle={(admin) => `Permanently delete ${admin.username}?`}
+                            deleteConfirmDescription={(admin) => `This action permanently removes ${admin.first_name} ${admin.last_name} and cannot be undone.`}
                             renderConfirmDetails={(admin) => (
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-2 text-white">

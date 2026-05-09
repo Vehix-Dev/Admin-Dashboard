@@ -20,15 +20,48 @@ import {
   getRequestRoute,
   type RequestRouteInfo,
 } from "@/lib/api"
-import { Clock, Map, Navigation } from "lucide-react"
+import { Clock, Map, Navigation, AlertCircle, CheckCircle, Zap } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ArrowLeft, MapPin, User, Wrench, Edit, Save, X, Trash2 } from "lucide-react"
+import dynamic from "next/dynamic"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  ZoomControl,
+} from "react-leaflet"
+import { Icon } from "leaflet"
+import "leaflet/dist/leaflet.css"
+
+/* ================= ICON FIX ================= */
+delete (Icon.Default.prototype as any)._getIconUrl
+Icon.Default.mergeOptions({
+  iconRetinaUrl: "/leaflet/images/marker-icon-2x.png",
+  iconUrl: "/leaflet/images/marker-icon.png",
+  shadowUrl: "/leaflet/images/marker-shadow.png",
+})
+
+const createMarkerIcon = (color: string) =>
+  new Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      </svg>
+    `)}`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -26],
+  })
+
+const riderIcon = createMarkerIcon("#2563EB")
+const roadieIcon = createMarkerIcon("#16A34A")
 
 export default function RequestDetailPage() {
   const params = useParams()
@@ -43,6 +76,7 @@ export default function RequestDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState<Partial<ServiceRequest>>({})
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [mapStyle, setMapStyle] = useState("dark")
   const { toast } = useToast()
 
   const id = params.id as string
@@ -489,6 +523,201 @@ export default function RequestDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {request.cancellation_reason && (
+            <Card className="border-amber-500/20 bg-amber-500/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-600">
+                  <AlertCircle className="h-4 w-4" />
+                  Cancellation Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Cancelled By</p>
+                  <p className="text-sm font-medium capitalize">{request.cancelled_by || "Unknown"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Reason</p>
+                  <p className="text-sm font-medium">{request.cancellation_reason}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {routeInfo && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Request Timeline
+                </CardTitle>
+                <CardDescription>Status progression and timestamps</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Created */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-500/20"></div>
+                      <div className="w-0.5 h-16 bg-border mt-2"></div>
+                    </div>
+                    <div className="pt-1">
+                      <p className="font-medium text-sm text-blue-600">Created</p>
+                      <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.created_at).toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {/* Accepted */}
+                  {routeInfo.timestamps.accepted_at && (
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20"></div>
+                        <div className="w-0.5 h-16 bg-border mt-2"></div>
+                      </div>
+                      <div className="pt-1">
+                        <p className="font-medium text-sm text-emerald-600">Accepted</p>
+                        <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.accepted_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* En Route */}
+                  {routeInfo.timestamps.en_route_at && (
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-purple-500 ring-4 ring-purple-500/20"></div>
+                        <div className="w-0.5 h-16 bg-border mt-2"></div>
+                      </div>
+                      <div className="pt-1">
+                        <p className="font-medium text-sm text-purple-600">En Route</p>
+                        <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.en_route_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Started */}
+                  {routeInfo.timestamps.started_at && (
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></div>
+                        <div className="w-0.5 h-16 bg-border mt-2"></div>
+                      </div>
+                      <div className="pt-1">
+                        <p className="font-medium text-sm text-orange-600">Started</p>
+                        <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.started_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Completed */}
+                  {routeInfo.timestamps.completed_at && (
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-teal-500 ring-4 ring-teal-500/20"></div>
+                      </div>
+                      <div className="pt-1">
+                        <p className="font-medium text-sm text-teal-600">Completed</p>
+                        <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.completed_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {request.rider_lat && request.rider_lng && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Map className="h-4 w-4" />
+                  Request Location
+                </CardTitle>
+                <CardDescription>Service request location on map</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Map Style Toggle */}
+                  <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
+                    {["light", "dark"].map((style) => (
+                      <button
+                        key={style}
+                        onClick={() => setMapStyle(style)}
+                        className={`px-3 py-1 text-xs rounded transition-colors ${
+                          mapStyle === style
+                            ? "bg-primary text-primary-foreground"
+                            : "text-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {style.charAt(0).toUpperCase() + style.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Map Component */}
+                  <div className="h-[400px] rounded-lg overflow-hidden border border-border">
+                    <MapContainer
+                      center={[getNumericValue(request.rider_lat), getNumericValue(request.rider_lng)]}
+                      zoom={14}
+                      className="h-full w-full"
+                      zoomControl={false}
+                    >
+                      {mapStyle === "dark" ? (
+                        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                      ) : (
+                        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+                      )}
+
+                      <ZoomControl position="bottomright" />
+
+                      {/* Rider Location */}
+                      <Marker
+                        position={[getNumericValue(request.rider_lat), getNumericValue(request.rider_lng)]}
+                        icon={riderIcon}
+                      >
+                        <Popup>
+                          <div className="text-sm">
+                            <p className="font-semibold">{request.rider_username}</p>
+                            <p className="text-xs text-muted-foreground">Rider Location</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+
+                      {/* Roadie Location (if available from route info) */}
+                      {routeInfo?.rodie && (
+                        <Marker
+                          position={[routeInfo.rodie.lat, routeInfo.rodie.lng]}
+                          icon={roadieIcon}
+                        >
+                          <Popup>
+                            <div className="text-sm">
+                              <p className="font-semibold">{routeInfo.rodie.id}</p>
+                              <p className="text-xs text-muted-foreground">Roadie Location</p>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      )}
+                    </MapContainer>
+                  </div>
+
+                  {/* Route Info */}
+                  {routeInfo?.route && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-muted/30 rounded-lg border">
+                        <p className="text-xs text-muted-foreground">Distance</p>
+                        <p className="text-sm font-semibold">{(routeInfo.route.distance_meters / 1000).toFixed(2)} km</p>
+                      </div>
+                      <div className="p-3 bg-muted/30 rounded-lg border">
+                        <p className="text-xs text-muted-foreground">ETA</p>
+                        <p className="text-sm font-semibold">{Math.round(routeInfo.route.eta_seconds / 60)} min</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

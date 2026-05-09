@@ -19,7 +19,6 @@ export function clearAccessToken() {
 
 import { getAuthToken } from "./auth"
 
-// API Telemetry for Monitoring
 export const APITelemetry = {
   metrics: [] as Array<{
     endpoint: string;
@@ -212,6 +211,9 @@ export interface AdminUser {
   is_active: boolean
   permissions?: string[]
   two_factor_enabled?: boolean
+  deletion_status?: string | null
+  deletion_requested_at?: string | null
+  deletion_reason?: string | null
   created_at: string
   updated_at: string
 }
@@ -277,6 +279,16 @@ export async function getDeletedAdminUsers(): Promise<DeletedAdminUser[]> {
 export async function restoreAdminUser(id: number): Promise<AdminUser> {
   return apiRequest<AdminUser>(`/api/auth/admin/users/${id}/restore/`, {
     method: "POST",
+  })
+}
+
+export async function getPendingDeletionUsers(): Promise<AdminUser[]> {
+  return apiRequest<AdminUser[]>("/api/auth/admin/users/pending-deletions/")
+}
+
+export async function permanentlyDeleteUser(id: number, role: string): Promise<void> {
+  await apiRequest(`/api/auth/admin/users/${id}/permanent-delete/${role}/`, {
+    method: "DELETE",
   })
 }
 

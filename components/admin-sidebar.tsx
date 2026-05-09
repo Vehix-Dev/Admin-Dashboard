@@ -118,6 +118,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
           { name: "Roles", href: "/sys-admin/users/roles", icon: Shield, permission: PERMISSIONS.ADMIN_USERS_VIEW },
           { name: "Groups", href: "/sys-admin/users/groups", icon: Users, permission: PERMISSIONS.ADMIN_USERS_VIEW },
           { name: "Deleted Users", href: "/sys-admin/users/deleted", icon: Trash2, permission: PERMISSIONS.ADMIN_USERS_VIEW },
+          { name: "Pending Deletions", href: "/sys-admin/users/pending-deletions", icon: Clock, permission: PERMISSIONS.ADMIN_USERS_VIEW },
           { name: "Audit Logs", href: "/sys-admin/users/audit", icon: FileText, permission: PERMISSIONS.ADMIN_USERS_VIEW },
         ]
       },

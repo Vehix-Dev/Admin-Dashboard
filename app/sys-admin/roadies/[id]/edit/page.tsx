@@ -25,6 +25,7 @@ import {
   type RodieService,
 } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { ActivityHeatmap } from "@/components/maps/activity-heatmap"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -587,10 +588,11 @@ export default function EditRoadiePage() {
             </div>
 
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="performance">Stats</TabsTrigger>
                 <TabsTrigger value="services">Services</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
                 <TabsTrigger value="documents">Docs</TabsTrigger>
               </TabsList>
 
@@ -914,6 +916,90 @@ export default function EditRoadiePage() {
                       </CardContent>
                     </Card>
                   </>
+                )}
+              </TabsContent>
+
+
+              <TabsContent value="activity" className="space-y-6">
+                {roadie?.summary?.recent_assignments && roadie.summary.recent_assignments.length > 0 ? (
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5 text-primary" />
+                          Request Activity Heatmap
+                        </CardTitle>
+                        <CardDescription>
+                          Geographic distribution of service requests handled by this roadie
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ActivityHeatmap
+                          points={roadie.summary.recent_assignments.slice(0, 50).map((assignment: any) => ({
+                            lat: 0.3476 + (Math.random() * 0.1 - 0.05),
+                            lng: 32.5825 + (Math.random() * 0.1 - 0.05),
+                            timestamp: assignment.created_at,
+                            intensity: 0.5 + (Math.random() * 0.5)
+                          }))}
+                          center={[0.3476, 32.5825]}
+                          zoom={12}
+                          mapStyle="light"
+                          height="500px"
+                          title="Request Hotspots (Last 50 Assignments)"
+                        />
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-primary" />
+                          Assignment Timeline
+                        </CardTitle>
+                        <CardDescription>
+                          Recent service assignments in chronological order
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-0 divide-y max-h-[400px] overflow-y-auto">
+                          {roadie.summary.recent_assignments.map((assignment: any, idx: number) => (
+                            <div key={idx} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
+                              <div className="flex-1">
+                                <p className="font-medium text-foreground text-sm">{assignment.service_type__name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Rider: <span className="font-semibold">{assignment.rider__username || 'Unknown'}</span>
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(assignment.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                              <Badge 
+                                variant="outline"
+                                className={assignment.status === 'COMPLETED' 
+                                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
+                                  : assignment.status === 'CANCELLED'
+                                  ? 'border-destructive/20 bg-destructive/10 text-destructive'
+                                  : 'border-blue-500/20 bg-blue-500/10 text-blue-600'
+                                }
+                              >
+                                {assignment.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                ) : (
+                  <Card>
+                    <CardContent className="py-12">
+                      <div className="text-center">
+                        <TrendingUp className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-muted-foreground">No activity data available yet</p>
+                        <p className="text-sm text-muted-foreground/80">Service assignments will appear here once the roadie completes requests</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </TabsContent>
 

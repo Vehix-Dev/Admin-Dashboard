@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { AdminSidebar } from "@/components/admin-sidebar"
@@ -50,7 +49,6 @@ export default function AdminLayout({
     )?.[1]
 
     if (requiredPermission && !hasPermission(requiredPermission as any)) {
-      // Allow access to dashboard and unauthorized page always
       if (pathname !== "/sys-admin" && pathname !== "/sys-admin/unauthorized") {
         router.push('/sys-admin/unauthorized')
       }
@@ -61,7 +59,6 @@ export default function AdminLayout({
     return <PageLoader message="Verifying credentials..." />
   }
 
-  // If user is null, AuthGuard in RootLayout will handle redirect to /login
   if (!user) return null
 
   return (
