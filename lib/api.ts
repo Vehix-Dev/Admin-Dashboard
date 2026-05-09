@@ -1281,6 +1281,28 @@ export interface Rating {
   updated_at: string
 }
 
+export interface ServiceRequest {
+  id: number
+  service_type: number
+  service_type_name?: string
+  service_type_details?: ServiceType
+  rider_lat?: number | string | null
+  rider_lng?: number | string | null
+  rider?: number
+  rodie?: number | null
+  rider_username?: string
+  rodie_username?: string
+  status?: string
+  created_at: string
+  updated_at: string
+  cancellation_reason?: string | null
+  cancelled_by?: string | null
+  is_paid?: boolean
+  fee_charged?: boolean
+  ratings?: Rating[]
+  [key: string]: any
+}
+
 export interface CreateServiceRequestData {
   service_type: number
   rider_lat: string | number

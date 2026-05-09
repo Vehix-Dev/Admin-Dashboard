@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react"
 import { MapContainer, TileLayer, useMap, ZoomControl } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
-import "leaflet-heatmap"
 
 interface HeatmapPoint {
   lat: number
@@ -33,37 +32,59 @@ L.Icon.Default.mergeOptions({
 const HeatmapLayer = ({ points }: { points: HeatmapPoint[] }) => {
   const map = useMap()
   const heatmapRef = useRef<any>(null)
+  const [HeatmapOverlayClass, setHeatmapOverlayClass] = useState<any>(null)
 
   useEffect(() => {
-    if (!map || points.length === 0) return
+    let active = true
+    import("leaflet-heatmap")
+      .then((module) => {
+        const HeatmapOverlay = (module as any).default ?? (module as any).HeatmapOverlay ?? module
+        if (active) {
+          setHeatmapOverlayClass(HeatmapOverlay)
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load Leaflet heatmap plugin", error)
+      })
 
-    // Remove existing heatmap if it exists
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!map || points.length === 0 || !HeatmapOverlayClass) return
+
     if (heatmapRef.current) {
       map.removeLayer(heatmapRef.current)
+      heatmapRef.current = null
     }
 
-    // Convert points to heatmap format
-    const heatData = points.map(p => [
-      p.lat,
-      p.lng,
-      p.intensity ?? 1 // Default intensity is 1
-    ])
+    const heatData = points.map((p) => ({
+      lat: p.lat,
+      lng: p.lng,
+      value: p.intensity ?? 1,
+      radius: 25,
+    }))
 
-    // Create heatmap layer with gradient
-    const heatmapLayer = L.heatLayer(heatData, {
-      radius: 40,
-      blur: 15,
-      maxZoom: 17,
-      max: 1,
+    const heatmapLayer = new HeatmapOverlayClass({
+      radius: 35,
+      maxOpacity: 0.85,
+      scaleRadius: true,
+      useLocalExtrema: false,
+      latField: "lat",
+      lngField: "lng",
+      valueField: "value",
       gradient: {
         0.0: "#003300",
         0.25: "#008000",
         0.5: "#FFFF00",
         0.75: "#FF8C00",
-        1.0: "#FF0000"
-      }
+        1.0: "#FF0000",
+      },
     })
 
+    heatmapLayer.setData({ max: 1, data: heatData })
     heatmapLayer.addTo(map)
     heatmapRef.current = heatmapLayer
 
@@ -74,9 +95,10 @@ const HeatmapLayer = ({ points }: { points: HeatmapPoint[] }) => {
         } catch (e) {
           // Layer already removed
         }
+        heatmapRef.current = null
       }
     }
-  }, [points, map])
+  }, [points, map, HeatmapOverlayClass])
 
   return null
 }
