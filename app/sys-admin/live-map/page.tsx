@@ -192,29 +192,40 @@ export default function LiveServiceMap() {
             }
           >
             <Popup>
-              <div className="min-w-[220px] space-y-1">
-                <h3 className="font-semibold text-foreground">
-                  {r.rider_username}
+              <div className="min-w-[280px] space-y-2">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <UserCheck className="h-4 w-4" />
+                  {r.rider_first_name} {r.rider_last_name}
                 </h3>
                 <p className="text-xs text-muted-foreground">@{r.rider_username}</p>
-
+                
                 <hr className="border-border" />
 
-                <div className="text-sm">
-                  <b>Request ID:</b> {r.request_id}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <b>Request ID:</b> <span className="font-mono text-xs">#{r.request_id}</span>
+                  </div>
+                  <div>
+                    <b>Service:</b> <span className="text-primary">{r.service_type}</span>
+                  </div>
+                  <div>
+                    <b>Status:</b> <span className={`font-medium ${r.current_service_status === 'COMPLETED' ? 'text-green-600' : r.current_service_status === 'CANCELLED' ? 'text-red-600' : 'text-amber-600'}`}>
+                      {r.current_service_status}
+                    </span>
+                  </div>
+                  <div>
+                    <b>Total Requests:</b> <span className="font-mono">{r.total_requests_count}</span>
+                  </div>
                 </div>
+
                 <div className="text-sm">
-                  <b>Service:</b> {r.service_type}
+                  <b>Wallet Balance:</b> <span className={`font-mono font-semibold ${r.wallet_balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    UGX {r.wallet_balance?.toLocaleString() || '0'}
+                  </span>
                 </div>
-                <div className="text-sm">
-                  <b>Status:</b> {r.status}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Updated:{" "}
-                  {new Date(r.updated_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+
+                <div className="text-xs text-muted-foreground pt-1 border-t border-border">
+                  Updated: {new Date(r.updated_at).toLocaleString()}
                 </div>
               </div>
             </Popup>
@@ -229,12 +240,42 @@ export default function LiveServiceMap() {
             icon={roadieIcon}
           >
             <Popup>
-              <div className="min-w-[200px]">
-                <h3 className="font-semibold text-foreground">{r.rodie_username}</h3>
-                <p className="text-xs text-muted-foreground">
-                  Provider • Updated{" "}
-                  {new Date(r.updated_at).toLocaleTimeString()}
-                </p>
+              <div className="min-w-[280px] space-y-2">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  {r.rodie_first_name} {r.rodie_last_name}
+                </h3>
+                <p className="text-xs text-muted-foreground">@{r.rodie_username}</p>
+                
+                <hr className="border-border" />
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <b>Rating:</b> 
+                    <span className="flex items-center gap-1 ml-1">
+                      ⭐ {r.average_rating?.toFixed(1) || 'N/A'}
+                    </span>
+                  </div>
+                  <div>
+                    <b>Completed:</b> <span className="font-mono text-green-600">{r.completed_services_count}</span>
+                  </div>
+                </div>
+
+                <div className="text-sm">
+                  <b>Wallet Balance:</b> <span className={`font-mono font-semibold ${r.wallet_balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    UGX {r.wallet_balance?.toLocaleString() || '0'}
+                  </span>
+                </div>
+
+                {r.last_service_at && (
+                  <div className="text-xs text-muted-foreground">
+                    Last service: {new Date(r.last_service_at).toLocaleDateString()}
+                  </div>
+                )}
+
+                <div className="text-xs text-muted-foreground pt-1 border-t border-border">
+                  Updated: {new Date(r.updated_at).toLocaleString()}
+                </div>
               </div>
             </Popup>
           </Marker>

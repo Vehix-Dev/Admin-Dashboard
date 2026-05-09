@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { DataTable, Column } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getPendingDeletionUsers, updateAdminUser, type AdminUser } from "@/lib/api"
+import { getPendingDeletionUsers, updateAdminUser, permanentlyDeleteUser, type AdminUser } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, ArrowLeft, Clock, Trash2 } from "lucide-react"
@@ -56,6 +56,24 @@ export default function PendingDeletionRequestsPage() {
       toast({
         title: "Error",
         description: err.message || "Unable to cancel deletion request.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handlePermanentDelete = async (user: AdminUser) => {
+    try {
+      await permanentlyDeleteUser(user.id, user.role)
+      toast({
+        title: "Success",
+        description: `${user.username} has been permanently deleted.`,
+      })
+      fetchPendingUsers()
+    } catch (err: any) {
+      console.error("Failed to permanently delete user", err)
+      toast({
+        title: "Error",
+        description: err.message || "Unable to permanently delete user.",
         variant: "destructive",
       })
     }
@@ -166,8 +184,11 @@ export default function PendingDeletionRequestsPage() {
             data={users}
             columns={columns}
             onRestore={handleCancelRequest}
+            onDelete={handlePermanentDelete}
             restoreConfirmTitle={(user) => `Cancel deletion request for ${user.username}?`}
             restoreConfirmDescription={(user) => `This will remove the pending deletion request and keep ${user.first_name} ${user.last_name} active on the platform.`}
+            deleteConfirmTitle={(user) => `Permanently delete ${user.username}?`}
+            deleteConfirmDescription={(user) => `This will permanently delete ${user.first_name} ${user.last_name} and all associated data. This action cannot be undone.`}
             title="Pending Deletion Requests"
             defaultSortBy="externalId"
             initialSortDirection="desc"

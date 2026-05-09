@@ -718,6 +718,55 @@ export default function RequestDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Ratings and Comments */}
+          {request.ratings && request.ratings.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Ratings & Comments
+                </CardTitle>
+                <CardDescription>Feedback from service participants</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {request.ratings.map((rating) => (
+                    <div key={rating.id} className="p-4 border rounded-lg bg-muted/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">{rating.rater_name}</span>
+                          <span className="text-sm text-muted-foreground">rated</span>
+                          <span className="font-medium text-foreground">{rating.rated_user_name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <span
+                              key={i}
+                              className={`text-lg ${i < rating.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                            >
+                              ★
+                            </span>
+                          ))}
+                          <span className="text-sm text-muted-foreground ml-2">
+                            ({rating.rating}/5)
+                          </span>
+                        </div>
+                      </div>
+                      {rating.comment && (
+                        <p className="text-sm text-muted-foreground italic">
+                          "{rating.comment}"
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {new Date(rating.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

@@ -964,6 +964,8 @@ export interface RoadieRecentAssignment {
   status: string
   created_at: string
   rider__username: string | null
+  rider_lat: string
+  rider_lng: string
 }
 
 export interface RoadieSummary {
@@ -1266,28 +1268,17 @@ export interface ServiceType {
   updated_at: string
 }
 
-export interface ServiceRequest {
+export interface Rating {
   id: number
-  rider: number
-  rider_username: string
-  rider_external_id?: string
-  rodie: number | null
-  rodie_username: string | null
-  rodie_external_id?: string
-  service_type: number
-  service_type_name: string
-  service_type_details: ServiceType
-  status: string
-  rider_lat: string
-  rider_lng: string
+  service_request: number
+  rater: number
+  rated_user: number
+  rating: number
+  comment: string
+  rater_name: string
+  rated_user_name: string
   created_at: string
   updated_at: string
-  is_paid?: boolean
-  fee_charged?: boolean
-  cancelled_by?: string | null
-  cancellation_reason?: string | null
-  rider_username_input?: string
-  rodie_username_input?: string
 }
 
 export interface CreateServiceRequestData {
@@ -1388,10 +1379,12 @@ export interface ActiveRiderLocation {
   rider_first_name: string
   rider_last_name: string
   rider_external_id: string
+  wallet_balance: number
+  total_requests_count: number
+  current_service_status: string
+  service_type: string
   lat: number
   lng: number
-  status: string
-  service_type: string
   updated_at: string
 }
 
@@ -1402,12 +1395,29 @@ export async function getActiveRiderLocations(): Promise<ActiveRiderLocation[]> 
 export interface GeoJSONFeature {
   type: "Feature"
   properties: {
-    request_id: number
-    rider_id: number
-    rider_username: string
-    rider_external_id: string
-    status: string
-    service_type: string
+    type: "rodie" | "rider"
+    // Rodie properties
+    rodie_id?: number
+    rodie_external_id?: string
+    rodie_username?: string
+    rodie_first_name?: string
+    rodie_last_name?: string
+    average_rating?: number
+    wallet_balance?: number
+    completed_services_count?: number
+    last_service_at?: string | null
+    // Rider properties
+    request_id?: number
+    rider_id?: number
+    rider_username?: string
+    rider_first_name?: string
+    rider_last_name?: string
+    rider_external_id?: string
+    total_requests_count?: number
+    current_service_status?: string
+    service_type?: string
+    status?: string
+    updated_at: string
   }
   geometry: {
     type: "Point"
@@ -1428,6 +1438,12 @@ export interface RodieLocation {
   rodie_id: number
   rodie_external_id: string
   rodie_username: string
+  rodie_first_name: string
+  rodie_last_name: string
+  average_rating: number
+  wallet_balance: number
+  completed_services_count: number
+  last_service_at: string | null
   lat: number
   lng: number
   updated_at: string

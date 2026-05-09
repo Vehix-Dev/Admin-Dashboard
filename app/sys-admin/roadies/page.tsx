@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getRoadies, updateRoadie, deleteRoadie, type Roadie, getCombinedRealtimeLocations, type RodieLocation, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
+import { getRoadies, updateRoadie, permanentlyDeleteUser, type Roadie, getCombinedRealtimeLocations, type RodieLocation, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
@@ -217,11 +217,11 @@ export default function RoadiesPage() {
 
   const handleDelete = async (roadie: RoadieWithThumbnail) => {
     try {
-      await deleteRoadie(roadie.id)
+      await permanentlyDeleteUser(roadie.id, 'ROADIE')
 
       const currentUser = await getAdminProfile()
       AuditService.log(
-        "Delete Roadie",
+        "Permanently Delete Roadie",
         "Roadies",
         `Roadie: ${roadie.first_name} ${roadie.last_name} (${roadie.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
@@ -229,7 +229,7 @@ export default function RoadiesPage() {
       )
       toast({
         title: "Success",
-        description: "Roadie deleted successfully"
+        description: "Roadie permanently deleted successfully"
       })
       fetchRoadies()
     } catch (err) {
@@ -243,20 +243,20 @@ export default function RoadiesPage() {
 
   const handleBulkDelete = async (selectedRoadies: RoadieWithThumbnail[]) => {
     try {
-      await Promise.all(selectedRoadies.map(r => deleteRoadie(r.id)))
+      await Promise.all(selectedRoadies.map(r => permanentlyDeleteUser(r.id, 'ROADIE')))
 
       const currentUser = await getAdminProfile()
       AuditService.log(
-        "Bulk Delete Roadies",
+        "Bulk Permanently Delete Roadies",
         "Roadies",
-        `Deleted ${selectedRoadies.length} roadies`,
+        `Permanently deleted ${selectedRoadies.length} roadies`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { count: selectedRoadies.length, roadieIds: selectedRoadies.map(r => r.id) }
       )
 
       toast({
         title: "Success",
-        description: `${selectedRoadies.length} roadies deleted successfully`
+        description: `${selectedRoadies.length} roadies permanently deleted successfully`
       })
       fetchRoadies()
     } catch (err) {

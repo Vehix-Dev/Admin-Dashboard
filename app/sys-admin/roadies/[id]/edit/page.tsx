@@ -937,10 +937,10 @@ export default function EditRoadiePage() {
                         <ActivityHeatmap
                           points={roadie.summary.recent_assignments
                             .slice(0, 50)
-                            .filter((assignment: any) => assignment.pickup_lat && assignment.pickup_lng) // Only include valid coordinates
+                            .filter((assignment: any) => assignment.rider_lat && assignment.rider_lng) // Only include valid coordinates
                             .map((assignment: any) => ({
-                              lat: parseFloat(assignment.pickup_lat),
-                              lng: parseFloat(assignment.pickup_lng),
+                              lat: parseFloat(assignment.rider_lat),
+                              lng: parseFloat(assignment.rider_lng),
                               timestamp: assignment.created_at,
                               intensity: 0.8 // Default intensity
                             }))}
