@@ -21,7 +21,6 @@ interface ActivityHeatmapProps {
   title?: string
 }
 
-// Fix leaflet default icons
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "/leaflet/images/marker-icon-2x.png",
@@ -121,21 +120,19 @@ export function ActivityHeatmap({
     }
 
     const now = new Date().getTime()
-    const maxAge = 90 * 24 * 60 * 60 * 1000 // 90 days in milliseconds
+    const maxAge = 90 * 24 * 60 * 60 * 1000 
 
     const withIntensity = points.map(p => {
-      let intensity = 0.3 // Base intensity for older points
+      let intensity = 0.3 
       
       if (p.timestamp) {
         const pointTime = new Date(p.timestamp).getTime()
         const ageMs = now - pointTime
         
         if (ageMs <= maxAge) {
-          // More recent = higher intensity (0.3 to 1.0)
           intensity = 0.3 + (1 - ageMs / maxAge) * 0.7
         }
       } else {
-        // No timestamp, use provided intensity or default
         intensity = p.intensity ?? 0.5
       }
 

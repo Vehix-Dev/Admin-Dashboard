@@ -20,9 +20,8 @@ import {
   getRequestRoute,
   type RequestRouteInfo,
 } from "@/lib/api"
-import { Clock, Map, Navigation, AlertCircle, CheckCircle, Zap } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, MapPin, User, Wrench, Edit, Save, X, Trash2 } from "lucide-react"
+import { ArrowLeft, MapPin, User, Wrench, Edit, Save, X, Trash2, CheckCircle, Clock, Map } from "lucide-react"
 import dynamic from "next/dynamic"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -76,7 +75,6 @@ export default function RequestDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState<Partial<ServiceRequest>>({})
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [mapStyle, setMapStyle] = useState("dark")
   const { toast } = useToast()
 
   const id = params.id as string
@@ -112,7 +110,7 @@ export default function RequestDetailPage() {
           service_type: requestData.service_type,
         })
       } catch (err) {
-        console.error(" Request detail fetch error:", err)
+        console.error("Request detail fetch error:", err)
         toast({
           title: "Error",
           description: "Failed to load service request details.",
@@ -131,13 +129,11 @@ export default function RequestDetailPage() {
 
     setIsSaving(true)
     try {
-      // Create a clean payload without read-only fields
       const payload: any = { ...formData }
       delete payload.rodie_username
       delete payload.rider_username
 
       await updateServiceRequest(request.id, payload)
-      // Refresh the request data
       const updatedRequest = await getServiceRequestById(Number(id))
       setRequest(updatedRequest)
       setIsEditing(false)
@@ -216,12 +212,9 @@ export default function RequestDetailPage() {
     return roadie ? `${roadie.first_name} ${roadie.last_name}` : `Roadie #${roadieId}`
   }
 
-  // Helper function to safely format latitude/longitude
   const formatCoordinate = (coord: any): string => {
     if (coord == null) return "N/A"
-
     try {
-      // Convert to number if it's a string
       const num = typeof coord === 'string' ? parseFloat(coord) : Number(coord)
       if (isNaN(num)) return "Invalid"
       return num.toFixed(6)
@@ -231,11 +224,26 @@ export default function RequestDetailPage() {
     }
   }
 
-  // Helper function to safely get numeric value
   const getNumericValue = (value: any): number => {
     if (value == null) return 0
     const num = typeof value === 'string' ? parseFloat(value) : Number(value)
     return isNaN(num) ? 0 : num
+  }
+
+  const getTimelineStepClass = (status: string, currentStep: string) => {
+    const statusLower = status.toLowerCase()
+    const stepLower = currentStep.toLowerCase()
+
+    if (statusLower === stepLower) return "bg-blue-500 ring-blue-500/20"
+    if (
+      (stepLower === "requested" && (statusLower === "accepted" || statusLower === "en_route" || statusLower === "started" || statusLower === "completed")) ||
+      (stepLower === "accepted" && (statusLower === "en_route" || statusLower === "started" || statusLower === "completed")) ||
+      (stepLower === "en_route" && (statusLower === "started" || statusLower === "completed")) ||
+      (stepLower === "started" && statusLower === "completed")
+    ) {
+      return "bg-emerald-500 ring-emerald-500/20"
+    }
+    return "bg-muted-foreground/20 ring-muted-foreground/10"
   }
 
   if (isLoading) {
@@ -324,8 +332,9 @@ export default function RequestDetailPage() {
         </div>
       </div>
 
+      {/* Service Details Section - 3 column layout */}
       <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Request Details</CardTitle>
@@ -544,231 +553,309 @@ export default function RequestDetailPage() {
               </CardContent>
             </Card>
           )}
-
-          {routeInfo && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Request Timeline
-                </CardTitle>
-                <CardDescription>Status progression and timestamps</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Created */}
-                  <div className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-500/20"></div>
-                      <div className="w-0.5 h-16 bg-border mt-2"></div>
-                    </div>
-                    <div className="pt-1">
-                      <p className="font-medium text-sm text-blue-600">Created</p>
-                      <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.created_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-
-                  {/* Accepted */}
-                  {routeInfo.timestamps.accepted_at && (
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20"></div>
-                        <div className="w-0.5 h-16 bg-border mt-2"></div>
-                      </div>
-                      <div className="pt-1">
-                        <p className="font-medium text-sm text-emerald-600">Accepted</p>
-                        <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.accepted_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* En Route */}
-                  {routeInfo.timestamps.en_route_at && (
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 rounded-full bg-purple-500 ring-4 ring-purple-500/20"></div>
-                        <div className="w-0.5 h-16 bg-border mt-2"></div>
-                      </div>
-                      <div className="pt-1">
-                        <p className="font-medium text-sm text-purple-600">En Route</p>
-                        <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.en_route_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Started */}
-                  {routeInfo.timestamps.started_at && (
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 rounded-full bg-orange-500 ring-4 ring-orange-500/20"></div>
-                        <div className="w-0.5 h-16 bg-border mt-2"></div>
-                      </div>
-                      <div className="pt-1">
-                        <p className="font-medium text-sm text-orange-600">Started</p>
-                        <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.started_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Completed */}
-                  {routeInfo.timestamps.completed_at && (
-                    <div className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 rounded-full bg-teal-500 ring-4 ring-teal-500/20"></div>
-                      </div>
-                      <div className="pt-1">
-                        <p className="font-medium text-sm text-teal-600">Completed</p>
-                        <p className="text-xs text-muted-foreground">{new Date(routeInfo.timestamps.completed_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {request.rider_lat && request.rider_lng && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Map className="h-4 w-4" />
-                  Request Location
-                </CardTitle>
-                <CardDescription>Service request location on map</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Map Style Toggle */}
-                  <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
-                    {["light", "dark"].map((style) => (
-                      <button
-                        key={style}
-                        onClick={() => setMapStyle(style)}
-                        className={`px-3 py-1 text-xs rounded transition-colors ${
-                          mapStyle === style
-                            ? "bg-primary text-primary-foreground"
-                            : "text-foreground hover:bg-muted/80"
-                        }`}
-                      >
-                        {style.charAt(0).toUpperCase() + style.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Map Component */}
-                  <div className="h-[400px] rounded-lg overflow-hidden border border-border">
-                    <MapContainer
-                      center={[getNumericValue(request.rider_lat), getNumericValue(request.rider_lng)]}
-                      zoom={14}
-                      className="h-full w-full"
-                      zoomControl={false}
-                    >
-                      {mapStyle === "dark" ? (
-                        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-                      ) : (
-                        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-                      )}
-
-                      <ZoomControl position="bottomright" />
-
-                      {/* Rider Location */}
-                      <Marker
-                        position={[getNumericValue(request.rider_lat), getNumericValue(request.rider_lng)]}
-                        icon={riderIcon}
-                      >
-                        <Popup>
-                          <div className="text-sm">
-                            <p className="font-semibold">{request.rider_username}</p>
-                            <p className="text-xs text-muted-foreground">Rider Location</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-
-                      {/* Roadie Location (if available from route info) */}
-                      {routeInfo?.rodie && (
-                        <Marker
-                          position={[routeInfo.rodie.lat, routeInfo.rodie.lng]}
-                          icon={roadieIcon}
-                        >
-                          <Popup>
-                            <div className="text-sm">
-                              <p className="font-semibold">{routeInfo.rodie.id}</p>
-                              <p className="text-xs text-muted-foreground">Roadie Location</p>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      )}
-                    </MapContainer>
-                  </div>
-
-                  {/* Route Info */}
-                  {routeInfo?.route && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-muted/30 rounded-lg border">
-                        <p className="text-xs text-muted-foreground">Distance</p>
-                        <p className="text-sm font-semibold">{(routeInfo.route.distance_meters / 1000).toFixed(2)} km</p>
-                      </div>
-                      <div className="p-3 bg-muted/30 rounded-lg border">
-                        <p className="text-xs text-muted-foreground">ETA</p>
-                        <p className="text-sm font-semibold">{Math.round(routeInfo.route.eta_seconds / 60)} min</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Ratings and Comments */}
-          {request.ratings && request.ratings.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Ratings & Comments
-                </CardTitle>
-                <CardDescription>Feedback from service participants</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {request.ratings.map((rating) => (
-                    <div key={rating.id} className="p-4 border rounded-lg bg-muted/30">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">{rating.rater_name}</span>
-                          <span className="text-sm text-muted-foreground">rated</span>
-                          <span className="font-medium text-foreground">{rating.rated_user_name}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <span
-                              key={i}
-                              className={`text-lg ${i < rating.rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                            >
-                              ★
-                            </span>
-                          ))}
-                          <span className="text-sm text-muted-foreground ml-2">
-                            ({rating.rating}/5)
-                          </span>
-                        </div>
-                      </div>
-                      {rating.comment && (
-                        <p className="text-sm text-muted-foreground italic">
-                          "{rating.comment}"
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(rating.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
+
+      {/* Horizontal Timeline Section */}
+      {routeInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Request Timeline
+            </CardTitle>
+            <CardDescription>Status progression and timestamps</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[768px]">
+                <div className="relative flex justify-between items-start">
+                  {/* Timeline Line */}
+                  <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted-foreground/20"></div>
+
+                  {/* Requested Step */}
+                  <div className="relative flex flex-col items-center flex-1 text-center">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full border-2 border-background flex items-center justify-center relative z-10 transition-colors",
+                      getTimelineStepClass(request.status, "REQUESTED")
+                    )}>
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    </div>
+                    <div className="mt-3">
+                      <p className="font-semibold text-sm">Requested</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(routeInfo.timestamps.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(routeInfo.timestamps.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Accepted Step */}
+                  <div className="relative flex flex-col items-center flex-1 text-center">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full border-2 border-background flex items-center justify-center relative z-10 transition-colors",
+                      routeInfo.timestamps.accepted_at
+                        ? getTimelineStepClass(request.status, "ACCEPTED")
+                        : "bg-muted-foreground/10 ring-muted-foreground/5"
+                    )}>
+                      {routeInfo.timestamps.accepted_at ? (
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/30"></div>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <p className="font-semibold text-sm">Accepted</p>
+                      {routeInfo.timestamps.accepted_at ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(routeInfo.timestamps.accepted_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(routeInfo.timestamps.accepted_at).toLocaleTimeString()}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Pending</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* En Route Step */}
+                  <div className="relative flex flex-col items-center flex-1 text-center">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full border-2 border-background flex items-center justify-center relative z-10 transition-colors",
+                      routeInfo.timestamps.en_route_at
+                        ? getTimelineStepClass(request.status, "EN_ROUTE")
+                        : "bg-muted-foreground/10 ring-muted-foreground/5"
+                    )}>
+                      {routeInfo.timestamps.en_route_at ? (
+                        <Navigation className="w-5 h-5 text-white" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/30"></div>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <p className="font-semibold text-sm">En Route</p>
+                      {routeInfo.timestamps.en_route_at ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(routeInfo.timestamps.en_route_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(routeInfo.timestamps.en_route_at).toLocaleTimeString()}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Pending</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Started Step */}
+                  <div className="relative flex flex-col items-center flex-1 text-center">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full border-2 border-background flex items-center justify-center relative z-10 transition-colors",
+                      routeInfo.timestamps.started_at
+                        ? getTimelineStepClass(request.status, "STARTED")
+                        : "bg-muted-foreground/10 ring-muted-foreground/5"
+                    )}>
+                      {routeInfo.timestamps.started_at ? (
+                        <Zap className="w-5 h-5 text-white" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/30"></div>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <p className="font-semibold text-sm">Started</p>
+                      {routeInfo.timestamps.started_at ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(routeInfo.timestamps.started_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(routeInfo.timestamps.started_at).toLocaleTimeString()}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Pending</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Completed Step */}
+                  <div className="relative flex flex-col items-center flex-1 text-center">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full border-2 border-background flex items-center justify-center relative z-10 transition-colors",
+                      routeInfo.timestamps.completed_at
+                        ? getTimelineStepClass(request.status, "COMPLETED")
+                        : "bg-muted-foreground/10 ring-muted-foreground/5"
+                    )}>
+                      {routeInfo.timestamps.completed_at ? (
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/30"></div>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <p className="font-semibold text-sm">Completed</p>
+                      {routeInfo.timestamps.completed_at ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(routeInfo.timestamps.completed_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(routeInfo.timestamps.completed_at).toLocaleTimeString()}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Pending</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ratings and Comments Section */}
+      {request.ratings && request.ratings.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Ratings & Comments
+            </CardTitle>
+            <CardDescription>Feedback from service participants</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              {request.ratings.map((rating) => (
+                <div key={rating.id} className="p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">{rating.rater_name}</span>
+                      <span className="text-sm text-muted-foreground">rated</span>
+                      <span className="font-medium text-foreground">{rating.rated_user_name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <span
+                          key={i}
+                          className={`text-lg ${i < rating.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                      <span className="text-sm text-muted-foreground ml-2">
+                        ({rating.rating}/5)
+                      </span>
+                    </div>
+                  </div>
+                  {rating.comment && (
+                    <p className="text-sm text-muted-foreground italic">
+                      "{rating.comment}"
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {new Date(rating.created_at).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Full Width Map Section - Dark Mode Default */}
+      {request.rider_lat && request.rider_lng && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Map className="h-5 w-5" />
+              Location Map
+            </CardTitle>
+            <CardDescription>Service request location and route information</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="h-[500px] w-full rounded-lg overflow-hidden">
+              <MapContainer
+                center={[getNumericValue(request.rider_lat), getNumericValue(request.rider_lng)]}
+                zoom={14}
+                className="h-full w-full"
+                zoomControl={false}
+                style={{ background: '#1a1a1a' }}
+              >
+                {/* Dark mode tile layer (default) */}
+                <TileLayer
+                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors'
+                />
+
+                <ZoomControl position="bottomright" />
+
+                {/* Rider Location Marker */}
+                <Marker
+                  position={[getNumericValue(request.rider_lat), getNumericValue(request.rider_lng)]}
+                  icon={riderIcon}
+                >
+                  <Popup>
+                    <div className="text-sm">
+                      <p className="font-semibold">{request.rider_username}</p>
+                      <p className="text-xs text-muted-foreground">Rider Location</p>
+                      <p className="text-xs font-mono mt-1">
+                        {formatCoordinate(request.rider_lat)}, {formatCoordinate(request.rider_lng)}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+
+                {/* Roadie Location (if available) */}
+                {routeInfo?.rodie && (
+                  <Marker
+                    position={[routeInfo.rodie.lat, routeInfo.rodie.lng]}
+                    icon={roadieIcon}
+                  >
+                    <Popup>
+                      <div className="text-sm">
+                        <p className="font-semibold">Roadie #{routeInfo.rodie.id}</p>
+                        <p className="text-xs text-muted-foreground">Roadie Location</p>
+                        <p className="text-xs font-mono mt-1">
+                          {formatCoordinate(routeInfo.rodie.lat)}, {formatCoordinate(routeInfo.rodie.lng)}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                )}
+              </MapContainer>
+            </div>
+
+            {/* Route Info Summary */}
+            {routeInfo?.route && (
+              <div className="flex gap-4 p-4 border-t border-border bg-muted/20">
+                <div className="flex-1 text-center">
+                  <p className="text-xs text-muted-foreground">Distance</p>
+                  <p className="text-lg font-semibold">{(routeInfo.route.distance_meters / 1000).toFixed(2)} km</p>
+                </div>
+                <div className="w-px bg-border"></div>
+                <div className="flex-1 text-center">
+                  <p className="text-xs text-muted-foreground">Estimated Time</p>
+                  <p className="text-lg font-semibold">{Math.round(routeInfo.route.eta_seconds / 60)} minutes</p>
+                </div>
+                <div className="w-px bg-border"></div>
+                <div className="flex-1 text-center">
+                  <p className="text-xs text-muted-foreground">Service Type</p>
+                  <p className="text-lg font-semibold">{getServiceName(request.service_type)}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <ConfirmModal
         isOpen={isDeleteModalOpen}
@@ -790,6 +877,6 @@ export default function RequestDetailPage() {
           </div>
         )}
       </ConfirmModal>
-    </div >
+    </div>
   )
 }
