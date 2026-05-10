@@ -21,8 +21,21 @@ import {
   type RequestRouteInfo,
 } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, MapPin, User, Wrench, Edit, Save, X, Trash2, CheckCircle, Clock, Map } from "lucide-react"
-import dynamic from "next/dynamic"
+import {
+  ArrowLeft,
+  MapPin,
+  User,
+  Wrench,
+  Edit,
+  Save,
+  X,
+  Trash2,
+  CheckCircle,
+  Clock,
+  Map,
+  Navigation,
+  AlertCircle
+} from "lucide-react"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
@@ -663,7 +676,7 @@ export default function RequestDetailPage() {
                         : "bg-muted-foreground/10 ring-muted-foreground/5"
                     )}>
                       {routeInfo.timestamps.started_at ? (
-                        <Zap className="w-5 h-5 text-white" />
+                        <div className="w-5 h-5 rounded-full bg-white"></div>
                       ) : (
                         <div className="w-2 h-2 rounded-full bg-muted-foreground/30"></div>
                       )}
@@ -727,7 +740,7 @@ export default function RequestDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
+              <div className="h-4 w-4" />
               Ratings & Comments
             </CardTitle>
             <CardDescription>Feedback from service participants</CardDescription>
