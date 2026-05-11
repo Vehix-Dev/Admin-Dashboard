@@ -33,6 +33,7 @@ import {
   FileDown,
   Plus,
   Search,
+  Eye,
   X,
   Loader2,
   Filter,
@@ -147,9 +148,7 @@ export default function RequestsPage() {
 
   // Permission checks
   const canAdd = useCan(PERMISSIONS.REQUESTS_ADD)
-  const canChange = useCan(PERMISSIONS.REQUESTS_CHANGE)
-  const canDelete = useCan(PERMISSIONS.REQUESTS_DELETE)
-  const canAssign = useCan(PERMISSIONS.REQUESTS_ASSIGN)
+  const canView = useCan(PERMISSIONS.REQUESTS_VIEW)
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -300,24 +299,7 @@ export default function RequestsPage() {
     }
   }
 
-  const handleDelete = async (request: RequestRow) => {
-    try {
-      await deleteServiceRequest(Number(request.id))
-      toast({
-        title: "Success",
-        description: "Service request deleted successfully"
-      })
-      fetchAllData()
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to delete service request",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const handleEdit = (request: RequestRow) => {
+  const handleView = (request: RequestRow) => {
     router.push(`/sys-admin/requests/${request.id}`)
   }
 
@@ -826,34 +808,10 @@ export default function RequestsPage() {
           <DataTable
             data={filteredRequests}
             columns={columns}
-            onEdit={canChange ? handleEdit : undefined}
-            onDelete={canDelete ? handleDelete : undefined}
+            onView={canView ? handleView : undefined}
             onExport={() => { }}
-            deleteConfirmTitle="Delete Service Request"
-            deleteConfirmDescription="Are you sure you want to delete this service request? This action cannot be undone."
-            renderConfirmDetails={(row: any) => {
-              const request = row as RequestRow
-              return (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Request ID:</span>
-                    <span className="font-mono text-white">#{request.id}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Service:</span>
-                    <span className="font-medium text-primary">{getServiceDisplayName(request)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Rider:</span>
-                    <span className="text-white">{request.rider_username || "N/A"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Status:</span>
-                    <span className="text-white">{request.status}</span>
-                  </div>
-                </div>
-              )
-            }}
+            viewIcon={<Eye className="h-4 w-4" />}
+            viewLabel="View Details"
             initialSortColumn={6}
             initialSortDirection="desc"
           />
