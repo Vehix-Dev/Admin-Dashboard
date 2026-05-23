@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getRoadies, updateRoadie, permanentlyDeleteUser, type Roadie, getCombinedRealtimeLocations, getServiceRequests, type ServiceRequest, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
+import { getRoadies, updateRoadie, permanentlyDeleteUser, type Roadie, getCombinedRealtimeLocations, getServiceRequests, type ServiceRequest, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES, getRoadieFleetOnlineTime } from "@/lib/api"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
@@ -51,6 +51,7 @@ export default function RoadiesPage() {
   const [onlineRoadies, setOnlineRoadies] = useState<Set<number>>(new Set())
   const [onJobRoadies, setOnJobRoadies] = useState<Set<number>>(new Set())
   const [activeRoadieIds, setActiveRoadieIds] = useState<Set<number>>(new Set())
+  const [fleetOnlineTime, setFleetOnlineTime] = useState<string>("—")
   const [searchQuery, setSearchQuery] = useState("")
   const [searchInput, setSearchInput] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -104,11 +105,15 @@ export default function RoadiesPage() {
   const fetchRoadies = async () => {
     setIsLoading(true)
     try {
-      const [data, realtimeData, requests] = await Promise.all([
+      const [data, realtimeData, requests, onlineStats] = await Promise.all([
         getRoadies(),
         getCombinedRealtimeLocations(),
         getServiceRequests().catch(() => [] as ServiceRequest[]),
+        getRoadieFleetOnlineTime(30).catch(() => null),
       ])
+      if (onlineStats) {
+        setFleetOnlineTime(onlineStats.total_online_formatted)
+      }
 
       const roadiesWithThumbnails = data as RoadieWithThumbnail[]
       setRoadies(roadiesWithThumbnails)
@@ -552,7 +557,7 @@ export default function RoadiesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 font-mono">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 font-mono">
         {[
           { label: "Total Roadies", value: totalRoadies, color: "text-foreground" },
           { label: "Approved", value: approvedRoadies, color: "text-emerald-500" },
@@ -561,6 +566,7 @@ export default function RoadiesPage() {
           { label: "Inactive", value: inactiveRoadies, color: "text-muted-foreground" },
           { label: "Online", value: onlineCount, color: "text-emerald-600" },
           { label: "On Job", value: onJobCount, color: "text-amber-600" },
+          { label: "Online Time (30d)", value: fleetOnlineTime, color: "text-violet-600" },
         ].map((stat) => (
           <Card key={stat.label} className="border-border/50 shadow-sm">
             <CardContent className="p-3">

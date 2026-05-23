@@ -261,7 +261,7 @@ export function AdminSidebar() {
         {sidebarOpen && (
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 relative flex items-center justify-center">
-              <img src="/vehix-logo.jpg" alt="Vehix Logo" className="h-full w-auto object-contain" />
+              <img src="/vehix-logo.png" alt="Vehix Logo" className="h-full w-auto object-contain" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-foreground text-sm tracking-tight leading-none">

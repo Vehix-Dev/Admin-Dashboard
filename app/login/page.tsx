@@ -208,7 +208,7 @@ export default function LoginPage() {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center space-y-4">
               <div className="relative">
-                <img src="/logo.png" alt="Logo" className="h-12 w-auto animate-pulse" />
+                <img src="/vehix-logo.png" alt="Vehix" className="h-12 w-auto animate-pulse" />
                 <Loader2 className="absolute -top-2 -right-2 h-6 w-6 animate-spin text-primary" />
               </div>
               <p className="text-lg font-medium text-foreground">Checking server connection...</p>
@@ -233,7 +233,7 @@ export default function LoginPage() {
           {/* Clean logo container */}
           <div className="mx-auto flex h-24 w-auto items-center justify-center p-2">
             <img
-              src="/logo.png"
+              src="/vehix-logo.png"
               alt="Vehix Logo"
               className="h-full w-auto object-contain"
             />

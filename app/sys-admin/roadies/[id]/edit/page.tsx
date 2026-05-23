@@ -4,7 +4,8 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { getRoadieById, updateRoadie, type Roadie, resetAdminUserPassword, getServiceRequests, type ServiceRequest, type Rating } from "@/lib/api"
+import { getRoadieById, updateRoadie, type Roadie, resetAdminUserPassword, getServiceRequests, type ServiceRequest, type Rating, getRoadieOnlineTime, type RoadieOnlineTimeDetail } from "@/lib/api"
+import { OnlineActivityCalendar } from "@/components/roadies/online-activity-calendar"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
 import {
@@ -108,6 +109,8 @@ export default function EditRoadiePage() {
   const [jobHistory, setJobHistory] = useState<ServiceRequest[]>([])
   const [jobHistoryStart, setJobHistoryStart] = useState<Date | undefined>(undefined)
   const [jobHistoryEnd, setJobHistoryEnd] = useState<Date | undefined>(undefined)
+  const [onlineTime, setOnlineTime] = useState<RoadieOnlineTimeDetail | null>(null)
+  const [loadingOnlineTime, setLoadingOnlineTime] = useState(false)
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -168,6 +171,16 @@ export default function EditRoadiePage() {
           setJobHistory(mine)
         } catch {
           setJobHistory([])
+        }
+
+        setLoadingOnlineTime(true)
+        try {
+          const ot = await getRoadieOnlineTime(data.id)
+          setOnlineTime(ot)
+        } catch {
+          setOnlineTime(null)
+        } finally {
+          setLoadingOnlineTime(false)
         }
       } catch (err) {
         toast({
@@ -603,11 +616,12 @@ export default function EditRoadiePage() {
             </div>
 
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="performance">Stats</TabsTrigger>
                 <TabsTrigger value="services">Services</TabsTrigger>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
+                <TabsTrigger value="activity">Jobs Map</TabsTrigger>
+                <TabsTrigger value="online">Online Time</TabsTrigger>
                 <TabsTrigger value="documents">Docs</TabsTrigger>
               </TabsList>
 
@@ -861,6 +875,18 @@ export default function EditRoadiePage() {
                             <p className="text-xs text-primary">Completion Rate</p>
                             <p className="text-xl font-bold text-primary">{roadie.summary.stats.completion_rate}%</p>
                           </div>
+                          {onlineTime && (
+                            <>
+                              <div className="p-3 bg-violet-500/10 rounded-lg border border-violet-500/20">
+                                <p className="text-xs text-violet-600">Total Online Time</p>
+                                <p className="text-xl font-bold text-violet-700">{onlineTime.total_online_formatted}</p>
+                              </div>
+                              <div className="p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                                <p className="text-xs text-indigo-600">Avg Session</p>
+                                <p className="text-xl font-bold text-indigo-700">{onlineTime.average_session_formatted}</p>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -1182,6 +1208,44 @@ export default function EditRoadiePage() {
                   </Card>
                   )
                 })()}
+              </TabsContent>
+
+              <TabsContent value="online" className="space-y-6">
+                {loadingOnlineTime ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">Loading online activity...</CardContent>
+                  </Card>
+                ) : onlineTime ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-xs text-muted-foreground">Total time online</p>
+                          <p className="text-2xl font-bold text-violet-600">{onlineTime.total_online_formatted}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-xs text-muted-foreground">Average session</p>
+                          <p className="text-2xl font-bold text-indigo-600">{onlineTime.average_session_formatted}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-xs text-muted-foreground">Sessions logged</p>
+                          <p className="text-2xl font-bold">{onlineTime.session_count}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    <OnlineActivityCalendar calendar={onlineTime.calendar} />
+                  </>
+                ) : (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      No online time data recorded yet. Sessions appear when the roadie toggles online in the app.
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="documents" className="space-y-6">

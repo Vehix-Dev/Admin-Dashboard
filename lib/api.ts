@@ -775,8 +775,10 @@ export interface Referral {
   id: number
   referrer: ReferralUser
   referrer_username?: string
-  referred?: ReferralUser // Keep for legacy/UI compatibility if needed
-  referred_user: ReferralUser // Matches backend serializer
+  referrer_type?: string
+  referred?: ReferralUser
+  referred_user: ReferralUser
+  referred_type?: string
   referee_username?: string
   amount: string
   reward_amount?: string
@@ -784,6 +786,105 @@ export interface Referral {
   is_credited: boolean
   created_at: string
   updated_at?: string
+}
+
+export interface AdminAuditLog {
+  id: number
+  admin_user?: number | null
+  admin_username: string
+  action_type: string
+  action_description: string
+  target_user?: number | null
+  target_username?: string | null
+  target_entity_type?: string | null
+  target_entity_id?: string | null
+  changes?: Record<string, unknown> | null
+  created_at: string
+  ip_address?: string | null
+}
+
+export interface AuditLogsPaginated {
+  count: number
+  next: string | null
+  previous: string | null
+  results: AdminAuditLog[]
+}
+
+export async function getAuditLogs(params?: {
+  page?: number
+  page_size?: number
+  search?: string
+}): Promise<AuditLogsPaginated> {
+  const qs = new URLSearchParams()
+  if (params?.page) qs.set("page", String(params.page))
+  qs.set("page_size", String(params?.page_size ?? 50))
+  if (params?.search) qs.set("search", params.search)
+  return apiRequest<AuditLogsPaginated>(`/api/auth/admin/audit-logs/?${qs.toString()}`)
+}
+
+export async function clearAuditLogs(): Promise<{ detail: string }> {
+  return apiRequest<{ detail: string }>("/api/auth/admin/audit-logs/clear/", {
+    method: "POST",
+  })
+}
+
+export interface RoadieFleetOnlineTime {
+  days: number
+  total_online_seconds: number
+  total_online_formatted: string
+  average_per_roadie_seconds: number
+  average_per_roadie_formatted: string
+  roadies_with_sessions: number
+  session_count: number
+}
+
+export interface RoadieOnlineSession {
+  id: number
+  went_online_at: string
+  went_offline_at: string | null
+  duration_seconds: number
+  duration_formatted: string
+  still_online: boolean
+  device_type?: string | null
+}
+
+export interface RoadieOnlineCalendarDay {
+  date: string
+  total_seconds: number
+  total_formatted: string
+  sessions: RoadieOnlineSession[]
+}
+
+export interface RoadieOnlineTimeDetail {
+  roadie_id: number
+  roadie_external_id: string
+  roadie_name: string
+  total_online_seconds: number
+  total_online_formatted: string
+  average_session_seconds: number
+  average_session_formatted: string
+  session_count: number
+  sessions: RoadieOnlineSession[]
+  calendar: Record<string, RoadieOnlineCalendarDay>
+}
+
+export async function getRoadieFleetOnlineTime(days = 30): Promise<RoadieFleetOnlineTime> {
+  return apiRequest<RoadieFleetOnlineTime>(
+    `/api/auth/admin/roadies/online-time/summary/?days=${days}`
+  )
+}
+
+export async function getRoadieOnlineTime(
+  roadieId: number,
+  params?: { date_from?: string; date_to?: string }
+): Promise<RoadieOnlineTimeDetail> {
+  const qs = new URLSearchParams()
+  if (params?.date_from) qs.set("date_from", params.date_from)
+  if (params?.date_to) qs.set("date_to", params.date_to)
+  const query = qs.toString()
+  return apiRequest<RoadieOnlineTimeDetail>(
+    `/api/auth/admin/roadies/${roadieId}/online-time/${query ? `?${query}` : ""}`
+  )
 }
 
 export async function getReferrals(): Promise<Referral[]> {

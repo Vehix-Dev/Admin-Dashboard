@@ -193,7 +193,7 @@ export default function Home() {
                     <div className="mb-8 animate-in fade-in zoom-in duration-500">
                         <div className="flex items-center justify-center gap-3">
                             <div className="h-16 w-16 rounded-xl overflow-hidden shadow-lg bg-white p-1">
-                                <img src="/vehix-logo.jpg" alt="Logo" className="w-full h-full object-cover rounded-lg" />
+                                <img src="/vehix-logo.png" alt="Logo" className="w-full h-full object-contain rounded-lg" />
                             </div>
                             <span className="text-4xl font-extrabold tracking-tighter text-gray-900 drop-shadow-sm">Vehix</span>
                         </div>
@@ -253,7 +253,7 @@ export default function Home() {
                     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b">
                         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                             <div className="font-bold text-xl flex items-center gap-2">
-                                <img src="/vehix-logo.jpg" className="h-8 w-8 rounded" />
+                                <img src="/vehix-logo.png" className="h-8 w-8 object-contain" alt="Vehix" />
                                 Vehix
                             </div>
                             <div className="flex gap-4">

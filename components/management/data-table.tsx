@@ -157,7 +157,7 @@ export function DataTable<T extends { id: string | number }>({
 
     // Add Logo
     try {
-      doc.addImage('/vehix-logo.jpg', 'JPEG', 14, 10, 20, 20)
+      doc.addImage('/vehix-logo.png', 'PNG', 14, 10, 20, 20)
     } catch (e) {
       console.error("Logo failed to load", e)
     }

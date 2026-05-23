@@ -71,7 +71,7 @@ const COLORS = {
 // Logo Configuration
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://vehix-platform.com';
 const LOGO_URL = process.env.NEXT_PUBLIC_APP_URL
-  ? `${process.env.NEXT_PUBLIC_APP_URL}/vehix-logo.jpg`
+  ? `${process.env.NEXT_PUBLIC_APP_URL}/vehix-logo.png`
   : 'https://placehold.co/200x50/EA5E2A/ffffff?text=Vehix';
 
 const BaseLayout = (content: string, previewText: string = '') => `

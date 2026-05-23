@@ -103,7 +103,29 @@ export default function ReferralsPage() {
         }).format(amount)
     }
 
+    const formatRole = (role?: string) => {
+        if (!role) return "Unknown"
+        if (role === "RODIE" || role === "ROADIE") return "Roadie"
+        if (role === "RIDER") return "Rider"
+        return role
+    }
+
+    const getReferralPath = (row: Referral) => {
+        const from = formatRole(row.referrer_type || row.referrer?.role)
+        const to = formatRole(row.referred_type || row.referred_user?.role)
+        return `${from} → ${to}`
+    }
+
     const columns: Column<Referral>[] = [
+        {
+            header: "Referral path",
+            accessor: "id",
+            cell: (_: unknown, row: Referral) => (
+                <Badge variant="outline" className="font-mono text-xs font-semibold">
+                    {getReferralPath(row)}
+                </Badge>
+            ),
+        },
         {
             header: "Referrer",
             accessor: "referrer_username",
