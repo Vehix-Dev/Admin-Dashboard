@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { MapContainer, TileLayer, useMap, ZoomControl } from "react-leaflet"
+import { useEffect, useMemo } from "react"
+import { MapContainer, TileLayer, CircleMarker, useMap, ZoomControl } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
@@ -21,83 +21,16 @@ interface ActivityHeatmapProps {
   title?: string
 }
 
-delete (L.Icon.Default.prototype as any)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "/leaflet/images/marker-icon-2x.png",
-  iconUrl: "/leaflet/images/marker-icon.png",
-  shadowUrl: "/leaflet/images/marker-shadow.png",
-})
-
-const HeatmapLayer = ({ points }: { points: HeatmapPoint[] }) => {
+const FitBounds = ({ points }: { points: HeatmapPoint[] }) => {
   const map = useMap()
-  const heatmapRef = useRef<any>(null)
-  const [HeatmapOverlayClass, setHeatmapOverlayClass] = useState<any>(null)
 
   useEffect(() => {
-    let active = true
-    import("leaflet-heatmap")
-      .then((module) => {
-        const HeatmapOverlay = (module as any).default ?? (module as any).HeatmapOverlay ?? module
-        if (active) {
-          setHeatmapOverlayClass(HeatmapOverlay)
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load Leaflet heatmap plugin", error)
-      })
-
-    return () => {
-      active = false
+    if (points.length === 0) return
+    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng]))
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 })
     }
-  }, [])
-
-  useEffect(() => {
-    if (!map || points.length === 0 || !HeatmapOverlayClass) return
-
-    if (heatmapRef.current) {
-      map.removeLayer(heatmapRef.current)
-      heatmapRef.current = null
-    }
-
-    const heatData = points.map((p) => ({
-      lat: p.lat,
-      lng: p.lng,
-      value: p.intensity ?? 1,
-      radius: 25,
-    }))
-
-    const heatmapLayer = new HeatmapOverlayClass({
-      radius: 35,
-      maxOpacity: 0.85,
-      scaleRadius: true,
-      useLocalExtrema: false,
-      latField: "lat",
-      lngField: "lng",
-      valueField: "value",
-      gradient: {
-        0.0: "#003300",
-        0.25: "#008000",
-        0.5: "#FFFF00",
-        0.75: "#FF8C00",
-        1.0: "#FF0000",
-      },
-    })
-
-    heatmapLayer.setData({ max: 1, data: heatData })
-    heatmapLayer.addTo(map)
-    heatmapRef.current = heatmapLayer
-
-    return () => {
-      if (heatmapRef.current && map) {
-        try {
-          map.removeLayer(heatmapRef.current)
-        } catch (e) {
-          // Layer already removed
-        }
-        heatmapRef.current = null
-      }
-    }
-  }, [points, map, HeatmapOverlayClass])
+  }, [points, map])
 
   return null
 }
@@ -108,47 +41,42 @@ export function ActivityHeatmap({
   zoom = 12,
   mapStyle = "light",
   height = "400px",
-  title = "Activity Heatmap"
+  title = "Activity Heatmap",
 }: ActivityHeatmapProps) {
-  const [displayPoints, setDisplayPoints] = useState<HeatmapPoint[]>([])
+  const displayPoints = useMemo(() => {
+    const valid = points.filter(
+      (p) =>
+        p != null &&
+        Number.isFinite(Number(p.lat)) &&
+        Number.isFinite(Number(p.lng)) &&
+        Math.abs(Number(p.lat)) <= 90 &&
+        Math.abs(Number(p.lng)) <= 180
+    )
+    if (valid.length === 0) return []
 
-  // Calculate intensity based on recency when component mounts or points change
-  useEffect(() => {
-    if (points.length === 0) {
-      setDisplayPoints([])
-      return
-    }
+    const now = Date.now()
+    const maxAge = 90 * 24 * 60 * 60 * 1000
 
-    const now = new Date().getTime()
-    const maxAge = 90 * 24 * 60 * 60 * 1000 
-
-    const withIntensity = points.map(p => {
-      let intensity = 0.3 
-      
+    return valid.map((p) => {
+      let intensity = p.intensity ?? 0.5
       if (p.timestamp) {
-        const pointTime = new Date(p.timestamp).getTime()
-        const ageMs = now - pointTime
-        
-        if (ageMs <= maxAge) {
+        const ageMs = now - new Date(p.timestamp).getTime()
+        if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= maxAge) {
           intensity = 0.3 + (1 - ageMs / maxAge) * 0.7
         }
-      } else {
-        intensity = p.intensity ?? 0.5
       }
-
-      return { ...p, intensity }
+      return {
+        lat: Number(p.lat),
+        lng: Number(p.lng),
+        intensity: Math.min(1, Math.max(0.2, intensity)),
+      }
     })
-
-    setDisplayPoints(withIntensity)
   }, [points])
 
-  // Calculate bounds from points
-  const bounds = displayPoints.length > 0 ? {
-    north: Math.max(...displayPoints.map(p => p.lat)),
-    south: Math.min(...displayPoints.map(p => p.lat)),
-    east: Math.max(...displayPoints.map(p => p.lng)),
-    west: Math.min(...displayPoints.map(p => p.lng)),
-  } : null
+  const tileUrl =
+    mapStyle === "dark"
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
 
   return (
     <div className="space-y-3">
@@ -156,46 +84,48 @@ export function ActivityHeatmap({
         <div>
           <h3 className="text-sm font-medium text-foreground">{title}</h3>
           <p className="text-xs text-muted-foreground">
-            {displayPoints.length} activity point{displayPoints.length !== 1 ? 's' : ''} • Intensity increases with recency
+            {displayPoints.length} location{displayPoints.length !== 1 ? "s" : ""} — brighter = more recent
           </p>
         </div>
       )}
-      
-      <div
-        className="rounded-lg border border-border overflow-hidden"
-        style={{ height }}
-      >
-        <MapContainer
-          center={center}
-          zoom={zoom}
-          className="h-full w-full"
-          zoomControl={false}
-        >
-          {mapStyle === "dark" ? (
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-          ) : (
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-          )}
 
-          <ZoomControl position="bottomright" />
-          <HeatmapLayer points={displayPoints} />
-        </MapContainer>
+      <div className="rounded-lg border border-border overflow-hidden" style={{ height }}>
+        {displayPoints.length === 0 ? (
+          <div className="h-full flex items-center justify-center bg-muted/30 text-sm text-muted-foreground">
+            No location data to display on the heatmap
+          </div>
+        ) : (
+          <MapContainer center={center} zoom={zoom} className="h-full w-full" zoomControl={false}>
+            <TileLayer url={tileUrl} />
+            <ZoomControl position="bottomright" />
+            <FitBounds points={displayPoints} />
+            {displayPoints.map((p, i) => (
+              <CircleMarker
+                key={`${p.lat}-${p.lng}-${i}`}
+                center={[p.lat, p.lng]}
+                radius={12 + p.intensity * 18}
+                pathOptions={{
+                  color: "#ea580c",
+                  fillColor: p.intensity > 0.7 ? "#dc2626" : p.intensity > 0.4 ? "#f59e0b" : "#22c55e",
+                  fillOpacity: 0.35 + p.intensity * 0.35,
+                  weight: 1,
+                }}
+              />
+            ))}
+          </MapContainer>
+        )}
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-2 text-xs px-2">
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gradient-to-r from-[#003300] to-[#008000] rounded"></div>
-          <span className="text-muted-foreground">Old</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gradient-to-r from-[#FFFF00] to-[#FF8C00] rounded"></div>
-          <span className="text-muted-foreground">Recent</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gradient-to-r from-[#FF8C00] to-[#FF0000] rounded"></div>
-          <span className="text-muted-foreground">Latest</span>
-        </div>
+      <div className="flex gap-3 text-xs px-1">
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 rounded-full bg-green-500/60" /> Older
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 rounded-full bg-amber-500/70" /> Recent
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 rounded-full bg-red-500/80" /> Latest
+        </span>
       </div>
     </div>
   )

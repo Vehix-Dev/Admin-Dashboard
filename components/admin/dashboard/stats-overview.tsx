@@ -1,200 +1,133 @@
 "use client"
 
 import Link from "next/link"
-import { Wrench, Activity, ThumbsUp, MapPin, Users, UserCheck, Target, Zap, TrendingUp } from "lucide-react"
+import { Wrench, Radio, UserCheck, Users, Briefcase, CheckCircle, XCircle, Clock, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
 interface StatCardProps {
-    title: string
-    value: number | string
-    icon: React.ReactNode
-    iconBg: string
-    subtext: string
-    trend: string
-    isPercentage?: boolean
-    className?: string
+  title: string
+  value: number | string
+  icon: React.ReactNode
+  accent?: string
+  href?: string
+  sub?: string
 }
 
-const StatCard = ({
-    title,
-    value,
-    icon,
-    iconBg,
-    subtext,
-    trend,
-    isPercentage = false,
-    className
-}: StatCardProps) => {
-    const getIconColor = () => {
-        if (iconBg.includes('blue')) return 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
-        if (iconBg.includes('emerald') || iconBg.includes('green')) return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
-        if (iconBg.includes('amber') || iconBg.includes('yellow')) return 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
-        if (iconBg.includes('purple')) return 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400'
-        return 'bg-primary/10 text-primary'
-    }
-
-    return (
-        <div className={cn("glass-card p-6 hover:border-primary/30 transition-all duration-300 group", className)}>
-            <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
-                    <p className="text-3xl font-bold text-foreground mb-3 tracking-tight">
-                        {isPercentage ? `${value}%` : typeof value === 'number' ? value.toLocaleString() : value}
-                    </p>
-                    <div className="space-y-1.5">
-                        <p className="text-sm text-muted-foreground">{subtext}</p>
-                        <div className="flex items-center gap-1.5">
-                            <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                            <span className="text-xs font-medium text-muted-foreground">{trend}</span>
-                        </div>
-                    </div>
-                </div>
-                <div className={cn("p-3 rounded-xl transition-transform group-hover:scale-110 duration-300", getIconColor())}>
-                    {icon}
-                </div>
-            </div>
+function StatCard({ title, value, icon, accent = "text-primary", href, sub }: StatCardProps) {
+  const inner = (
+    <div className="glass-card p-4 hover:border-primary/30 transition-all h-full">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
+          <p className={cn("text-2xl font-bold mt-1", accent)}>{value}</p>
+          {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </div>
-    )
+        <div className="p-2 rounded-lg bg-muted/50">{icon}</div>
+      </div>
+    </div>
+  )
+  return href ? <Link href={href} className="block">{inner}</Link> : inner
 }
 
-export function StatsOverview({ stats }: { stats: any }) {
-    if (!stats) return null;
+export function StatsOverview({ stats }: { stats: Record<string, unknown> }) {
+  if (!stats) return null
 
-    return (
-        <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/sys-admin/requests" className="block">
-                    <StatCard
-                        title="Total Service Requests"
-                        value={stats.totalRequests}
-                        icon={<Wrench className="h-5 w-5" />}
-                        iconBg="bg-blue-500"
-                        subtext={`${stats.activeRequests} active • ${stats.completedRequests} completed`}
-                        trend={`${stats.completionRate}% completion rate`}
-                    />
-                </Link>
+  const s = stats as {
+    totalRequests: number
+    activeRequests: number
+    onlineRoadies: number
+    onJobRoadies: number
+    activeRiders: number
+    todayTotal: number
+    todayCompleted: number
+    todayCancelled: number
+    todayExpired: number
+    todayConversionRate: number
+  }
 
-                <Link href="/sys-admin/reports/users" className="block">
-                    <StatCard
-                        title="Active Users"
-                        value={stats.activeRiders + stats.activeRoadies}
-                        icon={<Activity className="h-5 w-5" />}
-                        iconBg="bg-emerald-500"
-                        subtext={`${stats.activeRiders} riders • ${stats.activeRoadies} providers`}
-                        trend={`${stats.acceptanceRate}% request acceptance`}
-                    />
-                </Link>
-
-                <Link href="/sys-admin/reports" className="block">
-                    <StatCard
-                        title="Platform Health"
-                        value={stats.platformHealth.satisfaction}
-                        icon={<ThumbsUp className="h-5 w-5" />}
-                        iconBg="bg-amber-500"
-                        subtext="Service satisfaction score"
-                        trend={`${stats.averageResponseTime}min avg. response`}
-                        isPercentage={true}
-                    />
-                </Link>
-
-                <Link href="/sys-admin/live-map" className="block">
-                    <StatCard
-                        title="Realtime Activity"
-                        value={stats.activeLocations}
-                        icon={<MapPin className="h-5 w-5" />}
-                        iconBg="bg-purple-500"
-                        subtext={`${stats.enRouteAssignments} en route assignments`}
-                        trend="Live updates every 30s"
-                    />
-                </Link>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/sys-admin/riders" className="block group">
-                    <div className="glass-card p-6 shadow-sm hover:border-blue-500/30 transition-all cursor-pointer">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-foreground">Total Customers</h3>
-                            <Users className="h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-3xl font-bold text-foreground">{stats.totalRiders}</span>
-                                <div className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 uppercase tracking-wider border border-blue-500/20">
-                                    {stats.approvedRiders} approved
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground group-hover:text-blue-500/70">
-                                <span>Pending: {stats.pendingRiders}</span>
-                                <span>{stats.activeRiders} active</span>
-                            </div>
-                        </div>
-                    </div>
-                </Link>
-
-                <Link href="/sys-admin/roadies" className="block group">
-                    <div className="glass-card p-6 shadow-sm hover:border-emerald-500/30 transition-all cursor-pointer">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-foreground">Total Providers</h3>
-                            <UserCheck className="h-5 w-5 text-emerald-500 group-hover:scale-110 transition-transform" />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-3xl font-bold text-foreground">{stats.totalRoadies}</span>
-                                <div className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 uppercase tracking-wider border border-emerald-500/20">
-                                    {stats.approvedRoadies} approved
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground group-hover:text-emerald-500/70">
-                                <span>Pending: {stats.pendingRoadies}</span>
-                                <span>{stats.activeRoadies} active</span>
-                            </div>
-                        </div>
-                    </div>
-                </Link>
-
-                <Link href="/sys-admin/services" className="block group">
-                    <div className="glass-card p-6 shadow-sm hover:border-purple-500/30 transition-all cursor-pointer">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-foreground">Service Status</h3>
-                            <Target className="h-5 w-5 text-purple-500 group-hover:scale-110 transition-transform" />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-3xl font-bold text-foreground">{stats.totalServices}</span>
-                                <div className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500 uppercase tracking-wider border border-purple-500/20">
-                                    Catalog
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground group-hover:text-purple-500/70">
-                                <span>Active: {stats.activeRequests}</span>
-                                <span className="font-semibold">View All</span>
-                            </div>
-                        </div>
-                    </div>
-                </Link>
-
-                <div className="glass-card p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold text-foreground">Quick Launch</h3>
-                        <Zap className="h-5 w-5 text-amber-500" />
-                    </div>
-                    <div className="space-y-2">
-                        <Link href="/sys-admin/requests/create" className="block">
-                            <Button size="sm" className="w-full justify-start h-9 bg-primary/10 hover:bg-primary text-primary hover:text-white border-none transition-all duration-300">
-                                <Wrench className="mr-2 h-4 w-4" />
-                                New Request
-                            </Button>
-                        </Link>
-                        <Link href="/sys-admin/live-map" className="block">
-                            <Button variant="ghost" size="sm" className="w-full justify-start h-9 hover:bg-muted font-medium transition-all duration-300">
-                                <MapPin className="mr-2 h-4 w-4" />
-                                Live Map
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+          Platform overview
+        </h2>
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          <StatCard
+            title="Total Requests"
+            value={s.totalRequests}
+            icon={<Wrench className="h-4 w-4 text-blue-500" />}
+            accent="text-foreground"
+            href="/sys-admin/requests"
+          />
+          <StatCard
+            title="Active Requests"
+            value={s.activeRequests}
+            icon={<Radio className="h-4 w-4 text-amber-500" />}
+            accent="text-amber-600"
+            href="/sys-admin/requests"
+            sub="Realtime ongoing"
+          />
+          <StatCard
+            title="Online Roadies"
+            value={s.onlineRoadies}
+            icon={<UserCheck className="h-4 w-4 text-emerald-500" />}
+            accent="text-emerald-600"
+            href="/sys-admin/live-map"
+          />
+          <StatCard
+            title="On-Job Roadies"
+            value={s.onJobRoadies}
+            icon={<Briefcase className="h-4 w-4 text-orange-500" />}
+            accent="text-orange-600"
+            href="/sys-admin/live-map"
+          />
+          <StatCard
+            title="Active Riders"
+            value={s.activeRiders}
+            icon={<Users className="h-4 w-4 text-blue-500" />}
+            accent="text-blue-600"
+            href="/sys-admin/live-map"
+            sub="In active request"
+          />
         </div>
-    )
+      </div>
+
+      <div>
+        <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+          Today&apos;s performance
+        </h2>
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
+          <StatCard
+            title="Requests Today"
+            value={s.todayTotal}
+            icon={<Wrench className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Completed"
+            value={s.todayCompleted}
+            icon={<CheckCircle className="h-4 w-4 text-emerald-500" />}
+            accent="text-emerald-600"
+          />
+          <StatCard
+            title="Cancelled"
+            value={s.todayCancelled}
+            icon={<XCircle className="h-4 w-4 text-red-500" />}
+            accent="text-red-600"
+          />
+          <StatCard
+            title="Expired"
+            value={s.todayExpired}
+            icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+          />
+          <StatCard
+            title="Success Rate"
+            value={`${s.todayConversionRate}%`}
+            icon={<TrendingUp className="h-4 w-4 text-primary" />}
+            accent="text-primary"
+            sub="Completed vs today total"
+          />
+        </div>
+      </div>
+    </div>
+  )
 }

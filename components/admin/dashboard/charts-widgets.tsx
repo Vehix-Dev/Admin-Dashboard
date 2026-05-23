@@ -1,8 +1,63 @@
 "use client"
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
-import { Activity, AlertTriangle } from "lucide-react"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+} from "recharts"
+import { Activity, AlertTriangle, BarChart3 } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+export function ServicesByTypeChart({ services }: { services: { name: string; count: number; color?: string }[] }) {
+  if (!services?.length) {
+    return (
+      <div className="glass-card p-6 h-full min-h-[360px] flex flex-col items-center justify-center text-muted-foreground">
+        <BarChart3 className="h-12 w-12 text-muted-foreground/30 mb-3" />
+        <p className="font-semibold">No service data yet</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="glass-card p-6 h-full min-h-[360px]">
+      <div className="mb-6">
+        <h3 className="text-lg font-bold text-foreground">Requests by Service Type</h3>
+        <p className="text-xs text-muted-foreground">Distribution of assists across services</p>
+      </div>
+      <ResponsiveContainer width="100%" height={280}>
+        <BarChart data={services} margin={{ top: 8, right: 8, left: 0, bottom: 40 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
+          <XAxis
+            dataKey="name"
+            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            angle={-25}
+            textAnchor="end"
+            height={60}
+            interval={0}
+          />
+          <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: "8px",
+            }}
+          />
+          <Bar dataKey="count" fill="#F05A28" radius={[6, 6, 0, 0]} name="Requests" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
 
 export function RequestTrends({ trends }: { trends: any[] }) {
     if (!trends || trends.length === 0) {
@@ -82,7 +137,7 @@ export function StatusDistribution({ distribution }: { distribution: any[] }) {
         return (
             <div className="glass-card p-6 h-full min-h-[400px] flex flex-col items-center justify-center text-muted-foreground">
                 <AlertTriangle className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                <p className="font-semibold">No status data available</p>
+                <p className="font-semibold">No outcome data available</p>
             </div>
         )
     }
@@ -91,8 +146,8 @@ export function StatusDistribution({ distribution }: { distribution: any[] }) {
         <div className="glass-card p-6 h-full min-h-[400px]">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h3 className="text-lg font-bold text-foreground">Status Mix</h3>
-                    <p className="text-xs text-muted-foreground">Current system state</p>
+                    <h3 className="text-lg font-bold text-foreground">Success vs Failure</h3>
+                    <p className="text-xs text-muted-foreground">Completed vs cancelled + expired</p>
                 </div>
             </div>
             <div className="h-64 mb-6">

@@ -18,7 +18,8 @@ import { getDashboardConfig, saveDashboardConfig, type WidgetConfig } from "@/li
 
 // Widgets
 import { StatsOverview } from "@/components/admin/dashboard/stats-overview"
-import { RequestTrends, StatusDistribution } from "@/components/admin/dashboard/charts-widgets"
+import { RequestTrends, StatusDistribution, ServicesByTypeChart } from "@/components/admin/dashboard/charts-widgets"
+import { ACTIVE_STATUSES, buildActivityFeed, formatTimeAgo, isToday } from "@/lib/dashboard-utils"
 import { TopCustomers, TopProviders, RecentActivity } from "@/components/admin/dashboard/user-activity-widgets"
 import { PopularServices, UserGrowthChart } from "@/components/admin/dashboard/growth-widgets"
 import { PlatformHealthWidget } from "@/components/admin/dashboard/platform-health"
@@ -57,86 +58,137 @@ export default function AdminDashboardPage() {
   }
 
   const aggregateStats = (riders: any[], roadies: any[], requests: any[], services: any[], locations: any) => {
+    const norm = (s: string) => (s || "").toUpperCase()
     const totalRequests = requests.length
-    const completed = requests.filter(r => r.status?.toUpperCase() === 'COMPLETED').length
-    const active = requests.filter(r => ['PENDING', 'ACCEPTED', 'EN_ROUTE', 'ARRIVED'].includes(r.status?.toUpperCase())).length
+    const completed = requests.filter((r) => norm(r.status) === "COMPLETED").length
+    const cancelled = requests.filter((r) => norm(r.status) === "CANCELLED").length
+    const expired = requests.filter((r) => norm(r.status) === "EXPIRED").length
+    const activeRequests = requests.filter((r) => ACTIVE_STATUSES.includes(norm(r.status))).length
 
-    // Trends (Last 7 Days)
+    const onlineRoadies = locations?.rodies?.length ?? 0
+    const onJobRoadies =
+      locations?.rodies?.filter((r: { activity_status?: string }) => r.activity_status === "ON_JOB").length ?? 0
+    const activeRiders = locations?.riders?.length ?? 0
+
+    const todayTotal = requests.filter((r) => isToday(r.created_at)).length
+    const todayCompleted = requests.filter(
+      (r) => norm(r.status) === "COMPLETED" && isToday(r.completed_at || r.updated_at || r.created_at)
+    ).length
+    const todayCancelled = requests.filter(
+      (r) => norm(r.status) === "CANCELLED" && isToday(r.updated_at || r.created_at)
+    ).length
+    const todayExpired = requests.filter(
+      (r) => norm(r.status) === "EXPIRED" && isToday(r.updated_at || r.created_at)
+    ).length
+    const todayConversionRate =
+      todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0
+
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date()
       d.setDate(d.getDate() - (6 - i))
-      return d.toLocaleDateString('en-US', { weekday: 'short' })
+      return d.toLocaleDateString("en-US", { weekday: "short" })
     })
 
-    const requestTrends = last7Days.map(day => {
-      const dayRequests = requests.filter(r => new Date(r.created_at).toLocaleDateString('en-US', { weekday: 'short' }) === day)
+    const requestTrends = last7Days.map((day) => {
+      const dayRequests = requests.filter(
+        (r) => new Date(r.created_at).toLocaleDateString("en-US", { weekday: "short" }) === day
+      )
       return {
         day,
         requests: dayRequests.length,
-        completed: dayRequests.filter(r => r.status?.toUpperCase() === 'COMPLETED').length
+        completed: dayRequests.filter((r) => norm(r.status) === "COMPLETED").length,
       }
     })
 
-    // Service distribution
-    const serviceCounts: any = {}
-    requests.forEach(r => {
-      const name = r.service_type_name || 'Other'
+    const serviceCounts: Record<string, number> = {}
+    requests.forEach((r) => {
+      const name = r.service_type_name || "Other"
       serviceCounts[name] = (serviceCounts[name] || 0) + 1
     })
-    const popularServices = Object.entries(serviceCounts)
-      .sort((a: any, b: any) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([name, count], i) => ({ name, count, color: ['#F05A28', '#1F2A44', '#10B981', '#F59E0B', '#8B5CF6'][i % 5] }))
+    const servicesByType = Object.entries(serviceCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name, count], i) => ({
+        name,
+        count,
+        color: ["#F05A28", "#1F2A44", "#10B981", "#F59E0B", "#8B5CF6", "#3B82F6", "#EC4899", "#14B8A6"][i % 8],
+      }))
 
-    // User Growth (Simulated by month for now but based on actual created_at)
-    const months = ['Oct', 'Nov', 'Dec', 'Jan']
-    const userGrowth = months.map(month => ({
+    const popularServices = servicesByType.slice(0, 5)
+
+    const months = ["Oct", "Nov", "Dec", "Jan"]
+    const userGrowth = months.map((month) => ({
       month,
-      riders: riders.filter(r => new Date(r.created_at || Date.now()).getMonth() <= months.indexOf(month) + 9).length || 50,
-      roadies: roadies.filter(r => new Date(r.created_at || Date.now()).getMonth() <= months.indexOf(month) + 9).length || 20
+      riders: riders.filter((r) => new Date(r.created_at || Date.now()).getMonth() <= months.indexOf(month) + 9).length || 0,
+      roadies: roadies.filter((r) => new Date(r.created_at || Date.now()).getMonth() <= months.indexOf(month) + 9).length || 0,
     }))
+
+    const failed = cancelled + expired
+    const statusDistribution = [
+      { name: "Completed", value: completed, color: "#10B981" },
+      { name: "Failed", value: failed, color: "#EF4444" },
+    ].filter((v) => v.value > 0)
+
+    const activityFeed = buildActivityFeed(requests).map((item) => ({
+      ...item,
+      timeAgo: formatTimeAgo(item.timestamp),
+    }))
+
+    const topRiders = [...riders]
+      .map((r) => ({
+        ...r,
+        firstName: r.first_name,
+        lastName: r.last_name,
+        completedRequests: requests.filter((req) => req.rider === r.id && norm(req.status) === "COMPLETED").length,
+      }))
+      .sort((a, b) => b.completedRequests - a.completedRequests)
+      .slice(0, 5)
+
+    const topRoadies = [...roadies]
+      .map((r) => ({
+        ...r,
+        firstName: r.first_name,
+        lastName: r.last_name,
+        completedRequests: requests.filter((req) => req.rodie === r.id && norm(req.status) === "COMPLETED").length,
+      }))
+      .sort((a, b) => b.completedRequests - a.completedRequests)
+      .slice(0, 5)
 
     return {
       totalRequests,
       completedRequests: completed,
-      activeRequests: active,
+      activeRequests,
+      onlineRoadies,
+      onJobRoadies,
+      activeRiders,
+      todayTotal,
+      todayCompleted,
+      todayCancelled,
+      todayExpired,
+      todayConversionRate,
       totalRiders: riders.length,
       totalRoadies: roadies.length,
-      approvedRiders: riders.filter(r => r.is_approved).length,
-      pendingRiders: riders.filter(r => !r.is_approved).length,
-      approvedRoadies: roadies.filter(r => r.is_approved).length,
-      pendingRoadies: roadies.filter(r => !r.is_approved).length,
-      activeRiders: riders.filter(r => r.is_online).length || riders.length,
-      activeRoadies: roadies.filter(r => r.is_online).length || roadies.length,
       completionRate: totalRequests > 0 ? Math.round((completed / totalRequests) * 100) : 0,
-      acceptanceRate: requests.length > 0 ? Math.round((requests.filter(r => r.status !== 'PENDING').length / totalRequests) * 100) : 0,
-      averageResponseTime: 8, 
-      activeLocations: (locations?.riders?.length || 0) + (locations?.rodies?.length || 0),
-      enRouteAssignments: requests.filter(r => r.status?.toUpperCase() === 'EN_ROUTE').length,
       totalServices: services.length,
       requestTrends,
-      statusDistribution: [
-        { name: 'Requested', value: requests.filter(r => r.status?.toUpperCase() === 'REQUESTED').length, color: '#F59E0B' },
-        { name: 'Accepted', value: requests.filter(r => r.status?.toUpperCase() === 'ACCEPTED').length, color: '#F05A28' },
-        { name: 'Completed', value: requests.filter(r => r.status?.toUpperCase() === 'COMPLETED').length, color: '#10B981' },
-      ].filter(v => v.value > 0),
+      statusDistribution,
+      servicesByType,
       popularServices,
-      topRiders: riders.slice(0, 5).map(r => ({ ...r, firstName: r.first_name, lastName: r.last_name, completedRequests: requests.filter(req => req.rider === r.id && req.status?.toUpperCase() === 'COMPLETED').length })),
-      topRoadies: roadies.slice(0, 5).map(r => ({ ...r, firstName: r.first_name, lastName: r.last_name, completedRequests: requests.filter(req => req.rodie === r.id && req.status?.toUpperCase() === 'COMPLETED').length })),
-      recentServiceRequests: requests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5).map(r => ({
-        id: r.id,
-        rider: r.rider_username || 'User',
-        service: r.service_type_name || 'Service',
-        status: r.status,
-        created_at: r.created_at
-      })),
+      topRiders,
+      topRoadies,
+      activityFeed,
       platformHealth: {
-        activeUsers: (riders.filter(r => r.is_online).length || 0) + (roadies.filter(r => r.is_online).length || 0),
+        activeUsers: onlineRoadies + activeRiders,
         serviceAvailability: 100,
-        responseRate: requests.length > 0 ? Math.round((requests.filter(r => r.status?.toUpperCase() !== 'REQUESTED').length / totalRequests) * 100) : 0,
-        satisfaction: 98
+        responseRate:
+          totalRequests > 0
+            ? Math.round(
+                (requests.filter((r) => !["REQUESTED"].includes(norm(r.status))).length / totalRequests) * 100
+              )
+            : 0,
+        satisfaction: 98,
       },
-      userGrowth
+      userGrowth,
     }
   }
 
@@ -152,10 +204,10 @@ export default function AdminDashboardPage() {
       case 'stats-overview': return <StatsOverview stats={stats} />
       case 'request-trends': return <RequestTrends trends={stats.requestTrends} />
       case 'status-pie': return <StatusDistribution distribution={stats.statusDistribution} />
+      case 'popular-services': return <ServicesByTypeChart services={stats.servicesByType} />
       case 'top-customers': return <TopCustomers riders={stats.topRiders} />
       case 'top-providers': return <TopProviders roadies={stats.topRoadies} />
-      case 'recent-requests': return <RecentActivity requests={stats.recentServiceRequests} />
-      case 'popular-services': return <PopularServices services={stats.popularServices} totalRequests={stats.totalRequests} />
+      case 'recent-requests': return <RecentActivity feed={stats.activityFeed} />
       case 'platform-health': return <PlatformHealthWidget health={stats.platformHealth} />
       case 'user-growth': return <UserGrowthChart data={stats.userGrowth} />
       default: return null

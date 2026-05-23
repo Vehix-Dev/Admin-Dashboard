@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getRoadies, updateRoadie, permanentlyDeleteUser, type Roadie, getCombinedRealtimeLocations, type RodieLocation, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
+import { getRoadies, updateRoadie, permanentlyDeleteUser, type Roadie, getCombinedRealtimeLocations, getServiceRequests, type ServiceRequest, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
@@ -49,9 +49,12 @@ export default function RoadiesPage() {
   const [isLoadingThumbnails, setIsLoadingThumbnails] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [onlineRoadies, setOnlineRoadies] = useState<Set<number>>(new Set())
+  const [onJobRoadies, setOnJobRoadies] = useState<Set<number>>(new Set())
+  const [activeRoadieIds, setActiveRoadieIds] = useState<Set<number>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
   const [searchInput, setSearchInput] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [activityFilter, setActivityFilter] = useState<string>("all")
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [showFilters, setShowFilters] = useState(false)
@@ -93,6 +96,7 @@ export default function RoadiesPage() {
 
   const clearFilters = () => {
     setStatusFilter("all")
+    setActivityFilter("all")
     setStartDate(undefined)
     setEndDate(undefined)
   }
@@ -100,19 +104,35 @@ export default function RoadiesPage() {
   const fetchRoadies = async () => {
     setIsLoading(true)
     try {
-      const [data, realtimeData] = await Promise.all([
+      const [data, realtimeData, requests] = await Promise.all([
         getRoadies(),
-        getCombinedRealtimeLocations()
+        getCombinedRealtimeLocations(),
+        getServiceRequests().catch(() => [] as ServiceRequest[]),
       ])
 
       const roadiesWithThumbnails = data as RoadieWithThumbnail[]
       setRoadies(roadiesWithThumbnails)
       setFilteredRoadies(roadiesWithThumbnails)
 
-      // Process online roadies
       const onlineSet = new Set<number>()
-      realtimeData.rodies.forEach(r => onlineSet.add(r.rodie_id))
+      const jobSet = new Set<number>()
+      realtimeData.rodies.forEach((r) => {
+        onlineSet.add(r.rodie_id)
+        if (r.activity_status === "ON_JOB") jobSet.add(r.rodie_id)
+      })
       setOnlineRoadies(onlineSet)
+      setOnJobRoadies(jobSet)
+
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const activeSet = new Set<number>()
+      requests.forEach((req) => {
+        if (req.status !== "COMPLETED" || !req.rodie) return
+        const completedAt = (req as ServiceRequest & { completed_at?: string }).completed_at
+        if (!completedAt) return
+        if (new Date(completedAt) >= sevenDaysAgo) activeSet.add(req.rodie as number)
+      })
+      setActiveRoadieIds(activeSet)
 
       // Load thumbnails for all roadies
       await loadRoadieThumbnails(roadiesWithThumbnails)
@@ -196,10 +216,19 @@ export default function RoadiesPage() {
       })
     }
 
-    // Apply status filter
     if (statusFilter !== "all") {
       const isApproved = statusFilter === "approved"
       filtered = filtered.filter(roadie => roadie.is_approved === isApproved)
+    }
+
+    if (activityFilter !== "all") {
+      filtered = filtered.filter((roadie) => {
+        const isOnline = roadie.is_online || onlineRoadies.has(roadie.id)
+        const isOnJob = onJobRoadies.has(roadie.id)
+        if (activityFilter === "online") return isOnline && !isOnJob
+        if (activityFilter === "onjob") return isOnJob
+        return true
+      })
     }
 
     // Apply date range filter
@@ -213,7 +242,7 @@ export default function RoadiesPage() {
     }
 
     setFilteredRoadies(filtered)
-  }, [searchQuery, statusFilter, startDate, endDate, roadies])
+  }, [searchQuery, statusFilter, activityFilter, startDate, endDate, roadies, onlineRoadies, onJobRoadies])
 
   const handleDelete = async (roadie: RoadieWithThumbnail) => {
     try {
@@ -337,7 +366,7 @@ export default function RoadiesPage() {
 
   const columns = [
     {
-      header: "ID",
+      header: "Roadie ID",
       accessor: "external_id" as const,
       cell: (value: string, row: RoadieWithThumbnail) => (
         <div className="flex items-center gap-3">
@@ -389,6 +418,13 @@ export default function RoadiesPage() {
       )
     },
     {
+      header: "NIN",
+      accessor: "nin" as const,
+      cell: (value: string) => (
+        <span className="text-xs font-mono text-foreground">{value || "—"}</span>
+      ),
+    },
+    {
       header: "Wallet Balance",
       accessor: (row: RoadieWithThumbnail) => row.wallet?.balance || "0",
       cell: (value: string, row: RoadieWithThumbnail) => {
@@ -411,13 +447,28 @@ export default function RoadiesPage() {
       ),
     },
     {
-      header: "Online",
+      header: "Activity",
       accessor: (row: RoadieWithThumbnail) => row.is_online,
       cell: (value: boolean, row: RoadieWithThumbnail) => {
+        const isOnJob = onJobRoadies.has(row.id)
         const isOnline = value || onlineRoadies.has(row.id)
+        if (isOnJob) {
+          return (
+            <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold uppercase">
+              On Job
+            </Badge>
+          )
+        }
+        if (isOnline) {
+          return (
+            <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase">
+              Online
+            </Badge>
+          )
+        }
         return (
-          <Badge variant={isOnline ? "default" : "outline"} className={isOnline ? "bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase" : "text-muted-foreground border-border text-[10px] font-bold uppercase"}>
-            {isOnline ? "Online" : "Offline"}
+          <Badge variant="outline" className="text-muted-foreground border-border text-[10px] font-bold uppercase">
+            Offline
           </Badge>
         )
       }
@@ -470,9 +521,14 @@ export default function RoadiesPage() {
   const totalRoadies = roadies.length
   const shownRoadies = filteredRoadies.length
   const searchActive = searchQuery.trim() !== ""
-  const filtersActive = statusFilter !== "all" || startDate !== undefined || endDate !== undefined
-  const activeRoadies = roadies.filter(r => r.is_approved).length
-  const pendingRoadies = roadies.filter(r => !r.is_approved).length
+  const filtersActive =
+    statusFilter !== "all" || activityFilter !== "all" || startDate !== undefined || endDate !== undefined
+  const approvedRoadies = roadies.filter((r) => r.is_approved).length
+  const unapprovedRoadies = roadies.filter((r) => !r.is_approved).length
+  const activeLast7Days = roadies.filter((r) => activeRoadieIds.has(r.id)).length
+  const inactiveRoadies = roadies.filter((r) => !activeRoadieIds.has(r.id)).length
+  const onlineCount = roadies.filter((r) => r.is_online || onlineRoadies.has(r.id)).length
+  const onJobCount = roadies.filter((r) => onJobRoadies.has(r.id)).length
 
   return (
     <div className="space-y-6">
@@ -480,7 +536,7 @@ export default function RoadiesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Roadies</h1>
           <p className="text-sm text-muted-foreground mt-1 text-mono">
-            Manage roadside assistance providers and their status
+            Manage roadside service providers Accounts
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -496,42 +552,23 @@ export default function RoadiesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
-        <Card className="border-border/50 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Total Roadies</p>
-              <p className="text-2xl font-bold mt-1 text-foreground">{totalRoadies}</p>
-            </div>
-            <div className="bg-primary/10 p-2.5 rounded-xl">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Active</p>
-              <p className="text-2xl font-bold mt-1 text-emerald-500">{activeRoadies}</p>
-            </div>
-            <div className="bg-emerald-500/10 p-2.5 rounded-xl">
-              <Check className="h-5 w-5 text-emerald-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Pending Approval</p>
-              <p className="text-2xl font-bold mt-1 text-amber-500">{pendingRoadies}</p>
-            </div>
-            <div className="bg-amber-500/10 p-2.5 rounded-xl">
-              <XCircle className="h-5 w-5 text-amber-500" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 font-mono">
+        {[
+          { label: "Total Roadies", value: totalRoadies, color: "text-foreground" },
+          { label: "Approved", value: approvedRoadies, color: "text-emerald-500" },
+          { label: "Unapproved", value: unapprovedRoadies, color: "text-amber-500" },
+          { label: "Active (7d)", value: activeLast7Days, color: "text-blue-500" },
+          { label: "Inactive", value: inactiveRoadies, color: "text-muted-foreground" },
+          { label: "Online", value: onlineCount, color: "text-emerald-600" },
+          { label: "On Job", value: onJobCount, color: "text-amber-600" },
+        ].map((stat) => (
+          <Card key={stat.label} className="border-border/50 shadow-sm">
+            <CardContent className="p-3">
+              <p className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">{stat.label}</p>
+              <p className={`text-xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Search and Filters Bar */}
@@ -613,8 +650,22 @@ export default function RoadiesPage() {
                 </SelectTrigger>
                 <SelectContent className="font-mono text-xs">
                   <SelectItem value="all">ALL STATUSES</SelectItem>
-                  <SelectItem value="approved">ACTIVE ONLY</SelectItem>
-                  <SelectItem value="pending">PENDING ONLY</SelectItem>
+                  <SelectItem value="approved">APPROVED</SelectItem>
+                  <SelectItem value="pending">UNAPPROVED</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Activity</label>
+              <Select value={activityFilter} onValueChange={setActivityFilter}>
+                <SelectTrigger className="bg-background border-border font-mono text-xs h-10">
+                  <SelectValue placeholder="Activity" />
+                </SelectTrigger>
+                <SelectContent className="font-mono text-xs">
+                  <SelectItem value="all">ALL ACTIVITY</SelectItem>
+                  <SelectItem value="online">ONLINE</SelectItem>
+                  <SelectItem value="onjob">ON JOB</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -72,7 +72,6 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         items: [
           { name: "All Roadies", href: "/sys-admin/roadies", icon: List, permission: PERMISSIONS.ROADIES_VIEW },
           { name: "Add New", href: "/sys-admin/roadies/add", icon: Plus, permission: PERMISSIONS.ROADIES_ADD },
-          { name: "Drivers Total Assists", href: "/sys-admin/roadies/total-services", icon: BarChart, permission: PERMISSIONS.RODIE_SERVICES_VIEW },
           { name: "Deleted", href: "/sys-admin/roadies/deleted", icon: Trash2, permission: PERMISSIONS.ROADIES_DELETE },
         ]
       },

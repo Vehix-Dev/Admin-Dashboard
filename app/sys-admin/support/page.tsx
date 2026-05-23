@@ -26,23 +26,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-
-interface SupportTicket {
-    id: number
-    support_id: string
-    user: number
-    user_name: string
-    user_email: string
-    user_phone: string
-    user_type: "RIDER" | "RODIE"
-    subject: string
-    message: string
-    status: "PENDING" | "ONGOING" | "RESOLVED"
-    internal_comments: string | null
-    created_at: string
-    updated_at: string
-    resolved_at: string | null
-}
+import {
+    getSupportTickets,
+    updateSupportTicketStatus,
+    addSupportTicketComment,
+    deleteSupportTicket,
+    type SupportTicket,
+} from "@/lib/api"
 
 interface Dispute {
     id: number
@@ -77,21 +67,13 @@ export default function SupportPage() {
     const fetchTickets = async () => {
         setIsLoading(true)
         try {
-            // Call API to fetch support tickets
-            const response = await fetch("/api/auth/admin/support-tickets/", {
-                headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-                }
-            })
-            if (response.ok) {
-                const data = await response.json()
-                setTickets(Array.isArray(data) ? data : data.results || [])
-            }
+            const data = await getSupportTickets()
+            setTickets(data)
         } catch (error) {
             console.error("Failed to fetch tickets", error)
             toast({
                 title: "Fetch Error",
-                description: "Failed to load support tickets.",
+                description: "Failed to load support messages from the app.",
                 variant: "destructive"
             })
         } finally {
@@ -141,22 +123,12 @@ export default function SupportPage() {
 
     const handleStatusChange = async (ticket: SupportTicket, newStatus: string) => {
         try {
-            const response = await fetch(`/api/auth/admin/support-tickets/${ticket.id}/update_status/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-                },
-                body: JSON.stringify({ status: newStatus })
-            })
-            if (response.ok) {
-                const updated = await response.json()
-                setTickets(tickets.map(t => t.id === ticket.id ? updated : t))
-                if (selectedTicket?.id === ticket.id) {
-                    setSelectedTicket(updated)
-                }
-                toast({ title: "Updated", description: "Ticket status updated successfully." })
+            const updated = await updateSupportTicketStatus(ticket.id, newStatus)
+            setTickets(tickets.map(t => t.id === ticket.id ? updated : t))
+            if (selectedTicket?.id === ticket.id) {
+                setSelectedTicket(updated)
             }
+            toast({ title: "Updated", description: "Ticket status updated successfully." })
         } catch (error) {
             toast({ title: "Error", description: "Failed to update status", variant: "destructive" })
         }
@@ -166,22 +138,12 @@ export default function SupportPage() {
         if (!editingComment.trim()) return
 
         try {
-            const response = await fetch(`/api/auth/admin/support-tickets/${ticket.id}/add_comment/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-                },
-                body: JSON.stringify({ comment: editingComment })
-            })
-            if (response.ok) {
-                const updated = await response.json()
-                setTickets(tickets.map(t => t.id === ticket.id ? updated : t))
-                setSelectedTicket(updated)
-                setEditingComment("")
-                setShowCommentForm(false)
-                toast({ title: "Success", description: "Comment added successfully." })
-            }
+            const updated = await addSupportTicketComment(ticket.id, editingComment)
+            setTickets(tickets.map(t => t.id === ticket.id ? updated : t))
+            setSelectedTicket(updated)
+            setEditingComment("")
+            setShowCommentForm(false)
+            toast({ title: "Success", description: "Comment added successfully." })
         } catch (error) {
             toast({ title: "Error", description: "Failed to add comment", variant: "destructive" })
         }
@@ -191,19 +153,12 @@ export default function SupportPage() {
         if (!pendingDelete) return
 
         try {
-            const response = await fetch(`/api/auth/admin/support-tickets/${pendingDelete.id}/`, {
-                method: "DELETE",
-                headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
-                }
-            })
-            if (response.ok) {
-                setTickets(tickets.filter(t => t.id !== pendingDelete.id))
-                if (selectedTicket?.id === pendingDelete.id) {
-                    setSelectedTicket(null)
-                }
-                toast({ title: "Deleted", description: "Ticket deleted successfully." })
+            await deleteSupportTicket(pendingDelete.id)
+            setTickets(tickets.filter(t => t.id !== pendingDelete.id))
+            if (selectedTicket?.id === pendingDelete.id) {
+                setSelectedTicket(null)
             }
+            toast({ title: "Deleted", description: "Ticket deleted successfully." })
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete ticket", variant: "destructive" })
         } finally {

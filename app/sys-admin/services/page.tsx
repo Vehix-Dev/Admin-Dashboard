@@ -371,129 +371,14 @@ export default function ServicesPage() {
     return name?.charAt(0).toUpperCase() || 'S'
   }
 
-  const ServiceImageCell = ({ service }: { service: Service }) => {
-    const [isUploading, setIsUploading] = useState(false)
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (file && canChange) {
-        setIsUploading(true)
-        await handleImageUpload(service.id, file)
-        setIsUploading(false)
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
-      }
-    }
-
-    return (
-      <div className="flex flex-col items-center gap-2">
-        {service.image ? (
-          <div className="relative group">
-            <div
-              className="w-12 h-12 rounded-lg overflow-hidden border border-border bg-gradient-to-br from-primary/10 to-primary/5 cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setSelectedImage({ url: service.image!, serviceName: service.name })}
-            >
-              <img
-                src={service.image}
-                alt={service.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                  e.currentTarget.parentElement!.innerHTML = `
-                    <div class="w-full h-full flex items-center justify-center bg-muted">
-                      <ImageIcon class="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  `
-                }}
-              />
-            </div>
-            {canChange && (
-              <div className="absolute inset-0 bg-black/60 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 bg-background/80 hover:bg-background"
-                  onClick={() => setSelectedImage({ url: service.image!, serviceName: service.name })}
-                >
-                  <Eye className="h-3 w-3" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 bg-background/80 hover:bg-background"
-                  onClick={() => setImageToDelete({ serviceId: service.id, serviceName: service.name })}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="relative">
-            <div
-              className="w-12 h-12 rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors"
-              onClick={() => canChange && fileInputRef.current?.click()}
-            >
-              {isUploading || uploadingImage === service.id ? (
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              ) : (
-                <>
-                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-[8px] text-muted-foreground">Upload</span>
-                </>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-              disabled={!canChange || isUploading || uploadingImage === service.id}
-            />
-          </div>
-        )}
-        {service.image && (
-          <div className="flex items-center gap-1">
-            <Badge
-              variant="outline"
-              className="text-[8px] h-4 px-1 bg-green-500/10 text-green-600 border-green-500/20"
-            >
-              Has Image
-            </Badge>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   const columns = [
-    {
-      header: "Image",
-      accessor: "id" as const,
-      cell: (_: unknown, row: Service) => <ServiceImageCell service={row} />,
-      width: "80px",
-    },
     {
       header: "Service Details",
       accessor: "name" as const,
       cell: (value: string, row: Service) => (
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center text-primary font-bold text-lg">
-            {row.image ? (
-              <img
-                src={row.image}
-                alt={value}
-                className="h-8 w-8 rounded-lg object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                  e.currentTarget.parentElement!.innerHTML = getInitials(value || row.code)
-                }}
-              />
-            ) : (
-              getInitials(value || row.code)
-            )}
+            {getInitials(value || row.code)}
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-foreground text-sm">{value || "Unnamed Service"}</span>
@@ -639,8 +524,6 @@ export default function ServicesPage() {
             </div>
           </CardContent>
         </Card>
-
-
 
         <Card className="border-border/50 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
@@ -884,7 +767,7 @@ export default function ServicesPage() {
                 )}
               </div>
             )}
-            initialSortColumn={4}
+            initialSortColumn={3}
             initialSortDirection="desc"
           />
         )}

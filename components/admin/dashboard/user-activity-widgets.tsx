@@ -19,7 +19,7 @@ export function TopCustomers({ riders }: { riders: any[] }) {
             </div>
             <div className="space-y-4">
                 {riders.slice(0, 5).map((rider, index) => (
-                    <Link key={rider.id} href={`/admin/riders/${rider.id}`} className="block">
+                    <Link key={rider.id} href={`/sys-admin/riders/${rider.id}/edit`} className="block">
                         <div className="flex items-center justify-between p-3 border border-border/40 rounded-xl hover:bg-muted/50 transition-all cursor-pointer group hover:border-primary/20">
                             <div className="flex items-center gap-3">
                                 <div className="relative">
@@ -70,7 +70,7 @@ export function TopProviders({ roadies }: { roadies: any[] }) {
             </div>
             <div className="space-y-4">
                 {roadies.slice(0, 5).map((roadie, index) => (
-                    <Link key={roadie.id} href={`/admin/roadies/${roadie.id}`} className="block">
+                    <Link key={roadie.id} href={`/sys-admin/roadies/${roadie.id}/edit`} className="block">
                         <div className="flex items-center justify-between p-3 border border-border/40 rounded-xl hover:bg-muted/50 transition-all cursor-pointer group hover:border-emerald-500/20">
                             <div className="flex items-center gap-3">
                                 <Avatar className={cn("h-11 w-11 border-2 transition-transform group-hover:scale-105",
@@ -101,43 +101,30 @@ export function TopProviders({ roadies }: { roadies: any[] }) {
     )
 }
 
-export function RecentActivity({ requests }: { requests: any[] }) {
-    const getStatusColor = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'completed': return 'bg-green-500 text-white'
-            case 'accepted': return 'bg-blue-500 text-white'
-            case 'pending': return 'bg-amber-500 text-white'
-            case 'cancelled': return 'bg-red-500 text-white'
-            default: return 'bg-muted text-muted-foreground'
-        }
-    }
-
+export function RecentActivity({ feed }: { feed: { id: string; message: string; timestamp: string; timeAgo: string; requestId?: number }[] }) {
     return (
         <div className="glass-card p-6 h-full">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-foreground">Recent Pulse</h3>
+                <div>
+                    <h3 className="text-lg font-bold text-foreground">Recent Activity</h3>
+                    <p className="text-xs text-muted-foreground">Latest platform events</p>
+                </div>
                 <Clock className="h-5 w-5 text-primary animate-pulse" />
             </div>
-            <div className="space-y-4">
-                {requests.map((request) => (
-                    <Link key={request.id} href={`/admin/requests/${request.id}`} className="block">
-                        <div className="p-3 border border-border/40 rounded-xl hover:bg-muted/50 transition-all cursor-pointer group">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-[10px] font-bold bg-foreground text-background px-1.5 py-0.5 rounded-md">#{request.id}</span>
-                                        <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter", getStatusColor(request.status))}>
-                                            {request.status}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">{request.rider}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5 italic">{request.service}</p>
-                                </div>
-                                <ArrowUpRight className="h-4 w-4 text-muted-foreground/20 group-hover:text-primary transition-colors" />
-                            </div>
+            <div className="space-y-3 max-h-[420px] overflow-y-auto">
+                {feed.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">No recent activity</p>
+                ) : (
+                    feed.map((item) => (
+                        <div
+                            key={item.id}
+                            className="p-3 border border-border/40 rounded-xl hover:bg-muted/40 transition-colors"
+                        >
+                            <p className="text-sm text-foreground leading-snug">&ldquo;{item.message}&rdquo;</p>
+                            <p className="text-xs text-muted-foreground mt-1.5">{item.timeAgo}</p>
                         </div>
-                    </Link>
-                ))}
+                    ))
+                )}
             </div>
         </div>
     )

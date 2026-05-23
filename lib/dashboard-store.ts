@@ -11,11 +11,11 @@ export interface WidgetConfig {
 export const DEFAULT_WIDGETS: WidgetConfig[] = [
     { id: 'stats-overview', title: 'Stats Overview', visible: true, order: 0, size: 'full' },
     { id: 'request-trends', title: 'Request Trends', visible: true, order: 1, size: 'medium' },
-    { id: 'status-pie', title: 'Status Distribution', visible: true, order: 2, size: 'medium' },
+    { id: 'status-pie', title: 'Success vs Failure', visible: true, order: 2, size: 'medium' },
     { id: 'top-customers', title: 'Top Customers', visible: true, order: 3, size: 'medium' },
     { id: 'top-providers', title: 'Top Providers', visible: true, order: 4, size: 'medium' },
     { id: 'recent-requests', title: 'Recent Activity', visible: true, order: 5, size: 'medium' },
-    { id: 'popular-services', title: 'Popular Services', visible: true, order: 6, size: 'large' },
+    { id: 'popular-services', title: 'Services by Type', visible: true, order: 6, size: 'large' },
     { id: 'platform-health', title: 'Platform Health', visible: true, order: 7, size: 'medium' },
     { id: 'user-growth', title: 'User Growth', visible: true, order: 8, size: 'full' },
 ]

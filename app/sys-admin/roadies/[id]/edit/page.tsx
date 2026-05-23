@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { getRoadieById, updateRoadie, type Roadie, resetAdminUserPassword } from "@/lib/api"
+import { getRoadieById, updateRoadie, type Roadie, resetAdminUserPassword, getServiceRequests, type ServiceRequest, type Rating } from "@/lib/api"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
 import {
@@ -105,6 +105,9 @@ export default function EditRoadiePage() {
   const [selectedServiceToAdd, setSelectedServiceToAdd] = useState<string>("")
   const [addingService, setAddingService] = useState(false)
   const [pendingRemoveAssignmentId, setPendingRemoveAssignmentId] = useState<number | null>(null)
+  const [jobHistory, setJobHistory] = useState<ServiceRequest[]>([])
+  const [jobHistoryStart, setJobHistoryStart] = useState<Date | undefined>(undefined)
+  const [jobHistoryEnd, setJobHistoryEnd] = useState<Date | undefined>(undefined)
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -156,6 +159,16 @@ export default function EditRoadiePage() {
 
         // Load services data
         await fetchServicesData(data.id)
+
+        try {
+          const requests = await getServiceRequests()
+          const mine = requests.filter(
+            (r) => r.rodie === data.id && (r.status === "COMPLETED" || r.status === "CANCELLED")
+          )
+          setJobHistory(mine)
+        } catch {
+          setJobHistory([])
+        }
       } catch (err) {
         toast({
           title: "Error",
@@ -583,8 +596,10 @@ export default function EditRoadiePage() {
           {/* Left Column - Main Content with Tabs */}
           <div className="lg:col-span-2 space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Edit Provider</h1>
-              <p className="text-muted-foreground mt-1">Provider ID: {roadie?.external_id}</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                {roadie ? `${roadie.first_name} ${roadie.last_name}` : "Roadie"}
+              </h1>
+              <p className="text-muted-foreground mt-1 font-mono">Roadie ID: {roadie?.external_id}</p>
             </div>
 
             <Tabs defaultValue="profile" className="space-y-6">
@@ -835,35 +850,112 @@ export default function EditRoadiePage() {
                             <p className="text-xl font-bold text-foreground">{roadie.summary.stats.total_assignments}</p>
                           </div>
                           <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                            <p className="text-xs text-emerald-500">Completion Rate</p>
-                            <p className="text-xl font-bold text-emerald-600">{roadie.summary.stats.completion_rate}%</p>
+                            <p className="text-xs text-emerald-500">Completed</p>
+                            <p className="text-xl font-bold text-emerald-600">{roadie.summary.stats.completed_assignments}</p>
+                          </div>
+                          <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                            <p className="text-xs text-red-500">Cancelled</p>
+                            <p className="text-xl font-bold text-red-600">{roadie.summary.stats.cancelled_assignments}</p>
                           </div>
                           <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-                            <p className="text-xs text-primary">Riders Served</p>
-                            <p className="text-xl font-bold text-primary">{roadie.summary.stats.unique_riders_served}</p>
-                          </div>
-                          <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                            <p className="text-xs text-amber-500">Rating</p>
-                            <p className="text-xl font-bold text-amber-600">{roadie.summary.rating} ★</p>
+                            <p className="text-xs text-primary">Completion Rate</p>
+                            <p className="text-xl font-bold text-primary">{roadie.summary.stats.completion_rate}%</p>
                           </div>
                         </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Ratings & Reviews</CardTitle>
+                        <CardDescription>
+                          Average star rating and comments from riders ({roadie.summary.reviews?.length || 0} reviews)
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                          <span className="text-3xl font-bold text-amber-600">{roadie.summary.rating || 0}</span>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">Average rating</p>
+                            <p className="text-xs text-muted-foreground">From completed assist feedback</p>
+                          </div>
+                        </div>
+                        {(roadie.summary.reviews?.length ?? 0) > 0 ? (
+                          <div className="space-y-3 max-h-[320px] overflow-y-auto">
+                            {(roadie.summary.reviews as Rating[]).map((review) => (
+                              <div key={review.id} className="p-3 border rounded-lg bg-muted/20 text-sm">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="font-medium">
+                                    {review.rater_name || review.rater_username}
+                                  </span>
+                                  <span className="text-amber-600">{"★".repeat(review.rating)}</span>
+                                </div>
+                                {review.comment ? (
+                                  <p className="text-muted-foreground">{review.comment}</p>
+                                ) : (
+                                  <p className="text-muted-foreground italic text-xs">No comment</p>
+                                )}
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                  {new Date(review.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No reviews yet.</p>
+                        )}
                       </CardContent>
                     </Card>
 
                     {roadie?.wallet && (
                       <Card className="border-t-4 border-t-primary">
                         <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Wallet className="h-5 w-5 text-purple-600" />
-                              Wallet Details
-                            </div>
-                            <Badge className={parseFloat(roadie.wallet.balance) < 0 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}>
-                              Balance: {formatCurrency(roadie.wallet.balance)}
-                            </Badge>
+                          <CardTitle className="flex items-center gap-2">
+                            <Wallet className="h-5 w-5 text-purple-600" />
+                            Wallet Summary
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
+                          {(() => {
+                            const txs = roadie.wallet?.transactions || []
+                            const totalEarnings = txs
+                              .filter((t) => parseFloat(t.amount) > 0)
+                              .reduce((s, t) => s + parseFloat(t.amount), 0)
+                            const totalWithdrawals = txs
+                              .filter(
+                                (t) =>
+                                  parseFloat(t.amount) < 0 &&
+                                  (t.reason?.toLowerCase().includes("withdraw") ?? false)
+                              )
+                              .reduce((s, t) => s + Math.abs(parseFloat(t.amount)), 0)
+                            const totalDeposits = txs
+                              .filter(
+                                (t) =>
+                                  parseFloat(t.amount) > 0 &&
+                                  (t.reason?.toLowerCase().includes("deposit") ?? false)
+                              )
+                              .reduce((s, t) => s + parseFloat(t.amount), 0)
+                            return (
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                                <div className="p-3 rounded-lg border bg-muted/30">
+                                  <p className="text-xs text-muted-foreground">Current Balance</p>
+                                  <p className="font-bold">{formatCurrency(roadie.wallet!.balance)}</p>
+                                </div>
+                                <div className="p-3 rounded-lg border bg-emerald-500/10">
+                                  <p className="text-xs text-emerald-600">Total Earnings</p>
+                                  <p className="font-bold text-emerald-700">{formatCurrency(totalEarnings)}</p>
+                                </div>
+                                <div className="p-3 rounded-lg border bg-red-500/10">
+                                  <p className="text-xs text-red-600">Total Withdrawals</p>
+                                  <p className="font-bold text-red-700">{formatCurrency(totalWithdrawals)}</p>
+                                </div>
+                                <div className="p-3 rounded-lg border bg-blue-500/10">
+                                  <p className="text-xs text-blue-600">Total Deposits</p>
+                                  <p className="font-bold text-blue-700">{formatCurrency(totalDeposits)}</p>
+                                </div>
+                              </div>
+                            )
+                          })()}
                           <div className="space-y-4">
                             <h4 className="text-sm font-medium text-muted-foreground">Recent Transactions</h4>
                             <div className="space-y-2">
@@ -897,7 +989,11 @@ export default function EditRoadiePage() {
                       <CardContent>
                         <div className="space-y-0 divide-y">
                           {roadie.summary.recent_assignments.map((assignment) => (
-                            <div key={assignment.id} className="py-3 flex justify-between items-center first:pt-0 last:pb-0">
+                            <Link
+                              key={assignment.id}
+                              href={`/sys-admin/requests/${assignment.id}`}
+                              className="py-3 flex justify-between items-center first:pt-0 last:pb-0 hover:bg-muted/40 px-2 -mx-2 rounded transition-colors"
+                            >
                               <div>
                                 <p className="font-medium text-foreground">{assignment.service_type__name}</p>
                                 <p className="text-xs text-muted-foreground">
@@ -907,10 +1003,79 @@ export default function EditRoadiePage() {
                               <Badge variant="outline" className={getStatusColor(assignment.status)}>
                                 {assignment.status}
                               </Badge>
-                            </div>
+                            </Link>
                           ))}
                           {roadie.summary.recent_assignments.length === 0 && (
                             <p className="text-sm text-muted-foreground text-center py-4">No recent activity.</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Job History</CardTitle>
+                        <CardDescription>Completed and cancelled assists for this roadie</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                          <Input
+                            type="date"
+                            className="w-auto text-xs"
+                            onChange={(e) =>
+                              setJobHistoryStart(e.target.value ? new Date(e.target.value) : undefined)
+                            }
+                          />
+                          <Input
+                            type="date"
+                            className="w-auto text-xs"
+                            onChange={(e) =>
+                              setJobHistoryEnd(e.target.value ? new Date(e.target.value) : undefined)
+                            }
+                          />
+                        </div>
+                        <div className="border rounded-md overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left p-2 font-medium">Job ID</th>
+                                <th className="text-left p-2 font-medium">Service Type</th>
+                                <th className="text-left p-2 font-medium">Status</th>
+                                <th className="text-left p-2 font-medium">Date</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {jobHistory
+                                .filter((job) => {
+                                  const d = new Date(job.created_at)
+                                  if (jobHistoryStart && d < jobHistoryStart) return false
+                                  if (jobHistoryEnd) {
+                                    const end = new Date(jobHistoryEnd)
+                                    end.setHours(23, 59, 59, 999)
+                                    if (d > end) return false
+                                  }
+                                  return true
+                                })
+                                .map((job) => (
+                                  <tr key={job.id} className="border-t hover:bg-muted/30">
+                                    <td className="p-2">
+                                      <Link href={`/sys-admin/requests/${job.id}`} className="text-primary hover:underline font-mono">
+                                        #{job.id}
+                                      </Link>
+                                    </td>
+                                    <td className="p-2">{job.service_type_name || job.service_type}</td>
+                                    <td className="p-2">
+                                      <Badge variant="outline">{job.status}</Badge>
+                                    </td>
+                                    <td className="p-2 text-muted-foreground text-xs">
+                                      {new Date(job.created_at).toLocaleDateString()}
+                                    </td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                          {jobHistory.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-6">No job history found.</p>
                           )}
                         </div>
                       </CardContent>
@@ -921,7 +1086,27 @@ export default function EditRoadiePage() {
 
 
               <TabsContent value="activity" className="space-y-6">
-                {roadie?.summary?.recent_assignments && roadie.summary.recent_assignments.length > 0 ? (
+                {(() => {
+                  const heatmapPoints = [
+                    ...jobHistory
+                      .filter((j) => j.rider_lat != null && j.rider_lng != null)
+                      .map((j) => ({
+                        lat: parseFloat(String(j.rider_lat)),
+                        lng: parseFloat(String(j.rider_lng)),
+                        timestamp: j.created_at,
+                        intensity: 0.7,
+                      })),
+                    ...(roadie?.summary?.recent_assignments || [])
+                      .filter((a: { rider_lat?: string; rider_lng?: string }) => a.rider_lat && a.rider_lng)
+                      .map((assignment: { rider_lat: string; rider_lng: string; created_at: string }) => ({
+                        lat: parseFloat(assignment.rider_lat),
+                        lng: parseFloat(assignment.rider_lng),
+                        timestamp: assignment.created_at,
+                        intensity: 0.8,
+                      })),
+                  ]
+                  const hasActivity = heatmapPoints.length > 0 || (roadie?.summary?.recent_assignments?.length ?? 0) > 0
+                  return hasActivity ? (
                   <>
                     <Card>
                       <CardHeader>
@@ -935,20 +1120,12 @@ export default function EditRoadiePage() {
                       </CardHeader>
                       <CardContent>
                         <ActivityHeatmap
-                          points={roadie.summary.recent_assignments
-                            .slice(0, 50)
-                            .filter((assignment: any) => assignment.rider_lat && assignment.rider_lng) // Only include valid coordinates
-                            .map((assignment: any) => ({
-                              lat: parseFloat(assignment.rider_lat),
-                              lng: parseFloat(assignment.rider_lng),
-                              timestamp: assignment.created_at,
-                              intensity: 0.8 // Default intensity
-                            }))}
+                          points={heatmapPoints}
                           center={[0.3476, 32.5825]}
                           zoom={12}
                           mapStyle="light"
                           height="500px"
-                          title="Request Hotspots (Last 50 Assignments)"
+                          title="Request Hotspots"
                         />
                       </CardContent>
                     </Card>
@@ -965,7 +1142,7 @@ export default function EditRoadiePage() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-0 divide-y max-h-[400px] overflow-y-auto">
-                          {roadie.summary.recent_assignments.map((assignment: any, idx: number) => (
+                          {(roadie?.summary?.recent_assignments ?? []).map((assignment: any, idx: number) => (
                             <div key={idx} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
                               <div className="flex-1">
                                 <p className="font-medium text-foreground text-sm">{assignment.service_type__name}</p>
@@ -993,7 +1170,7 @@ export default function EditRoadiePage() {
                       </CardContent>
                     </Card>
                   </>
-                ) : (
+                  ) : (
                   <Card>
                     <CardContent className="py-12">
                       <div className="text-center">
@@ -1003,7 +1180,8 @@ export default function EditRoadiePage() {
                       </div>
                     </CardContent>
                   </Card>
-                )}
+                  )
+                })()}
               </TabsContent>
 
               <TabsContent value="documents" className="space-y-6">
@@ -1375,34 +1553,6 @@ export default function EditRoadiePage() {
               <TabsContent value="performance" className="space-y-6">
                 {roadie?.summary && (
                   <>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5 text-primary" />
-                          Performance Stats
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="p-3 bg-muted/30 rounded-lg border">
-                            <p className="text-xs text-muted-foreground">Total Jobs</p>
-                            <p className="text-xl font-bold text-foreground">{roadie.summary.stats.total_assignments}</p>
-                          </div>
-                          <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                            <p className="text-xs text-emerald-500">Completion Rate</p>
-                            <p className="text-xl font-bold text-emerald-600">{roadie.summary.stats.completion_rate}%</p>
-                          </div>
-                          <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-                            <p className="text-xs text-primary">Riders Served</p>
-                            <p className="text-xl font-bold text-primary">{roadie.summary.stats.unique_riders_served}</p>
-                          </div>
-                          <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                            <p className="text-xs text-amber-500">Rating</p>
-                            <p className="text-xl font-bold text-amber-600">{roadie.summary.rating} ★</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
 
                     {roadie?.wallet && (
                       <Card className="border-t-4 border-t-primary">
@@ -1901,52 +2051,6 @@ export default function EditRoadiePage() {
                       </div>
                     </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Image Summary Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Image Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Images</span>
-                    <span className="font-bold text-foreground">{roadieImages.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Approved</span>
-                    <span className="font-bold text-emerald-500">
-                      {roadieImages.filter(img => img.status === 'APPROVED').length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Pending</span>
-                    <span className="font-bold text-amber-500">
-                      {roadieImages.filter(img => img.status === 'PENDING').length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Rejected</span>
-                    <span className="font-bold text-destructive">
-                      {roadieImages.filter(img => img.status === 'REJECTED').length}
-                    </span>
-                  </div>
-                  <Separator />
-                  <PermissionButton
-                    variant="outline"
-                    className="w-full gap-2"
-                    onClick={() => setUploadDialogOpen(true)}
-                    permissions={PERMISSIONS.ROADIES_CHANGE}
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                    Upload New Images
-                  </PermissionButton>
                 </div>
               </CardContent>
             </Card>

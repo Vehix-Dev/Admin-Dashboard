@@ -5,21 +5,27 @@ import { DataTable, Column } from "@/components/management/data-table"
 import {
     getDeletedRoadies,
     restoreRoadie,
+    permanentlyDeleteUser,
     type Roadie
 } from "@/lib/api"
 import { useCan } from "@/components/auth/permission-guard"
 import { PERMISSIONS } from "@/lib/permissions"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, ArrowLeft } from "lucide-react"
+import { RefreshCw, ArrowLeft, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 
 export default function DeletedRoadiesPage() {
     const [roadies, setRoadies] = useState<Roadie[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [deleteTarget, setDeleteTarget] = useState<Roadie | null>(null)
     const { toast } = useToast()
+    const { user } = useAuth()
     const canManage = useCan(PERMISSIONS.ROADIES_DELETE)
+    const isSuperAdmin = !!user?.is_superuser
 
     const fetchDeletedRoadies = async () => {
         setIsLoading(true)
@@ -45,10 +51,29 @@ export default function DeletedRoadiesPage() {
                 description: "Roadie restored successfully"
             })
             fetchDeletedRoadies()
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast({
                 title: "Error",
-                description: err.message || "Failed to restore roadie",
+                description: err instanceof Error ? err.message : "Failed to restore roadie",
+                variant: "destructive"
+            })
+        }
+    }
+
+    const handlePermanentDelete = async () => {
+        if (!deleteTarget) return
+        try {
+            await permanentlyDeleteUser(deleteTarget.id, 'ROADIE')
+            toast({
+                title: "Success",
+                description: "Roadie permanently deleted"
+            })
+            setDeleteTarget(null)
+            fetchDeletedRoadies()
+        } catch (err: unknown) {
+            toast({
+                title: "Error",
+                description: err instanceof Error ? err.message : "Failed to permanently delete roadie",
                 variant: "destructive"
             })
         }
@@ -61,7 +86,7 @@ export default function DeletedRoadiesPage() {
             cell: (_: unknown, row: Roadie) => (
                 <div className="flex flex-col">
                     <span className="font-medium">{row.first_name} {row.last_name}</span>
-                    <span className="text-xs text-muted-foreground">{row.username}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{row.external_id}</span>
                 </div>
             )
         },
@@ -83,24 +108,39 @@ export default function DeletedRoadiesPage() {
         {
             header: "Status",
             accessor: "is_approved",
-            cell: (value: boolean) => (
+            cell: () => (
                 <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Deleted</Badge>
             )
         },
         {
             header: "Actions",
             accessor: "id",
-            cell: (_: any, row: Roadie) => canManage ? (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRestore(row)}
-                    className="h-8 gap-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                >
-                    <RefreshCw className="h-4 w-4" />
-                    Restore
-                </Button>
-            ) : null,
+            cell: (_: unknown, row: Roadie) => (
+                <div className="flex gap-1">
+                    {canManage && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRestore(row)}
+                            className="h-8 gap-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                            Restore
+                        </Button>
+                    )}
+                    {isSuperAdmin && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteTarget(row)}
+                            className="h-8 gap-2 text-destructive hover:bg-destructive/10"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete Forever
+                        </Button>
+                    )}
+                </div>
+            ),
         },
     ]
 
@@ -111,9 +151,10 @@ export default function DeletedRoadiesPage() {
                     <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                         <span className="text-muted-foreground font-normal">Roadies /</span> Deleted
                     </h1>
-                    <p className="text-muted-foreground mt-1">Manage deleted roadie accounts</p>
+                    <p className="text-muted-foreground mt-1">
+                        Restore deleted roadies or permanently remove test accounts. Accounts in pending deletion are auto-removed after 30 days.
+                    </p>
                 </div>
-                <div className="flex items-center gap-2" />
             </div>
 
             <div className="flex items-center gap-2">
@@ -128,6 +169,21 @@ export default function DeletedRoadiesPage() {
             <DataTable
                 data={roadies}
                 columns={columns}
+                isLoading={isLoading}
+            />
+
+            <ConfirmModal
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                title="Permanently delete roadie?"
+                description={
+                    deleteTarget
+                        ? `This will permanently delete ${deleteTarget.first_name} ${deleteTarget.last_name} (${deleteTarget.external_id}) and all associated data. This cannot be undone.`
+                        : ""
+                }
+                onConfirm={handlePermanentDelete}
+                confirmText="Delete permanently"
+                mode="delete"
             />
         </div>
     )

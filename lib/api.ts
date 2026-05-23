@@ -946,6 +946,8 @@ export interface RiderSummary {
   recent_requests: RiderRecentRequest[]
   created_date: string
   last_active: string
+  rating?: number
+  reviews?: Rating[]
 }
 
 export interface RoadieStatusBreakdown {
@@ -984,6 +986,7 @@ export interface RoadieSummary {
   last_active: string
   is_approved: boolean
   rating: number
+  reviews?: Rating[]
 }
 
 export interface Rider {
@@ -1275,8 +1278,10 @@ export interface Rating {
   rated_user: number
   rating: number
   comment: string
-  rater_name: string
-  rated_user_name: string
+  rater_name?: string
+  rated_user_name?: string
+  rater_username?: string
+  rated_user_username?: string
   created_at: string
   updated_at: string
 }
@@ -1394,6 +1399,20 @@ export async function chargeCompletedRequestFees(requestIds: number[]): Promise<
   })
 }
 
+export interface MapAssignedParty {
+  rider_id?: number
+  rider_external_id?: string | null
+  rider_username?: string
+  rider_first_name?: string
+  rider_last_name?: string
+  request_id?: number
+  rodie_id?: number
+  rodie_external_id?: string | null
+  rodie_username?: string
+  rodie_first_name?: string
+  rodie_last_name?: string
+}
+
 export interface ActiveRiderLocation {
   request_id: number
   rider_id: number
@@ -1401,10 +1420,18 @@ export interface ActiveRiderLocation {
   rider_first_name: string
   rider_last_name: string
   rider_external_id: string
+  rider_phone?: string
   wallet_balance: number
   total_requests_count: number
   current_service_status: string
+  status?: string
   service_type: string
+  roadie_assigned?: MapAssignedParty | null
+  rodie_lat?: number | null
+  rodie_lng?: number | null
+  time_elapsed?: string | null
+  time_elapsed_seconds?: number | null
+  request_created_at?: string
   lat: number
   lng: number
   updated_at: string
@@ -1462,6 +1489,12 @@ export interface RodieLocation {
   rodie_username: string
   rodie_first_name: string
   rodie_last_name: string
+  rodie_phone?: string
+  activity_status?: 'ON_JOB' | 'AVAILABLE'
+  service_types?: string[]
+  service_type?: string | null
+  assigned_rider?: MapAssignedParty | null
+  active_request_id?: number | null
   average_rating: number
   wallet_balance: number
   completed_services_count: number
@@ -1482,6 +1515,54 @@ export async function getCombinedRealtimeLocations(): Promise<CombinedRealtimeRe
 
 export async function getCombinedMapData(): Promise<GeoJSONFeatureCollection> {
   return apiRequest<GeoJSONFeatureCollection>("/api/auth/admin/locations/realtime/map/")
+}
+
+export interface SupportTicket {
+  id: number
+  support_id: string
+  user: number
+  user_name: string
+  user_email: string
+  user_phone: string
+  user_type: "RIDER" | "RODIE"
+  subject: string
+  message: string
+  status: "PENDING" | "ONGOING" | "RESOLVED"
+  internal_comments: string | null
+  created_at: string
+  updated_at: string
+  resolved_at: string | null
+}
+
+export async function getSupportTickets(): Promise<SupportTicket[]> {
+  const data = await apiRequest<SupportTicket[] | { results: SupportTicket[] }>(
+    "/api/auth/admin/support-tickets/"
+  )
+  return Array.isArray(data) ? data : data.results || []
+}
+
+export async function updateSupportTicketStatus(
+  id: number,
+  status: string
+): Promise<SupportTicket> {
+  return apiRequest<SupportTicket>(`/api/auth/admin/support-tickets/${id}/update_status/`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  })
+}
+
+export async function addSupportTicketComment(
+  id: number,
+  comment: string
+): Promise<SupportTicket> {
+  return apiRequest<SupportTicket>(`/api/auth/admin/support-tickets/${id}/add_comment/`, {
+    method: "POST",
+    body: JSON.stringify({ comment }),
+  })
+}
+
+export async function deleteSupportTicket(id: number): Promise<void> {
+  await apiRequest(`/api/auth/admin/support-tickets/${id}/`, { method: "DELETE" })
 }
 
 export interface Dispute {

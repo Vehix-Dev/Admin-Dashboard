@@ -109,6 +109,7 @@ export default function EditRiderPage() {
     username: "",
     nin: "",
     is_approved: false,
+    is_active: true,
   })
   const [passwordResetData, setPasswordResetData] = useState({
     new_password: "",
@@ -144,6 +145,7 @@ export default function EditRiderPage() {
           username: data.username,
           nin: data.nin || "",
           is_approved: data.is_approved,
+          is_active: data.is_active !== false,
         })
 
         // Load rider images
@@ -640,7 +642,26 @@ export default function EditRiderPage() {
                           Approved
                         </label>
                         <span className="text-xs text-muted-foreground ml-2">
-                          {formData.is_approved ? "Rider is active and can use the platform" : "Rider is pending approval"}
+                          {formData.is_approved ? "Rider can request services" : "Rider approval revoked"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded border border-destructive/20">
+                        <input
+                          type="checkbox"
+                          id="is_active"
+                          checked={formData.is_active}
+                          onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                          className="rounded text-primary focus:ring-primary border-border"
+                          disabled={!canChange}
+                        />
+                        <label htmlFor="is_active" className="text-sm font-medium text-foreground">
+                          Account active
+                        </label>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {formData.is_active
+                            ? "Rider can sign in and use the app"
+                            : "Account suspended — rider cannot access the app"}
                         </span>
                       </div>
 
@@ -1166,6 +1187,29 @@ export default function EditRiderPage() {
                             <div className="text-sm text-purple-500/80 font-medium">Completion Rate</div>
                           </div>
                         </div>
+
+                        {(rider.summary.rating !== undefined || (rider.summary.reviews?.length ?? 0) > 0) && (
+                          <div className="p-4 rounded-lg border bg-amber-500/10 border-amber-500/20 space-y-3">
+                            <div className="flex items-center gap-3">
+                              <span className="text-3xl font-bold text-amber-600">{rider.summary.rating ?? 0}</span>
+                              <div>
+                                <p className="font-medium text-foreground">Average rating from roadies</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {rider.summary.reviews?.length ?? 0} review(s)
+                                </p>
+                              </div>
+                            </div>
+                            {rider.summary.reviews?.map((review) => (
+                              <div key={review.id} className="p-3 bg-background/60 rounded border text-sm">
+                                <div className="flex justify-between">
+                                  <span className="font-medium">{review.rater_name || review.rater_username}</span>
+                                  <span className="text-amber-600">{"★".repeat(review.rating)}</span>
+                                </div>
+                                {review.comment && <p className="text-muted-foreground mt-1">{review.comment}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
                         {/* Status Breakdown */}
                         <div className="space-y-3">

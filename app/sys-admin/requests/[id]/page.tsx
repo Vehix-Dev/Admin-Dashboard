@@ -736,53 +736,64 @@ export default function RequestDetailPage() {
       )}
 
       {/* Ratings and Comments Section */}
-      {request.ratings && request.ratings.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="h-4 w-4" />
-              Ratings & Comments
-            </CardTitle>
-            <CardDescription>Feedback from service participants</CardDescription>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle>Ratings & Comments</CardTitle>
+          <CardDescription>
+            Star ratings and optional experience comments from the rider and roadie after completion
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {request.ratings && request.ratings.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
-              {request.ratings.map((rating) => (
-                <div key={rating.id} className="p-4 border rounded-lg bg-muted/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{rating.rater_name}</span>
-                      <span className="text-sm text-muted-foreground">rated</span>
-                      <span className="font-medium text-foreground">{rating.rated_user_name}</span>
+              {request.ratings.map((rating) => {
+                const raterLabel =
+                  rating.rater_name ||
+                  (rating as { rater_username?: string }).rater_username ||
+                  `User #${rating.rater}`
+                const ratedLabel =
+                  rating.rated_user_name ||
+                  (rating as { rated_user_username?: string }).rated_user_username ||
+                  `User #${rating.rated_user}`
+                return (
+                  <div key={rating.id} className="p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-foreground">{raterLabel}</span>
+                        <span className="text-sm text-muted-foreground">rated</span>
+                        <span className="font-medium text-foreground">{ratedLabel}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <span
+                            key={i}
+                            className={`text-lg ${i < rating.rating ? "text-yellow-400" : "text-gray-300"}`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                        <span className="text-sm text-muted-foreground ml-2">({rating.rating}/5)</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <span
-                          key={i}
-                          className={`text-lg ${i < rating.rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                      <span className="text-sm text-muted-foreground ml-2">
-                        ({rating.rating}/5)
-                      </span>
-                    </div>
-                  </div>
-                  {rating.comment && (
-                    <p className="text-sm text-muted-foreground italic">
-                      "{rating.comment}"
+                    {rating.comment ? (
+                      <p className="text-sm text-foreground/90 border-l-2 border-primary/30 pl-3">
+                        {rating.comment}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No written comment</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {new Date(rating.created_at).toLocaleString()}
                     </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {new Date(rating.created_at).toLocaleString()}
-                  </p>
-                </div>
-              ))}
+                  </div>
+                )
+              })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className="text-sm text-muted-foreground">No ratings submitted for this assist yet.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Full Width Map Section - Dark Mode Default */}
       {request.rider_lat && request.rider_lng && (
@@ -801,11 +812,9 @@ export default function RequestDetailPage() {
                 zoom={14}
                 className="h-full w-full"
                 zoomControl={false}
-                style={{ background: '#1a1a1a' }}
               >
-                {/* Dark mode tile layer (default) */}
                 <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors'
                 />
 
