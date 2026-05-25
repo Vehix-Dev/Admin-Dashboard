@@ -96,6 +96,11 @@ export async function apiRequest<T>(endpoint: string, options?: RequestInit): Pr
       throw new Error(`API Error (${response.status}): ${errorText}`)
     }
 
+    // Handle responses without a body (e.g., 204 No Content)
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return undefined as T
+    }
+
     return response.json()
   } catch (error) {
     console.error(`API request failed: ${endpoint}`, error)
@@ -121,6 +126,11 @@ export async function apiMultipartRequest<T>(endpoint: string, formData: FormDat
     if (!response.ok) {
       const errorText = await response.text()
       throw new Error(`API Error (${response.status}): ${errorText}`)
+    }
+
+    // Handle responses without a body (e.g., 204 No Content)
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return undefined as T
     }
 
     return response.json()
