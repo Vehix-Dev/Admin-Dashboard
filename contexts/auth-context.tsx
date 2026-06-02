@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setLoginTimestamp(timestamp)
 
                     // Immediate check on initialization
-                    const SESSION_DURATION = 60 * 60 * 1000 // 1 hour
+                    const SESSION_DURATION = 120 * 60 * 1000 // 1 hour
                     if (Date.now() - timestamp >= SESSION_DURATION) {
                         console.log("[Auth] Absolute session expired on init")
                         logout()

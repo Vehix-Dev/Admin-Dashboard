@@ -15,8 +15,7 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { useCan, PermissionButton } from "@/components/auth/permission-guard"
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { AuditService } from "@/lib/audit"
-import { getAdminProfile } from "@/lib/auth"
+import { logUserAction } from "@/lib/audit-logger"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
@@ -107,17 +106,20 @@ export default function AdminUsersPage() {
         try {
             await deleteAdminUser(admin.id)
 
-            // Audit Log
-            const currentUser = await getAdminProfile()
-            AuditService.log(
+            // Audit Log - using new audit logger
+            await logUserAction(
                 "Delete User",
-                "Users",
-                `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
-                currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
-                { userId: admin.id, email: admin.email },
-                undefined,
-                undefined,
-                'critical'
+                admin.id,
+                admin.username || admin.email,
+                {
+                    email: admin.email,
+                    first_name: admin.first_name,
+                    last_name: admin.last_name,
+                    role: admin.role,
+                    is_active: admin.is_active,
+                },
+                null,
+                { reason: 'User deletion via admin panel' }
             )
 
             toast({
@@ -135,23 +137,24 @@ export default function AdminUsersPage() {
     }
 
     const handleStatusToggle = async (admin: AdminUser) => {
+        const newStatus = !admin.is_active
+        
         try {
-            await updateAdminUser(admin.id, { is_active: !admin.is_active })
+            await updateAdminUser(admin.id, { is_active: newStatus })
 
-            // Audit Log
-            const currentUser = await getAdminProfile()
-            AuditService.log(
-                !admin.is_active ? "Enable User" : "Disable User",
-                "Users",
-                `User: ${admin.first_name} ${admin.last_name} (${admin.username})`,
-                currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
+            // Audit Log - using new audit logger
+            await logUserAction(
+                newStatus ? "Enable User" : "Disable User",
+                admin.id,
+                admin.username || admin.email,
                 { is_active: admin.is_active },
-                { is_active: !admin.is_active }
+                { is_active: newStatus },
+                { status_change: newStatus ? 'enabled' : 'disabled' }
             )
 
             toast({
                 title: "Success",
-                description: `Admin user ${!admin.is_active ? "enabled" : "disabled"} successfully`
+                description: `Admin user ${newStatus ? "enabled" : "disabled"} successfully`
             })
             fetchAdmins()
         } catch (err: any) {
