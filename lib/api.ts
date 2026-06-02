@@ -299,7 +299,8 @@ export async function getPendingDeletionUsers(): Promise<AdminUser[]> {
 }
 
 export async function permanentlyDeleteUser(id: number, role: string): Promise<void> {
-  await apiRequest(`/api/auth/admin/users/${id}/permanent-delete/${role}/`, {
+  const normalizedRole = role === 'ROADIE' ? 'RODIE' : role
+  await apiRequest(`/api/auth/admin/users/${id}/permanent-delete/${normalizedRole}/`, {
     method: "DELETE",
   })
 }

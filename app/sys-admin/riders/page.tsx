@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getRiders, updateRider, permanentlyDeleteUser, type Rider, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES, getServiceRequests, type ServiceRequest } from "@/lib/api"
+import { getRiders, updateRider, deleteRider, type Rider, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES, getServiceRequests, type ServiceRequest } from "@/lib/api"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
@@ -223,11 +223,11 @@ export default function RidersPage() {
 
   const handleDelete = async (rider: RiderWithThumbnail) => {
     try {
-      await permanentlyDeleteUser(rider.id, 'RIDER')
+      await deleteRider(rider.id)
 
       const currentUser = await getAdminProfile()
       AuditService.log(
-        "Permanently Delete Rider",
+        "Delete Rider",
         "Riders",
         `Rider: ${rider.first_name} ${rider.last_name} (${rider.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
@@ -236,7 +236,7 @@ export default function RidersPage() {
 
       toast({
         title: "Success",
-        description: "Rider permanently deleted successfully"
+        description: "Rider deleted successfully"
       })
       fetchRiders()
     } catch (err) {
@@ -250,20 +250,20 @@ export default function RidersPage() {
 
   const handleBulkDelete = async (selectedRiders: RiderWithThumbnail[]) => {
     try {
-      await Promise.all(selectedRiders.map(r => permanentlyDeleteUser(r.id, 'RIDER')))
+      await Promise.all(selectedRiders.map(r => deleteRider(r.id)))
 
       const currentUser = await getAdminProfile()
       AuditService.log(
-        "Bulk Permanently Delete Riders",
+        "Bulk Delete Riders",
         "Riders",
-        `Permanently deleted ${selectedRiders.length} riders`,
+        `Deleted ${selectedRiders.length} riders`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { count: selectedRiders.length, riderIds: selectedRiders.map(r => r.id) }
       )
 
       toast({
         title: "Success",
-        description: `${selectedRiders.length} riders permanently deleted successfully`
+        description: `${selectedRiders.length} riders deleted successfully`
       })
       fetchRiders()
     } catch (err) {

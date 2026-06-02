@@ -23,9 +23,12 @@ import { Calendar as DatePicker } from "@/components/ui/calendar"
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 
 interface Transaction {
-    id: number
+    id: number | string
+    type?: string
     amount: string
     reason: string
+    status?: string
+    reference?: string
     created_at: string
 }
 
@@ -124,12 +127,23 @@ export default function WalletDetailsPage() {
         return "text-destructive"
     }
 
-    const getTransactionType = (amount: number) => {
+    const getTransactionType = (transaction: Transaction, amount: number) => {
+        if (transaction.type === "DEPOSIT") return "Deposit"
+        if (transaction.type === "WITHDRAWAL") return "Withdrawal"
+        if ((transaction.reason || "").toLowerCase().includes("service fee")) return "Service Fee Deduction"
         return amount >= 0 ? "Credit" : "Debit"
     }
 
-    const getTransactionTypeColor = (amount: number) => {
-        return amount >= 0 ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500" : "border-destructive/20 bg-destructive/10 text-destructive"
+    const getTransactionTypeColor = (transaction: Transaction, amount: number) => {
+        return transaction.type === "DEPOSIT" || amount >= 0
+            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+            : "border-destructive/20 bg-destructive/10 text-destructive"
+    }
+
+    const getSignedAmount = (transaction: Transaction) => {
+        const amount = parseFloat(transaction.amount)
+        if (transaction.type === "WITHDRAWAL" && amount > 0) return -amount
+        return amount
     }
 
     const getUserRole = () => {
@@ -156,12 +170,12 @@ export default function WalletDetailsPage() {
 
         const transactions = getFilteredTransactions()
         const totalCredits = transactions
-            .filter(t => parseFloat(t.amount) >= 0)
-            .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+            .filter(t => getSignedAmount(t) >= 0)
+            .reduce((sum, t) => sum + getSignedAmount(t), 0)
 
         const totalDebits = transactions
-            .filter(t => parseFloat(t.amount) < 0)
-            .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0)
+            .filter(t => getSignedAmount(t) < 0)
+            .reduce((sum, t) => sum + Math.abs(getSignedAmount(t)), 0)
 
         const firstTransaction = transactions.length > 0
             ? new Date(transactions[transactions.length - 1].created_at)
@@ -178,8 +192,8 @@ export default function WalletDetailsPage() {
             netChange: totalCredits - totalDebits,
             firstTransaction,
             lastTransaction,
-            creditCount: transactions.filter(t => parseFloat(t.amount) >= 0).length,
-            debitCount: transactions.filter(t => parseFloat(t.amount) < 0).length,
+            creditCount: transactions.filter(t => getSignedAmount(t) >= 0).length,
+            debitCount: transactions.filter(t => getSignedAmount(t) < 0).length,
         }
     }
 
@@ -202,7 +216,7 @@ export default function WalletDetailsPage() {
 
         const headers = ['ID', 'Date', 'Time', 'Description', 'Type', 'Amount (UGX)', 'Running Balance (UGX)']
         const csvData = filteredTransactions.map((t, index) => {
-            const amount = parseFloat(t.amount)
+            const amount = getSignedAmount(t)
             const date = new Date(t.created_at)
             const runningBalance = filteredTransactions
                 .slice(0, index + 1)
@@ -213,7 +227,7 @@ export default function WalletDetailsPage() {
                 date.toLocaleDateString(),
                 date.toLocaleTimeString(),
                 `"${t.reason}"`,
-                amount >= 0 ? 'Credit' : 'Debit',
+                getTransactionType(t, amount),
                 amount,
                 runningBalance
             ]
@@ -361,13 +375,13 @@ export default function WalletDetailsPage() {
                                 <div className="flex justify-between items-center text-foreground">
                                     <span className="text-sm">Created:</span>
                                     <span className="font-medium text-sm">
-                                        {new Date(wallet.created_at).toLocaleDateString()}
+                                        {wallet.created_at ? new Date(wallet.created_at).toLocaleDateString() : "N/A"}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center text-foreground">
                                     <span className="text-sm">Updated:</span>
                                     <span className="font-medium text-sm">
-                                        {new Date(wallet.updated_at).toLocaleDateString()}
+                                        {wallet.updated_at ? new Date(wallet.updated_at).toLocaleDateString() : "N/A"}
                                     </span>
                                 </div>
                                 {stats?.firstTransaction && (
@@ -516,20 +530,20 @@ export default function WalletDetailsPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredTransactions.map((transaction, index) => {
-                                        const amount = parseFloat(transaction.amount)
+                                        const amount = getSignedAmount(transaction)
                                         const isCredit = amount >= 0
                                         const transactionDate = new Date(transaction.created_at)
 
                                         // Calculate running balance
                                         const runningBalance = filteredTransactions
                                             .slice(0, index + 1)
-                                            .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+                                            .reduce((sum, t) => sum + getSignedAmount(t), 0)
 
                                         return (
                                             <TableRow key={transaction.id} className="hover:bg-muted/30 border-b border-border transition-colors">
                                                 <TableCell>
                                                     <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-foreground border">
-                                                        TX{transaction.id.toString().padStart(4, '0')}
+                                                        {String(transaction.reference || transaction.id).replace(/^transaction_/, "TX").replace(/^payment_/, "PAY")}
                                                     </code>
                                                 </TableCell>
                                                 <TableCell>
@@ -546,10 +560,11 @@ export default function WalletDetailsPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="font-medium text-foreground">{transaction.reason}</div>
+                                                    {transaction.status && <div className="text-xs text-muted-foreground">{transaction.status}</div>}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline" className={cn("font-medium", getTransactionTypeColor(amount))}>
-                                                        {getTransactionType(amount)}
+                                                    <Badge variant="outline" className={cn("font-medium", getTransactionTypeColor(transaction, amount))}>
+                                                        {getTransactionType(transaction, amount)}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right">

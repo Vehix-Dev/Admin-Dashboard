@@ -74,7 +74,7 @@ export default function JobsPerformanceReportPage() {
             if (startDate) params.append("start_date", format(startDate, "yyyy-MM-dd"))
             if (endDate) params.append("end_date", format(endDate, "yyyy-MM-dd"))
 
-            const response = await fetch(`/api/auth/admin/reports/jobs-performance?${params}`, {
+            const response = await fetch(`/api/auth/admin/reports/jobs-performance/?${params}`, {
                 headers: {
                     "Authorization": `Bearer ${localStorage.getItem("admin_access_token")}`,
                 }
@@ -82,6 +82,8 @@ export default function JobsPerformanceReportPage() {
             if (response.ok) {
                 const data = await response.json()
                 setMetrics(data)
+            } else {
+                throw new Error(`Failed to load performance metrics (${response.status})`)
             }
         } catch (error) {
             console.error("Failed to fetch metrics", error)

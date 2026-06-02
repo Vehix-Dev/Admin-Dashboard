@@ -48,9 +48,12 @@ interface WalletWithUser {
     user_type: "Rider" | "Roadie" | "Unknown"
     balance: string
     transactions: Array<{
-        id: number
+        id: number | string
+        type?: string
         amount: string
         reason: string
+        status?: string
+        reference?: string
         created_at: string
     }>
 }
@@ -142,6 +145,12 @@ export default function WalletsPage() {
     })
 
     // Stats based on all filtered wallets
+    const getSignedTransactionAmount = (transaction: WalletWithUser["transactions"][number]) => {
+        const amount = parseFloat(transaction.amount || "0")
+        if (transaction.type === "WITHDRAWAL" && amount > 0) return -amount
+        return amount
+    }
+
     const calculateStats = () => {
         const data = filteredWallets
         if (data.length === 0) {
@@ -169,8 +178,8 @@ export default function WalletsPage() {
         const totalRiderBalance = data.filter(w => w.user_type === "Rider").reduce((sum, wallet) => sum + parseFloat(wallet.balance), 0)
         const totalRoadieBalance = data.filter(w => w.user_type === "Roadie").reduce((sum, wallet) => sum + parseFloat(wallet.balance), 0)
         const allTransactions = data.flatMap(wallet => wallet.transactions || [])
-        const totalDeposits = allTransactions.filter(t => parseFloat(t.amount) > 0).reduce((sum, t) => sum + parseFloat(t.amount), 0)
-        const totalWithdrawals = allTransactions.filter(t => parseFloat(t.amount) < 0).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0)
+        const totalDeposits = allTransactions.filter(t => getSignedTransactionAmount(t) > 0).reduce((sum, t) => sum + getSignedTransactionAmount(t), 0)
+        const totalWithdrawals = allTransactions.filter(t => getSignedTransactionAmount(t) < 0).reduce((sum, t) => sum + Math.abs(getSignedTransactionAmount(t)), 0)
         const outstandingRoadieBalance = Math.abs(data.filter(w => w.user_type === "Roadie" && parseFloat(w.balance) < 0).reduce((sum, wallet) => sum + parseFloat(wallet.balance), 0))
 
         return {
@@ -221,12 +230,12 @@ export default function WalletsPage() {
         },
         {
             header: "Total Deposits",
-            accessor: (row: WalletWithUser) => row.transactions.filter(t => parseFloat(t.amount) > 0).reduce((sum, t) => sum + parseFloat(t.amount), 0),
+            accessor: (row: WalletWithUser) => row.transactions.filter(t => getSignedTransactionAmount(t) > 0).reduce((sum, t) => sum + getSignedTransactionAmount(t), 0),
             cell: (value: number) => <span className="font-mono text-emerald-600">{formatCurrency(value)}</span>,
         },
         {
             header: "Total Withdrawals",
-            accessor: (row: WalletWithUser) => row.transactions.filter(t => parseFloat(t.amount) < 0).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0),
+            accessor: (row: WalletWithUser) => row.transactions.filter(t => getSignedTransactionAmount(t) < 0).reduce((sum, t) => sum + Math.abs(getSignedTransactionAmount(t)), 0),
             cell: (value: number) => <span className="font-mono text-destructive">{formatCurrency(value)}</span>,
         },
         {

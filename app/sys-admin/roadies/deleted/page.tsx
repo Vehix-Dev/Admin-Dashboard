@@ -63,7 +63,7 @@ export default function DeletedRoadiesPage() {
     const handlePermanentDelete = async () => {
         if (!deleteTarget) return
         try {
-            await permanentlyDeleteUser(deleteTarget.id, 'ROADIE')
+            await permanentlyDeleteUser(deleteTarget.id, 'RODIE')
             toast({
                 title: "Success",
                 description: "Roadie permanently deleted"

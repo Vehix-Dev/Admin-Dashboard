@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getRoadies, updateRoadie, permanentlyDeleteUser, type Roadie, getCombinedRealtimeLocations, getServiceRequests, type ServiceRequest, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES, getRoadieFleetOnlineTime } from "@/lib/api"
+import { getRoadies, updateRoadie, deleteRoadie, type Roadie, getCombinedRealtimeLocations, getServiceRequests, type ServiceRequest, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES, getRoadieFleetOnlineTime } from "@/lib/api"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
@@ -251,11 +251,11 @@ export default function RoadiesPage() {
 
   const handleDelete = async (roadie: RoadieWithThumbnail) => {
     try {
-      await permanentlyDeleteUser(roadie.id, 'ROADIE')
+      await deleteRoadie(roadie.id)
 
       const currentUser = await getAdminProfile()
       AuditService.log(
-        "Permanently Delete Roadie",
+        "Delete Roadie",
         "Roadies",
         `Roadie: ${roadie.first_name} ${roadie.last_name} (${roadie.username})`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
@@ -263,7 +263,7 @@ export default function RoadiesPage() {
       )
       toast({
         title: "Success",
-        description: "Roadie permanently deleted successfully"
+        description: "Roadie deleted successfully"
       })
       fetchRoadies()
     } catch (err) {
@@ -277,20 +277,20 @@ export default function RoadiesPage() {
 
   const handleBulkDelete = async (selectedRoadies: RoadieWithThumbnail[]) => {
     try {
-      await Promise.all(selectedRoadies.map(r => permanentlyDeleteUser(r.id, 'ROADIE')))
+      await Promise.all(selectedRoadies.map(r => deleteRoadie(r.id)))
 
       const currentUser = await getAdminProfile()
       AuditService.log(
-        "Bulk Permanently Delete Roadies",
+        "Bulk Delete Roadies",
         "Roadies",
-        `Permanently deleted ${selectedRoadies.length} roadies`,
+        `Deleted ${selectedRoadies.length} roadies`,
         currentUser?.username || currentUser?.name || currentUser?.email || "Unknown",
         { count: selectedRoadies.length, roadieIds: selectedRoadies.map(r => r.id) }
       )
 
       toast({
         title: "Success",
-        description: `${selectedRoadies.length} roadies permanently deleted successfully`
+        description: `${selectedRoadies.length} roadies deleted successfully`
       })
       fetchRoadies()
     } catch (err) {
@@ -443,6 +443,15 @@ export default function RoadiesPage() {
           </span>
         )
       },
+    },
+    {
+      header: "Rating",
+      accessor: (row: RoadieWithThumbnail) => row.rating ?? row.summary?.rating ?? 5,
+      cell: (value: number) => (
+        <span className="font-mono text-sm font-semibold text-amber-600">
+          {Number(value || 5).toFixed(1)} / 5
+        </span>
+      ),
     },
     {
       header: "Device",
