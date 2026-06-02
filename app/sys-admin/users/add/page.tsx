@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createAdminUser } from "@/lib/api"
+import { createAdminUser, getAdminUsers } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Save, Eye, EyeOff, Loader2 } from "lucide-react"
@@ -111,18 +111,25 @@ export default function AddAdminPage() {
         try {
             // 1. Create User (Django API)
             const response = await createAdminUser({
-                first_name: formData.first_name,
-                last_name: formData.last_name,
-                email: formData.email,
-                phone: formData.phone,
-                username: formData.username,
+                first_name: formData.first_name.trim(),
+                last_name: formData.last_name.trim(),
+                email: formData.email.trim(),
+                phone: formData.phone.trim(),
+                username: formData.username.trim(),
                 password: formData.password,
-                is_active: formData.is_active
+                is_active: formData.is_active,
+                is_approved: true
             })
 
             // 2. Assign Groups (JSON DB)
-            if (response && response.id) {
-                const userId = String(response.id);
+            let userId = response?.id ? String(response.id) : ""
+            if (!userId) {
+                const users = await getAdminUsers()
+                const createdUser = users.find(user => user.username === formData.username.trim())
+                userId = createdUser?.id ? String(createdUser.id) : ""
+            }
+
+            if (userId) {
                 // Assign permissions/groups
                 const groupsRes = await fetch(`/sys-api/admin/users/${userId}/groups`, {
                     method: 'POST',
@@ -131,6 +138,8 @@ export default function AddAdminPage() {
                 })
 
                 if (!groupsRes.ok) throw new Error("Created user but failed to assign groups")
+            } else {
+                throw new Error("Created user but could not resolve the user ID to grant dashboard access")
             }
 
             toast({

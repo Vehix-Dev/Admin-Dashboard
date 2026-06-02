@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DataTable } from "@/components/management/data-table"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { getRiders, updateRider, permanentlyDeleteUser, type Rider, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES } from "@/lib/api"
+import { getRiders, updateRider, permanentlyDeleteUser, type Rider, getAllThumbnails, type ThumbnailInfo, IMAGE_TYPES, getServiceRequests, type ServiceRequest } from "@/lib/api"
 import { AuditService } from "@/lib/audit"
 import { getAdminProfile } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
@@ -52,6 +52,9 @@ export default function RidersPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchInput, setSearchInput] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [activityFilter, setActivityFilter] = useState<string>("all")
+  const [activeRiderIds, setActiveRiderIds] = useState<Set<number>>(new Set())
+  const [activeRequestCount, setActiveRequestCount] = useState(0)
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const [showFilters, setShowFilters] = useState(false)
@@ -93,6 +96,7 @@ export default function RidersPage() {
 
   const clearFilters = () => {
     setStatusFilter("all")
+    setActivityFilter("all")
     setStartDate(undefined)
     setEndDate(undefined)
   }
@@ -100,7 +104,19 @@ export default function RidersPage() {
   const fetchRiders = async () => {
     setIsLoading(true)
     try {
-      const data = await getRiders()
+      const [data, requests] = await Promise.all([
+        getRiders(),
+        getServiceRequests().catch(() => [] as ServiceRequest[]),
+      ])
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const activeSet = new Set<number>()
+      requests.forEach((req) => {
+        if (!req.rider) return
+        if (new Date(req.created_at) >= sevenDaysAgo) activeSet.add(req.rider)
+      })
+      setActiveRiderIds(activeSet)
+      setActiveRequestCount(requests.filter(req => ["REQUESTED", "ACCEPTED", "EN_ROUTE", "STARTED"].includes((req.status || "").toUpperCase())).length)
       const ridersWithThumbnails = data as RiderWithThumbnail[]
       setRiders(ridersWithThumbnails)
       setFilteredRiders(ridersWithThumbnails)
@@ -184,6 +200,15 @@ export default function RidersPage() {
       filtered = filtered.filter(rider => rider.is_approved === isApproved)
     }
 
+    if (activityFilter !== "all") {
+      filtered = filtered.filter((rider) => {
+        const isActive = activeRiderIds.has(rider.id)
+        if (activityFilter === "active") return isActive
+        if (activityFilter === "inactive") return !isActive
+        return true
+      })
+    }
+
     if (startDate || endDate) {
       filtered = filtered.filter(rider => {
         const requestDate = new Date(rider.created_at)
@@ -194,7 +219,7 @@ export default function RidersPage() {
     }
 
     setFilteredRiders(filtered)
-  }, [searchQuery, statusFilter, startDate, endDate, riders])
+  }, [searchQuery, statusFilter, activityFilter, startDate, endDate, riders, activeRiderIds])
 
   const handleDelete = async (rider: RiderWithThumbnail) => {
     try {
@@ -363,15 +388,6 @@ export default function RidersPage() {
       )
     },
     {
-      header: "NIN",
-      accessor: "nin" as const,
-      cell: (value: string) => (
-        <span className="font-mono text-[10px] bg-muted px-2 py-0.5 rounded border border-border/50 text-foreground tracking-tighter">
-          {value || "N/A"}
-        </span>
-      ),
-    },
-    {
       header: "Device",
       accessor: "device_type" as const,
       cell: (value: string | null) => (
@@ -379,11 +395,11 @@ export default function RidersPage() {
       ),
     },
     {
-      header: "Online",
+      header: "Activity",
       accessor: "is_online" as const,
-      cell: (value: boolean) => (
-        <Badge variant={value ? "default" : "outline"} className={value ? "bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase" : "text-muted-foreground border-border text-[10px] font-bold uppercase"}>
-          {value ? "Online" : "Offline"}
+      cell: (value: boolean, row: RiderWithThumbnail) => (
+        <Badge variant={activeRiderIds.has(row.id) ? "default" : "outline"} className={activeRiderIds.has(row.id) ? "bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase" : "text-muted-foreground border-border text-[10px] font-bold uppercase"}>
+          {activeRiderIds.has(row.id) ? "In Request" : "Idle"}
         </Badge>
       )
     },
@@ -405,9 +421,9 @@ export default function RidersPage() {
             {statusToggling.includes(row.id) && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
             <div className="flex items-center gap-1">
               {value ? (
-                <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Approved</Badge>
+                <Badge variant="outline" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 text-[10px] font-bold uppercase">Activated</Badge>
               ) : (
-                <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20 text-[10px] font-bold uppercase">Pending</Badge>
+                <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20 text-[10px] font-bold uppercase">Deactivated</Badge>
               )}
             </div>
           </div>
@@ -434,17 +450,19 @@ export default function RidersPage() {
   const totalRiders = riders.length
   const shownRiders = filteredRiders.length
   const searchActive = searchQuery.trim() !== ""
-  const filtersActive = statusFilter !== "all" || startDate !== undefined || endDate !== undefined
-  const activeRiders = riders.filter(r => r.is_approved).length
-  const pendingRiders = riders.filter(r => !r.is_approved).length
+  const filtersActive = statusFilter !== "all" || activityFilter !== "all" || startDate !== undefined || endDate !== undefined
+  const activeRiders = riders.filter(r => activeRiderIds.has(r.id)).length
+  const inactiveRiders = riders.filter(r => !activeRiderIds.has(r.id)).length
+  const activatedRiders = riders.filter(r => r.is_approved).length
+  const deactivatedRiders = riders.filter(r => !r.is_approved).length
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Customers</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Riders</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage rider accounts and system access
+            Manage Rider's Accounts
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -454,47 +472,27 @@ export default function RidersPage() {
             className="gap-2 bg-primary hover:bg-primary/90 text-white font-mono h-10"
           >
             <Plus className="h-4 w-4" />
-            Add Customer
+            Add Rider
           </PermissionButton>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
-        <Card className="border-border/50 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Total Customers</p>
-              <p className="text-2xl font-bold mt-1 text-foreground">{totalRiders}</p>
-            </div>
-            <div className="bg-primary/10 p-2.5 rounded-xl">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Active</p>
-              <p className="text-2xl font-bold mt-1 text-emerald-500">{activeRiders}</p>
-            </div>
-            <div className="bg-emerald-500/10 p-2.5 rounded-xl">
-              <Check className="h-5 w-5 text-emerald-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Pending Approval</p>
-              <p className="text-2xl font-bold mt-1 text-amber-500">{pendingRiders}</p>
-            </div>
-            <div className="bg-amber-500/10 p-2.5 rounded-xl">
-              <XCircle className="h-5 w-5 text-amber-500" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 font-mono">
+        {[
+          { label: "Total Riders", value: totalRiders, color: "text-foreground" },
+          { label: "Active Riders", value: activeRiders, color: "text-emerald-500" },
+          { label: "Inactive Riders", value: inactiveRiders, color: "text-muted-foreground" },
+          { label: "Activated Riders", value: activatedRiders, color: "text-blue-500" },
+          { label: "Deactivated Riders", value: deactivatedRiders, color: "text-amber-500" },
+          { label: "Active Requests", value: activeRequestCount, color: "text-purple-500" },
+        ].map((stat) => (
+          <Card key={stat.label} className="border-border/50 shadow-sm">
+            <CardContent className="p-3">
+              <p className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">{stat.label}</p>
+              <p className={`text-xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="bg-card rounded-lg border border-border shadow-sm p-4">
@@ -504,7 +502,7 @@ export default function RidersPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search by name, email, phone, username, NIN..."
+                placeholder="Search by Rider ID, name, email, phone, or username..."
                 value={searchInput}
                 onChange={handleSearchChange}
                 className="pl-10 pr-20 font-mono text-sm bg-background border-border"
@@ -573,8 +571,22 @@ export default function RidersPage() {
                 </SelectTrigger>
                 <SelectContent className="font-mono text-xs">
                   <SelectItem value="all">ALL STATUSES</SelectItem>
-                  <SelectItem value="approved">ACTIVE ONLY</SelectItem>
-                  <SelectItem value="pending">PENDING ONLY</SelectItem>
+                  <SelectItem value="approved">ACTIVATED ONLY</SelectItem>
+                  <SelectItem value="pending">DEACTIVATED ONLY</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Activity</label>
+              <Select value={activityFilter} onValueChange={setActivityFilter}>
+                <SelectTrigger className="bg-background border-border font-mono text-xs h-10">
+                  <SelectValue placeholder="Select activity" />
+                </SelectTrigger>
+                <SelectContent className="font-mono text-xs">
+                  <SelectItem value="all">ALL ACTIVITY</SelectItem>
+                  <SelectItem value="active">IN REQUEST</SelectItem>
+                  <SelectItem value="inactive">IDLE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -700,10 +712,10 @@ export default function RidersPage() {
             onDelete={canDelete ? handleDelete : undefined}
             onBulkDelete={canDelete ? handleBulkDelete : undefined}
             onExport={() => { }} // Now handled internally by DataTable
-            deleteConfirmTitle="Delete Customer"
-            deleteConfirmDescription="Are you sure you want to delete this customer account? This action cannot be undone."
-            bulkDeleteConfirmTitle="Delete Multiple Customers"
-            bulkDeleteConfirmDescription="Are you sure you want to delete the selected customer accounts? This action cannot be undone."
+            deleteConfirmTitle="Delete Rider"
+            deleteConfirmDescription="Are you sure you want to delete this rider account? This action cannot be undone."
+            bulkDeleteConfirmTitle="Delete Multiple Riders"
+            bulkDeleteConfirmDescription="Are you sure you want to delete the selected rider accounts? This action cannot be undone."
             renderConfirmDetails={(rider) => (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">

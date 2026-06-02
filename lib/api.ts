@@ -96,12 +96,14 @@ export async function apiRequest<T>(endpoint: string, options?: RequestInit): Pr
       throw new Error(`API Error (${response.status}): ${errorText}`)
     }
 
-    // Handle responses without a body (e.g., 204 No Content)
-    if (response.status === 204 || response.headers.get('content-length') === '0') {
+    // Handle responses without a body. Some API endpoints return 200 with an
+    // empty body after successful mutations such as DELETE.
+    const responseText = await response.text()
+    if (response.status === 204 || responseText.trim() === "") {
       return undefined as T
     }
 
-    return response.json()
+    return JSON.parse(responseText)
   } catch (error) {
     console.error(`API request failed: ${endpoint}`, error)
     throw error
@@ -1238,9 +1240,6 @@ export async function updateRoadie(id: number, data: Partial<Roadie>): Promise<R
 }
 
 export async function deleteRoadie(id: number): Promise<void> {
-  await apiRequest(`/api/auth/admin/roadies/${id}/`, {
-    method: "DELETE",
-  })
   await apiRequest(`/api/auth/admin/roadies/${id}/`, {
     method: "DELETE",
   })

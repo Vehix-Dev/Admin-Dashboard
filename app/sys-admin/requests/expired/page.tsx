@@ -266,6 +266,11 @@ export default function ExpiredRequestsPage() {
             ),
         },
         {
+            header: "Location",
+            accessor: (row: RequestRow) => formatLocation(row.rider_lat, row.rider_lng),
+            cell: (value: string) => <span className="font-mono text-xs text-muted-foreground">{value}</span>,
+        },
+        {
             header: "Expired At",
             accessor: "updated_at" as const,
             cell: (value: string) => formatDate(value),
@@ -274,6 +279,16 @@ export default function ExpiredRequestsPage() {
             header: "Created",
             accessor: "created_at" as const,
             cell: (value: string) => formatDate(value),
+        },
+        {
+            header: "Action",
+            accessor: "id" as const,
+            cell: (value: string) => (
+                <Button variant="ghost" size="sm" onClick={() => handleIdClick(value)} className="gap-2">
+                    View
+                    <ExternalLink className="h-3 w-3" />
+                </Button>
+            ),
         }
     ]
 

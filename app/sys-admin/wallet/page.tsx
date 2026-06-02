@@ -37,6 +37,7 @@ import { format, subDays, isWithinInterval, startOfDay, endOfDay } from "date-fn
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Updated Wallet interface to match new API response
 interface WalletWithUser {
@@ -44,6 +45,7 @@ interface WalletWithUser {
     user_id: number
     user_external_id: string | null
     user_username: string
+    user_type: "Rider" | "Roadie" | "Unknown"
     balance: string
     transactions: Array<{
         id: number
@@ -61,6 +63,7 @@ export default function WalletsPage() {
     const [startDate, setStartDate] = useState<Date | undefined>(undefined)
     const [endDate, setEndDate] = useState<Date | undefined>(undefined)
     const [showFilters, setShowFilters] = useState(false)
+    const [userTypeFilter, setUserTypeFilter] = useState<string>("all")
     const [platformConfig, setPlatformConfig] = useState<PlatformConfig | null>(null)
     const { toast } = useToast()
     const canView = useCan(PERMISSIONS.WALLET_VIEW)
@@ -87,6 +90,7 @@ export default function WalletsPage() {
                     user_id: user?.id || wallet.user, // Use profile ID if found, else generic user ID
                     user_external_id: user?.external_id || null,
                     user_username: user?.username || 'Unknown User',
+                    user_type: rider ? "Rider" : roadie ? "Roadie" : "Unknown",
                     balance: wallet.balance,
                     transactions: wallet.transactions || []
                 }
@@ -126,7 +130,15 @@ export default function WalletsPage() {
             (wallet.user_id && wallet.user_id.toString().includes(searchLower))
         )
 
-        return matchesSearch
+        const matchesUserType = userTypeFilter === "all" || wallet.user_type.toLowerCase() === userTypeFilter
+        const matchesDate = (!startDate && !endDate) || wallet.transactions.some((transaction) => {
+            const transactionDate = new Date(transaction.created_at)
+            const start = startDate ? startOfDay(startDate) : new Date(0)
+            const end = endDate ? endOfDay(endDate) : new Date()
+            return isWithinInterval(transactionDate, { start, end })
+        })
+
+        return matchesSearch && matchesUserType && matchesDate
     })
 
     // Stats based on all filtered wallets
@@ -139,7 +151,12 @@ export default function WalletsPage() {
                 positiveBalanceCount: 0,
                 negativeBalanceCount: 0,
                 totalRiders: 0,
-                totalRoadies: 0
+                totalRoadies: 0,
+                totalRiderBalance: 0,
+                totalRoadieBalance: 0,
+                totalDeposits: 0,
+                totalWithdrawals: 0,
+                outstandingRoadieBalance: 0,
             }
         }
 
@@ -149,6 +166,12 @@ export default function WalletsPage() {
 
         const totalRiders = data.filter(w => w.user_external_id?.startsWith('R')).length
         const totalRoadies = data.filter(w => w.user_external_id?.startsWith('BS')).length
+        const totalRiderBalance = data.filter(w => w.user_type === "Rider").reduce((sum, wallet) => sum + parseFloat(wallet.balance), 0)
+        const totalRoadieBalance = data.filter(w => w.user_type === "Roadie").reduce((sum, wallet) => sum + parseFloat(wallet.balance), 0)
+        const allTransactions = data.flatMap(wallet => wallet.transactions || [])
+        const totalDeposits = allTransactions.filter(t => parseFloat(t.amount) > 0).reduce((sum, t) => sum + parseFloat(t.amount), 0)
+        const totalWithdrawals = allTransactions.filter(t => parseFloat(t.amount) < 0).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0)
+        const outstandingRoadieBalance = Math.abs(data.filter(w => w.user_type === "Roadie" && parseFloat(w.balance) < 0).reduce((sum, wallet) => sum + parseFloat(wallet.balance), 0))
 
         return {
             totalWallets: data.length,
@@ -156,7 +179,12 @@ export default function WalletsPage() {
             positiveBalanceCount,
             negativeBalanceCount,
             totalRiders,
-            totalRoadies
+            totalRoadies,
+            totalRiderBalance,
+            totalRoadieBalance,
+            totalDeposits,
+            totalWithdrawals,
+            outstandingRoadieBalance,
         }
     }
 
@@ -183,14 +211,23 @@ export default function WalletsPage() {
             )
         },
         {
-            header: "Role",
-            accessor: "user_external_id",
+            header: "User Type",
+            accessor: "user_type",
             cell: (value) => {
-                if (!value) return <Badge variant="outline" className="text-muted-foreground">Unknown</Badge>
-                if (value.startsWith('R')) return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200">Rider</Badge>
-                if (value.startsWith('BS')) return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200">Roadie</Badge>
-                return <Badge variant="outline">{value}</Badge>
+                if (value === "Rider") return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200">Rider</Badge>
+                if (value === "Roadie") return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200">Roadie</Badge>
+                return <Badge variant="outline" className="text-muted-foreground">Unknown</Badge>
             }
+        },
+        {
+            header: "Total Deposits",
+            accessor: (row: WalletWithUser) => row.transactions.filter(t => parseFloat(t.amount) > 0).reduce((sum, t) => sum + parseFloat(t.amount), 0),
+            cell: (value: number) => <span className="font-mono text-emerald-600">{formatCurrency(value)}</span>,
+        },
+        {
+            header: "Total Withdrawals",
+            accessor: (row: WalletWithUser) => row.transactions.filter(t => parseFloat(t.amount) < 0).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0),
+            cell: (value: number) => <span className="font-mono text-destructive">{formatCurrency(value)}</span>,
         },
         {
             header: "Balance",
@@ -265,7 +302,7 @@ export default function WalletsPage() {
             ) : (
                 <>
                     {/* Stats Cards */}
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
                         <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
@@ -274,6 +311,46 @@ export default function WalletsPage() {
                             <CardContent>
                                 <div className="text-2xl font-bold text-emerald-500">{formatCurrency(stats.totalBalance)}</div>
                                 <p className="text-xs text-muted-foreground mt-1">Across {stats.totalWallets} wallets</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Rider Wallet Balance</CardTitle>
+                                <User className="h-4 w-4 text-blue-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold text-blue-500">{formatCurrency(stats.totalRiderBalance)}</div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Roadie Wallet Balance</CardTitle>
+                                <Wrench className="h-4 w-4 text-purple-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold text-purple-500">{formatCurrency(stats.totalRoadieBalance)}</div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-emerald-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold text-emerald-500">{formatCurrency(stats.totalDeposits)}</div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-destructive/20 bg-gradient-to-br from-destructive/5 to-transparent">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Withdrawals</CardTitle>
+                                <TrendingDown className="h-4 w-4 text-destructive" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xl font-bold text-destructive">{formatCurrency(stats.totalWithdrawals)}</div>
                             </CardContent>
                         </Card>
 
@@ -305,12 +382,12 @@ export default function WalletsPage() {
 
                         <Card className="border-destructive/20 bg-gradient-to-br from-destructive/5 to-transparent">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Negative Balances</CardTitle>
+                                <CardTitle className="text-sm font-medium">Outstanding Balance</CardTitle>
                                 <TrendingDown className="h-4 w-4 text-destructive" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-destructive">{stats.negativeBalanceCount}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Users owing fees</p>
+                                <div className="text-xl font-bold text-destructive">{formatCurrency(stats.outstandingRoadieBalance)}</div>
+                                <p className="text-xs text-muted-foreground mt-1">Negative Roadie wallets</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -327,7 +404,63 @@ export default function WalletsPage() {
                                 />
                                 <Filter className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             </div>
+                            <Button variant={showFilters ? "default" : "outline"} onClick={() => setShowFilters(!showFilters)} className="gap-2">
+                                <Filter className="h-4 w-4" />
+                                Filters
+                            </Button>
                         </div>
+
+                        {showFilters && (
+                            <div className="grid gap-4 rounded-lg border border-border bg-card p-4 md:grid-cols-3">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium">User Type</label>
+                                    <Select value={userTypeFilter} onValueChange={setUserTypeFilter}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All users" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Users</SelectItem>
+                                            <SelectItem value="rider">Rider</SelectItem>
+                                            <SelectItem value="roadie">Roadie</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium">Start Date</label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-start text-left">
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium">End Date</label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-start text-left">
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="md:col-span-3 flex justify-end">
+                                    <Button variant="ghost" size="sm" onClick={() => { setUserTypeFilter("all"); setStartDate(undefined); setEndDate(undefined) }}>
+                                        <X className="mr-2 h-4 w-4" />
+                                        Clear Filters
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
 
                         {filteredWallets.length === 0 ? (
                             <EmptyState

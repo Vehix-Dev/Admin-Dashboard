@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import {
     getAllImages,
     updateImageStatus,
@@ -29,6 +30,7 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 
 export default function MediaModerationPage() {
+    const searchParams = useSearchParams()
     const [images, setImages] = useState<AdminImage[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [filterStatus, setFilterStatus] = useState<string>("ALL")
@@ -38,6 +40,13 @@ export default function MediaModerationPage() {
 
     const { toast } = useToast()
     const canManage = useCan(PERMISSIONS.MEDIA_MANAGE)
+
+    useEffect(() => {
+        const type = searchParams.get("type")
+        if (type === "riders" || type === "roadies") {
+            setActiveTab(type)
+        }
+    }, [searchParams])
 
     const fetchImages = async () => {
         setIsLoading(true)

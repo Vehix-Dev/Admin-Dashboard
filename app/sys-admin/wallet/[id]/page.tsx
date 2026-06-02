@@ -18,6 +18,9 @@ import { useToast } from "@/hooks/use-toast"
 import { ArrowLeft, ExternalLink, DollarSign, Calendar, Clock, User, Wallet as WalletIcon, FileDown, Printer } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as DatePicker } from "@/components/ui/calendar"
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 
 interface Transaction {
     id: number
@@ -43,6 +46,8 @@ export default function WalletDetailsPage() {
     const [wallet, setWallet] = useState<WalletWithUser | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [platformConfig, setPlatformConfig] = useState<PlatformConfig | null>(null)
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined)
     const { toast } = useToast()
 
     const walletId = params.id as string
@@ -149,7 +154,7 @@ export default function WalletDetailsPage() {
     const calculateStats = () => {
         if (!wallet) return null
 
-        const transactions = wallet.transactions || []
+        const transactions = getFilteredTransactions()
         const totalCredits = transactions
             .filter(t => parseFloat(t.amount) >= 0)
             .reduce((sum, t) => sum + parseFloat(t.amount), 0)
@@ -178,16 +183,28 @@ export default function WalletDetailsPage() {
         }
     }
 
+    const getFilteredTransactions = () => {
+        const transactions = wallet?.transactions || []
+        if (!startDate && !endDate) return transactions
+        return transactions.filter((transaction) => {
+            const transactionDate = new Date(transaction.created_at)
+            const start = startDate ? startOfDay(startDate) : new Date(0)
+            const end = endDate ? endOfDay(endDate) : new Date()
+            return isWithinInterval(transactionDate, { start, end })
+        })
+    }
+
+    const filteredTransactions = getFilteredTransactions()
     const stats = calculateStats()
 
     const exportToCSV = () => {
-        if (!wallet || !wallet.transactions || wallet.transactions.length === 0) return
+        if (!wallet || filteredTransactions.length === 0) return
 
         const headers = ['ID', 'Date', 'Time', 'Description', 'Type', 'Amount (UGX)', 'Running Balance (UGX)']
-        const csvData = wallet.transactions.map((t, index) => {
+        const csvData = filteredTransactions.map((t, index) => {
             const amount = parseFloat(t.amount)
             const date = new Date(t.created_at)
-            const runningBalance = wallet.transactions
+            const runningBalance = filteredTransactions
                 .slice(0, index + 1)
                 .reduce((sum, tx) => sum + parseFloat(tx.amount), 0)
 
@@ -421,7 +438,7 @@ export default function WalletDetailsPage() {
                         <div>
                             <CardTitle>Transaction History</CardTitle>
                             <CardDescription className="text-muted-foreground">
-                                {wallet.transactions?.length || 0} transactions recorded
+                                {filteredTransactions.length} transactions shown
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -451,10 +468,38 @@ export default function WalletDetailsPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {!wallet.transactions || wallet.transactions.length === 0 ? (
+                    <div className="mb-4 grid gap-4 md:grid-cols-3">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="justify-start text-left">
+                                    <Calendar className="mr-2 h-4 w-4" />
+                                    {startDate ? format(startDate, "MMM d, yyyy") : "Start date"}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <DatePicker mode="single" selected={startDate} onSelect={setStartDate} />
+                            </PopoverContent>
+                        </Popover>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="justify-start text-left">
+                                    <Calendar className="mr-2 h-4 w-4" />
+                                    {endDate ? format(endDate, "MMM d, yyyy") : "End date"}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <DatePicker mode="single" selected={endDate} onSelect={setEndDate} />
+                            </PopoverContent>
+                        </Popover>
+                        <Button variant="ghost" onClick={() => { setStartDate(undefined); setEndDate(undefined) }}>
+                            Clear Date Range
+                        </Button>
+                    </div>
+
+                    {filteredTransactions.length === 0 ? (
                         <EmptyState
                             title="No transactions found"
-                            description="This wallet has no recorded transactions yet."
+                            description="No transactions match the selected date range."
                         />
                     ) : (
                         <div className="border border-border rounded-lg overflow-hidden">
@@ -470,13 +515,13 @@ export default function WalletDetailsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {wallet.transactions.map((transaction, index) => {
+                                    {filteredTransactions.map((transaction, index) => {
                                         const amount = parseFloat(transaction.amount)
                                         const isCredit = amount >= 0
                                         const transactionDate = new Date(transaction.created_at)
 
                                         // Calculate running balance
-                                        const runningBalance = wallet.transactions
+                                        const runningBalance = filteredTransactions
                                             .slice(0, index + 1)
                                             .reduce((sum, t) => sum + parseFloat(t.amount), 0)
 
@@ -533,7 +578,7 @@ export default function WalletDetailsPage() {
                     <CardContent className="pt-6">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="text-sm text-muted-foreground">
-                                Showing {wallet.transactions.length} transactions for {wallet.user_username}
+                                Showing {filteredTransactions.length} transactions for {wallet.user_username}
                             </div>
                             <div className="flex gap-2">
                                 <Button

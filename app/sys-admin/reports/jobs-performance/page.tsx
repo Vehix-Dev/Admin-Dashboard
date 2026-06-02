@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { format, startOfDay, endOfDay, isWithinInterval } from "date-fns"
 import { Loader2, Filter, Calendar as CalendarIcon, TrendingUp, CheckCircle, AlertCircle, Clock, BarChart3, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -58,6 +59,7 @@ interface PerformanceMetrics {
 }
 
 export default function JobsPerformanceReportPage() {
+    const router = useRouter()
     const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [startDate, setStartDate] = useState<Date | undefined>(undefined)
@@ -74,7 +76,7 @@ export default function JobsPerformanceReportPage() {
 
             const response = await fetch(`/api/auth/admin/reports/jobs-performance?${params}`, {
                 headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+                    "Authorization": `Bearer ${localStorage.getItem("admin_access_token")}`,
                 }
             })
             if (response.ok) {
@@ -116,7 +118,7 @@ export default function JobsPerformanceReportPage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Jobs/Assists Performance</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Jobs/Assists Performance report</h1>
                     <p className="text-sm text-muted-foreground mt-1 font-mono">Operational insights into platform request performance</p>
                 </div>
                 <Button
@@ -173,7 +175,7 @@ export default function JobsPerformanceReportPage() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
+                <Card role="button" tabIndex={0} onClick={() => router.push("/sys-admin/requests")} className="cursor-pointer transition-colors hover:border-primary/50">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600">Total Requests</CardTitle>
                     </CardHeader>
@@ -183,7 +185,7 @@ export default function JobsPerformanceReportPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card role="button" tabIndex={0} onClick={() => router.push("/sys-admin/requests/completed")} className="cursor-pointer transition-colors hover:border-primary/50">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle>
                     </CardHeader>
@@ -193,7 +195,7 @@ export default function JobsPerformanceReportPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card role="button" tabIndex={0} onClick={() => router.push("/sys-admin/requests/cancelled")} className="cursor-pointer transition-colors hover:border-primary/50">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600">Cancelled</CardTitle>
                     </CardHeader>
@@ -203,7 +205,7 @@ export default function JobsPerformanceReportPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card role="button" tabIndex={0} onClick={() => router.push("/sys-admin/requests/cancelled")} className="cursor-pointer transition-colors hover:border-primary/50">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600">Expired</CardTitle>
                     </CardHeader>

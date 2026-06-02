@@ -44,7 +44,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
     items: [
       { name: "Dashboard", href: "/sys-admin", icon: LayoutDashboard, permission: PERMISSIONS.DASHBOARD_VIEW },
       {
-        name: "Jobs & Assists",
+        name: "Job & Assist Management",
         href: "/sys-admin/requests",
         icon: Wrench,
         hasSubItems: true,
@@ -128,7 +128,8 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         hasSubItems: true,
         permission: PERMISSIONS.MEDIA_VIEW,
         items: [
-          { name: "Media", href: "/sys-admin/moderation/media", icon: Image, permission: PERMISSIONS.MEDIA_VIEW },
+          { name: "Rider Moderation", href: "/sys-admin/moderation/media?type=riders", icon: Users, permission: PERMISSIONS.MEDIA_VIEW },
+          { name: "Roadie Moderation", href: "/sys-admin/moderation/media?type=roadies", icon: UserCheck, permission: PERMISSIONS.MEDIA_VIEW },
         ]
       },
       {
@@ -150,6 +151,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         items: [
           { name: "Overview", href: "/sys-admin/reports", icon: BarChart, permission: PERMISSIONS.REPORTS_VIEW },
           { name: "Financial Report", href: "/sys-admin/reports/financial", icon: DollarSign, permission: PERMISSIONS.REPORTS_VIEW },
+          { name: "Jobs/Assists Performance report", href: "/sys-admin/reports/jobs-performance", icon: Activity, permission: PERMISSIONS.REPORTS_VIEW },
           { name: "User Analytics", href: "/sys-admin/reports/users", icon: Users, permission: PERMISSIONS.REPORTS_VIEW },
           { name: "Service Performance", href: "/sys-admin/reports/services", icon: Wrench, permission: PERMISSIONS.REPORTS_VIEW },
         ]

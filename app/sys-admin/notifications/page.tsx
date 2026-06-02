@@ -178,8 +178,8 @@ export default function NotificationsPage() {
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="broadcast" id="broadcast" />
                                     <Label htmlFor="broadcast" className="font-normal cursor-pointer text-sm">Broadcast</Label>
-                                    <span className="text-[10px] text-red-500 italic ml-2">
-                                        - *The broadcast notification will only be sent as a notification and will not be saved on the notification page.
+                                    <span className="text-[10px] text-muted-foreground italic ml-2">
+                                        Broadcasts are saved in notification history when the backend records the sent notification.
                                     </span>
                                 </div>
                             </RadioGroup>
@@ -260,7 +260,7 @@ export default function NotificationsPage() {
                                     placeholder="http://www.example.com"
                                     className="w-full"
                                 />
-                                <p className="text-[10px] text-muted-foreground">URL requires HTTP/HTTPS protocol</p>
+                                <p className="text-[10px] text-muted-foreground">Optional deep link opened when the recipient taps the notification. Use HTTP/HTTPS for web pages or an app route supported by the mobile app.</p>
                             </div>
 
                             <div className="space-y-2">

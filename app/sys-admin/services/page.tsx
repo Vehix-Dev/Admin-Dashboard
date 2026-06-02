@@ -198,6 +198,7 @@ export default function ServicesPage() {
         name: data.name || "",
         code: data.code || "",
         fixed_price: data.fixed_price,
+        parent_service: (data as any).parent_service,
         is_active: data.is_active !== undefined ? data.is_active : true,
         image: data.image ?? null,
       }
@@ -328,14 +329,14 @@ export default function ServicesPage() {
 
   const handleExport = () => {
     try {
-      const headers = ['ID', 'Name', 'Code', 'Status', 'Roadies Offering', 'Image URL', 'Created At']
+      const headers = ['ID', 'Name', 'Code', 'Service Fee', 'Status', 'Roadies Offering', 'Created At']
       const csvData = services.map(service => [
         service.id,
         `"${service.name}"`,
         service.code,
+        service.fixed_price || '',
         service.is_active ? 'Active' : 'Inactive',
         service.rodie_count || 0,
-        service.image || 'No image',
         new Date(service.created_at).toLocaleDateString()
       ])
 
@@ -843,6 +844,7 @@ export default function ServicesPage() {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleCreate}
+        services={services}
       />
 
       {/* Edit Modal */}
@@ -851,6 +853,7 @@ export default function ServicesPage() {
         onClose={() => setEditingService(null)}
         onSubmit={handleEdit}
         initialData={editingService || undefined}
+        services={services}
       />
     </div>
   )

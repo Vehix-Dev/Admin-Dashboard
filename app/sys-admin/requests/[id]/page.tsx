@@ -259,6 +259,26 @@ export default function RequestDetailPage() {
     return "bg-muted-foreground/20 ring-muted-foreground/10"
   }
 
+  const formatDuration = (start?: string | null, end?: string | null) => {
+    if (!start || !end) return "Not available"
+    const diffMs = new Date(end).getTime() - new Date(start).getTime()
+    if (!Number.isFinite(diffMs) || diffMs < 0) return "Not available"
+    const totalMinutes = Math.round(diffMs / 60000)
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
+  }
+
+  const renderRating = (rating: any, fallbackLabel: string) => {
+    if (!rating) return <p className="text-sm text-muted-foreground">No rating provided</p>
+    return (
+      <div className="space-y-1">
+        <p className="text-sm font-medium">{fallbackLabel}: {rating.rating || rating.stars || "N/A"} / 5</p>
+        <p className="text-sm text-muted-foreground">{rating.comment || rating.review || "No comment provided"}</p>
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -546,27 +566,76 @@ export default function RequestDetailPage() {
             </CardContent>
           </Card>
 
-          {request.cancellation_reason && (
-            <Card className="border-amber-500/20 bg-amber-500/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-amber-600">
-                  <AlertCircle className="h-4 w-4" />
-                  Cancellation Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Cancelled By</p>
-                  <p className="text-sm font-medium capitalize">{request.cancelled_by || "Unknown"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Reason</p>
-                  <p className="text-sm font-medium">{request.cancellation_reason}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Additional Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {(request.additional_notes || request.notes || request.rider_notes || "").trim() || "No additional notes provided"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {(request.status || "").toUpperCase() === "COMPLETED" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Service Duration</CardTitle>
+              <CardDescription>Time from acceptance to completion</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">
+                {formatDuration(
+                  routeInfo?.timestamps?.accepted_at || request.accepted_at,
+                  routeInfo?.timestamps?.completed_at || request.completed_at || request.updated_at
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {(request.status || "").toUpperCase() === "CANCELLED" && (
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-600">
+                <AlertCircle className="h-4 w-4" />
+                Cancellation Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Cancelled By</p>
+                <p className="text-sm font-medium capitalize">{request.cancelled_by || "Unknown"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Reason</p>
+                <p className="text-sm font-medium">{request.cancellation_reason || "No cancellation reason provided"}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {(request.status || "").toUpperCase() === "COMPLETED" && (
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Ratings & Reviews</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Rider to Roadie</p>
+                {renderRating(request.rider_to_roadie_rating || request.roadie_rating || request.ratings?.find((rating: any) => rating.target_role === "ROADIE"), "Rating")}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Roadie to Rider</p>
+                {renderRating(request.roadie_to_rider_rating || request.rider_rating || request.ratings?.find((rating: any) => rating.target_role === "RIDER"), "Rating")}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Horizontal Timeline Section */}

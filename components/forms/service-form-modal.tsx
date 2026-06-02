@@ -24,13 +24,15 @@ interface ServiceFormModalProps {
   onClose: () => void
   onSubmit: (data: Partial<Service> & { image?: File }) => Promise<void>
   initialData?: Service
+  services?: Service[]
 }
 
-export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: ServiceFormModalProps) {
+export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData, services = [] }: ServiceFormModalProps) {
   const [formData, setFormData] = useState<{
     name: string
     code: string
     fixed_price: string
+    parent_service: string
     is_active: boolean
     image?: File
     existingImage?: string
@@ -38,6 +40,7 @@ export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: Ser
     name: "",
     code: "",
     fixed_price: "",
+    parent_service: "none",
     is_active: true,
   })
 
@@ -51,6 +54,7 @@ export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: Ser
         name: initialData.name || "",
         code: initialData.code || "",
         fixed_price: initialData.fixed_price || "",
+        parent_service: String((initialData as any).parent_service || (initialData as any).parent || "none"),
         is_active: initialData.is_active ?? true,
         existingImage: initialData.image,
       })
@@ -62,6 +66,7 @@ export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: Ser
         name: "",
         code: "",
         fixed_price: "",
+        parent_service: "none",
         is_active: true,
       })
       setImagePreview(null)
@@ -119,6 +124,10 @@ export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: Ser
         submitData.fixed_price = formData.fixed_price.trim()
       }
 
+      if (formData.parent_service !== "none") {
+        submitData.parent_service = Number(formData.parent_service)
+      }
+
       if (formData.image) {
         submitData.image = formData.image
       }
@@ -130,6 +139,7 @@ export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: Ser
           name: "",
           code: "",
           fixed_price: "",
+          parent_service: "none",
           is_active: true,
         })
         setImagePreview(null)
@@ -230,6 +240,27 @@ export function ServiceFormModal({ isOpen, onClose, onSubmit, initialData }: Ser
                   placeholder="e.g., 2000.00"
                   className="font-mono"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="parent_service" className="text-xs font-mono uppercase tracking-wider">
+                  Parent Service
+                </Label>
+                <select
+                  id="parent_service"
+                  value={formData.parent_service}
+                  onChange={(e) => handleChange("parent_service", e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="none">Main service</option>
+                  {services
+                    .filter((service) => service.id !== initialData?.id)
+                    .map((service) => (
+                      <option key={service.id} value={service.id}>
+                        Subcategory of {service.name}
+                      </option>
+                    ))}
+                </select>
               </div>
 
               <div className="flex items-center justify-between pt-2">
