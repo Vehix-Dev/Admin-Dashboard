@@ -110,15 +110,21 @@ export default function AuditLogsPage() {
     setIsLoading(true)
     try {
       const result = await getAuditLogs({ page, page_size: 50, search: searchTerm || undefined })
+
+      if (!result || !Array.isArray(result.results)) {
+        console.error("Invalid audit log response:", result)
+        throw new Error("Unexpected audit log response format")
+      }
+
       const mappedLogs = result.results.map(mapAuditLogToComponentFormat)
       setLogs(mappedLogs)
-      
-      // Extract unique modules for filter
+
       const modules = Array.from(new Set(mappedLogs.map(log => log.module)))
       setUniqueModules(modules.sort())
-      
-      setTotalCount(result.count)
-      setTotalPages(Math.max(1, Math.ceil(result.count / 50)))
+
+      const count = typeof result.count === "number" ? result.count : mappedLogs.length
+      setTotalCount(count)
+      setTotalPages(Math.max(1, Math.ceil(count / 50)))
       setCurrentPage(page)
     } catch (error) {
       console.error("Error fetching audit logs:", error)
@@ -128,6 +134,10 @@ export default function AuditLogsPage() {
         variant: "destructive",
       })
       setLogs([])
+      setTotalCount(0)
+      setTotalPages(1)
+      setCurrentPage(1)
+      setUniqueModules([])
     } finally {
       setIsLoading(false)
     }
