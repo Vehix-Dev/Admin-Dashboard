@@ -24,6 +24,8 @@ import {
   Check,
   XCircle,
   Users,
+  Star,
+  StarHalf,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
@@ -39,6 +41,36 @@ import { Card, CardContent } from "@/components/ui/card"
 interface RoadieWithThumbnail extends Roadie {
   thumbnail?: string
   profileImage?: ThumbnailInfo
+}
+
+// Star Rating Component
+const StarRating = ({ rating }: { rating: number }) => {
+  const fullStars = Math.floor(rating)
+  const hasHalfStar = rating % 1 >= 0.5
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0)
+  
+  return (
+    <div className="flex items-center gap-0.5">
+      {[...Array(fullStars)].map((_, i) => (
+        <Star
+          key={`full-${i}`}
+          className="h-4 w-4 fill-amber-500 text-amber-500"
+        />
+      ))}
+      {hasHalfStar && (
+        <StarHalf className="h-4 w-4 fill-amber-500 text-amber-500" />
+      )}
+      {[...Array(emptyStars)].map((_, i) => (
+        <Star
+          key={`empty-${i}`}
+          className="h-4 w-4 text-muted-foreground/30"
+        />
+      ))}
+      <span className="ml-2 text-xs font-mono font-semibold text-amber-600">
+        {rating.toFixed(1)}
+      </span>
+    </div>
+  )
 }
 
 export default function RoadiesPage() {
@@ -448,9 +480,7 @@ export default function RoadiesPage() {
       header: "Rating",
       accessor: (row: RoadieWithThumbnail) => row.rating ?? row.summary?.rating ?? 5,
       cell: (value: number) => (
-        <span className="font-mono text-sm font-semibold text-amber-600">
-          {Number(value || 5).toFixed(1)} / 5
-        </span>
+        <StarRating rating={Number(value || 5)} />
       ),
     },
     {
