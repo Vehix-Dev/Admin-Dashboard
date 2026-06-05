@@ -17,6 +17,14 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Progress } from "@/components/ui/progress"
 
 export default function NotificationsPage() {
     const [loading, setLoading] = useState(false)
@@ -32,6 +40,15 @@ export default function NotificationsPage() {
     const [message, setMessage] = useState("")
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
+    
+    // Progress dialog state
+    const [showProgress, setShowProgress] = useState(false)
+    const [progress, setProgress] = useState(0)
+    const [currentUserIndex, setCurrentUserIndex] = useState(0)
+    const [totalUsers, setTotalUsers] = useState(0)
+    const [successCount, setSuccessCount] = useState(0)
+    const [errorCount, setErrorCount] = useState(0)
+    const [currentUserName, setCurrentUserName] = useState("")
 
     const canManage = useCan(PERMISSIONS.NOTIFICATIONS_MANAGE)
 
@@ -98,6 +115,14 @@ export default function NotificationsPage() {
     }
 
     async function sendNotificationToMultipleUsers() {
+        const userArray = Array.from(selectedUserIds)
+        setTotalUsers(userArray.length)
+        setSuccessCount(0)
+        setErrorCount(0)
+        setProgress(0)
+        setCurrentUserIndex(0)
+        setShowProgress(true)
+
         const payload: any = {
             title,
             body: message,
@@ -109,30 +134,53 @@ export default function NotificationsPage() {
         }
 
         const errors: { userId: string; error: string }[] = []
-        let successCount = 0
+        let successes = 0
 
         // Send notification to each selected user one by one
-        for (const userId of selectedUserIds) {
+        for (let i = 0; i < userArray.length; i++) {
+            const userId = userArray[i]
+            
+            // Update current user name for display
+            const userOption = currentSelectionOptions.find(opt => opt.value === userId)
+            setCurrentUserName(userOption?.label || `User ${userId}`)
+            setCurrentUserIndex(i + 1)
+            
+            // Update progress percentage
+            const progressPercent = ((i) / userArray.length) * 100
+            setProgress(progressPercent)
+
             try {
                 const notificationPayload = {
                     ...payload,
                     user: parseInt(userId)
                 }
                 await createNotification(notificationPayload)
-                successCount++
+                successes++
+                setSuccessCount(successes)
+                
+                // Add small delay to show progress updates smoothly
+                await new Promise(resolve => setTimeout(resolve, 100))
             } catch (err) {
                 console.error(`Failed to send to user ${userId}:`, err)
                 errors.push({ 
                     userId, 
                     error: err instanceof Error ? err.message : "Unknown error" 
                 })
+                setErrorCount(errors.length)
             }
         }
 
+        // Complete progress to 100%
+        setProgress(100)
+
+        // Close dialog after a brief delay to show 100%
+        await new Promise(resolve => setTimeout(resolve, 500))
+        setShowProgress(false)
+
         if (errors.length > 0) {
-            alert(`Sent to ${successCount} users. Failed to send to ${errors.length} users. Check console for details.`)
+            alert(`Sent to ${successes} users. Failed to send to ${errors.length} users. Check console for details.`)
         } else {
-            alert(`Successfully sent notification to ${successCount} users!`)
+            alert(`Successfully sent notification to ${successes} users!`)
         }
     }
 
@@ -169,7 +217,7 @@ export default function NotificationsPage() {
                     setCreating(false)
                     return
                 }
-                // Send to multiple selected users
+                // Send to multiple selected users with progress dialog
                 await sendNotificationToMultipleUsers()
             } else {
                 // Send to entire audience (all riders or all roadies)
@@ -196,6 +244,73 @@ export default function NotificationsPage() {
 
     return (
         <div className="space-y-6 p-6 pb-20">
+            {/* Progress Dialog */}
+            <Dialog open={showProgress} onOpenChange={(open) => {
+                // Prevent closing by clicking outside or escape during sending
+                if (!open && progress < 100 && totalUsers > 0 && currentUserIndex < totalUsers) {
+                    return
+                }
+                setShowProgress(open)
+            }}>
+                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => {
+                    // Prevent closing by clicking outside during sending
+                    if (progress < 100 && totalUsers > 0 && currentUserIndex < totalUsers) {
+                        e.preventDefault()
+                    }
+                }}>
+                    <DialogHeader>
+                        <DialogTitle>Sending Notifications</DialogTitle>
+                        <DialogDescription>
+                            Please wait while we send notifications to selected users
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-6 py-4">
+                        {/* Progress Bar */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Progress</span>
+                                <span className="font-medium">{Math.round(progress)}%</span>
+                            </div>
+                            <Progress value={progress} className="h-2" />
+                        </div>
+
+                        {/* Stats */}
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                            <div className="space-y-1">
+                                <p className="text-2xl font-bold">{currentUserIndex}</p>
+                                <p className="text-xs text-muted-foreground">Processed</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-2xl font-bold">{totalUsers}</p>
+                                <p className="text-xs text-muted-foreground">Total</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-2xl font-bold text-green-600">{successCount}</p>
+                                <p className="text-xs text-muted-foreground">Successful</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-2xl font-bold text-red-600">{errorCount}</p>
+                                <p className="text-xs text-muted-foreground">Failed</p>
+                            </div>
+                        </div>
+
+                        {/* Current user being processed */}
+                        <div className="rounded-lg bg-muted/50 p-3">
+                            <p className="text-xs text-muted-foreground mb-1">Currently sending to:</p>
+                            <p className="text-sm font-medium truncate">{currentUserName || "Preparing..."}</p>
+                        </div>
+
+                        {/* Loading indicator */}
+                        {progress < 100 && (
+                            <div className="flex justify-center">
+                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Send Notification</h1>
