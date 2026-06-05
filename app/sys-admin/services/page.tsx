@@ -36,6 +36,10 @@ import {
   Trash2,
   Eye,
   Download,
+  Edit,
+  Save,
+  Camera,
+  AlertCircle,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
@@ -55,6 +59,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -70,6 +75,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Progress } from "@/components/ui/progress"
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
@@ -81,6 +87,11 @@ export default function ServicesPage() {
   const [selectedImage, setSelectedImage] = useState<{ url: string; serviceName: string } | null>(null)
   const [uploadingImage, setUploadingImage] = useState<number | null>(null)
   const [imageToDelete, setImageToDelete] = useState<{ serviceId: number; serviceName: string } | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [editingImageService, setEditingImageService] = useState<Service | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isImageUploading, setIsImageUploading] = useState(false)
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("")
@@ -224,7 +235,7 @@ export default function ServicesPage() {
 
     try {
       const payload = { ...data }
-      if (payload.image === null) delete payload.image // Handle explicit removal
+      if (payload.image === null) delete payload.image
       
       await updateService(editingService.id, payload as any)
       toast({
@@ -289,21 +300,43 @@ export default function ServicesPage() {
     if (!file) return
 
     setUploadingImage(serviceId)
+    setUploadProgress(0)
+    
+    // Simulate upload progress
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(interval)
+          return 90
+        }
+        return prev + 10
+      })
+    }, 100)
+
     try {
       await updateService(serviceId, { image: file })
-      toast({
-        title: "Success",
-        description: "Service image uploaded successfully"
-      })
-      fetchServices()
+      clearInterval(interval)
+      setUploadProgress(100)
+      setTimeout(() => {
+        toast({
+          title: "Success",
+          description: "Service image uploaded successfully"
+        })
+        fetchServices()
+        setUploadProgress(0)
+      }, 500)
     } catch (err) {
+      clearInterval(interval)
+      setUploadProgress(0)
       toast({
         title: "Error",
         description: "Failed to upload image",
         variant: "destructive"
       })
     } finally {
-      setUploadingImage(null)
+      setTimeout(() => {
+        setUploadingImage(null)
+      }, 1000)
     }
   }
 
@@ -327,9 +360,87 @@ export default function ServicesPage() {
     }
   }
 
+  const handleEditImage = (service: Service) => {
+    setEditingImageService(service)
+    setImagePreview(service.image || null)
+    setImageFile(null)
+  }
+
+  const handleSaveImage = async () => {
+    if (!imageFile || !editingImageService) return
+
+    setIsImageUploading(true)
+    setUploadProgress(0)
+    
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(interval)
+          return 90
+        }
+        return prev + 10
+      })
+    }, 100)
+
+    try {
+      await updateService(editingImageService.id, { image: imageFile })
+      clearInterval(interval)
+      setUploadProgress(100)
+      setTimeout(() => {
+        toast({
+          title: "Success",
+          description: "Service image updated successfully"
+        })
+        fetchServices()
+        setEditingImageService(null)
+        setImageFile(null)
+        setImagePreview(null)
+        setUploadProgress(0)
+        setIsImageUploading(false)
+      }, 500)
+    } catch (err) {
+      clearInterval(interval)
+      setUploadProgress(0)
+      setIsImageUploading(false)
+      toast({
+        title: "Error",
+        description: "Failed to update image",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "File size must be less than 5MB",
+          variant: "destructive"
+        })
+        return
+      }
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select an image file",
+          variant: "destructive"
+        })
+        return
+      }
+      setImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleExport = () => {
     try {
-      const headers = ['ID', 'Name', 'Code', 'Service Fee', 'Status', 'Roadies Offering', 'Created At']
+      const headers = ['ID', 'Name', 'Code', 'Service Fee', 'Status', 'Roadies Offering', 'Has Image', 'Created At']
       const csvData = services.map(service => [
         service.id,
         `"${service.name}"`,
@@ -337,6 +448,7 @@ export default function ServicesPage() {
         service.fixed_price || '',
         service.is_active ? 'Active' : 'Inactive',
         service.rodie_count || 0,
+        service.image ? 'Yes' : 'No',
         new Date(service.created_at).toLocaleDateString()
       ])
 
@@ -368,19 +480,50 @@ export default function ServicesPage() {
     }
   }
 
-  const getInitials = (name: string) => {
-    return name?.charAt(0).toUpperCase() || 'S'
-  }
-
   const columns = [
     {
       header: "Service Details",
       accessor: "name" as const,
       cell: (value: string, row: Service) => (
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center text-primary font-bold text-lg">
-            {getInitials(value || row.code)}
-          </div>
+          {row.image ? (
+            <div className="relative group">
+              <img
+                src={row.image}
+                alt={value || row.code}
+                className="h-12 w-12 rounded-xl object-cover border border-border shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setSelectedImage({ url: row.image!, serviceName: value || row.code })}
+              />
+              <Button
+                size="icon"
+                variant="secondary"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleEditImage(row)
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <div className="relative group">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center text-primary font-bold text-lg">
+                {getInitials(value || row.code)}
+              </div>
+              <Button
+                size="icon"
+                variant="secondary"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleEditImage(row)
+                }}
+              >
+                <Camera className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="font-semibold text-foreground text-sm">{value || "Unnamed Service"}</span>
             <span className="text-xs text-muted-foreground font-mono">CODE: {row.code}</span>
@@ -456,6 +599,10 @@ export default function ServicesPage() {
     },
   ]
 
+  const getInitials = (name: string) => {
+    return name?.charAt(0).toUpperCase() || 'S'
+  }
+
   // Statistics
   const stats = {
     total: services.length,
@@ -501,7 +648,7 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono">
         <Card className="border-border/50 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
@@ -534,6 +681,18 @@ export default function ServicesPage() {
             </div>
             <div className="bg-purple-500/10 p-2.5 rounded-xl">
               <Users className="h-5 w-5 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">With Images</p>
+              <p className="text-2xl font-bold mt-1 text-blue-500">{stats.withImages}</p>
+            </div>
+            <div className="bg-blue-500/10 p-2.5 rounded-xl">
+              <ImageIcon className="h-5 w-5 text-blue-500" />
             </div>
           </CardContent>
         </Card>
@@ -813,6 +972,140 @@ export default function ServicesPage() {
                 Close
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Image Dialog */}
+      <Dialog open={!!editingImageService} onOpenChange={(open) => !open && setEditingImageService(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono">Edit Service Image</DialogTitle>
+            <DialogDescription>
+              Update the image for {editingImageService?.name}. Recommended size: 200x200 pixels.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Current/Preview Image */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                {imagePreview ? (
+                  <div className="relative group">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="h-32 w-32 rounded-xl object-cover border-2 border-primary shadow-lg"
+                    />
+                    <button
+                      onClick={() => {
+                        setImagePreview(null)
+                        setImageFile(null)
+                        if (fileInputRef.current) fileInputRef.current.value = ''
+                      }}
+                      className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 hover:bg-destructive/90 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : editingImageService?.image ? (
+                  <img
+                    src={editingImageService.image}
+                    alt={editingImageService.name}
+                    className="h-32 w-32 rounded-xl object-cover border border-border"
+                  />
+                ) : (
+                  <div className="h-32 w-32 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-dashed border-primary/30 flex items-center justify-center">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Progress */}
+              {isImageUploading && (
+                <div className="w-full space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Uploading...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-2" />
+                </div>
+              )}
+
+              {/* File Input */}
+              <div className="w-full">
+                <Label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg hover:border-primary transition-colors bg-muted/30">
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      {imageFile ? imageFile.name : "Click to select image"}
+                    </span>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    disabled={isImageUploading}
+                  />
+                </Label>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Max file size: 5MB. Supported formats: JPG, PNG, JPEG
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingImageService(null)
+                  setImageFile(null)
+                  setImagePreview(null)
+                  if (fileInputRef.current) fileInputRef.current.value = ''
+                }}
+                disabled={isImageUploading}
+              >
+                Cancel
+              </Button>
+              {editingImageService?.image && (
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setImageToDelete({
+                      serviceId: editingImageService.id,
+                      serviceName: editingImageService.name
+                    })
+                    setEditingImageService(null)
+                  }}
+                  disabled={isImageUploading}
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove Image
+                </Button>
+              )}
+              <Button
+                onClick={handleSaveImage}
+                disabled={!imageFile || isImageUploading}
+                className="gap-2 bg-primary hover:bg-primary/90"
+              >
+                {isImageUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Image
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
