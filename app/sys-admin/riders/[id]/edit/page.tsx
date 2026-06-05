@@ -21,7 +21,6 @@ import {
   type AdminImage,
   adminUploadForUser,
   adminBulkUploadForUser,
-  getAllThumbnails,
   IMAGE_TYPES,
   getImageTypeLabel,
   getStatusLabelForImage,
@@ -107,7 +106,6 @@ export default function EditRiderPage() {
     email: "",
     phone: "",
     username: "",
-    nin: "",
     is_approved: false,
     is_active: true,
   })
@@ -143,7 +141,6 @@ export default function EditRiderPage() {
           email: data.email,
           phone: data.phone,
           username: data.username,
-          nin: data.nin || "",
           is_approved: data.is_approved,
           is_active: data.is_active !== false,
         })
@@ -405,7 +402,7 @@ export default function EditRiderPage() {
     }
 
     try {
-      await bulkUpdateStatusView(selectedImages, status)
+      await bulkUpdateImageStatus(selectedImages, status)
       toast({
         title: "Success",
         description: `Updated ${selectedImages.length} images to ${status.toLowerCase()}`,
@@ -460,11 +457,6 @@ export default function EditRiderPage() {
     } else {
       setSelectedImages(riderImages.map(img => img.id))
     }
-  }
-
-  const bulkUpdateStatusView = async (imageIds: number[], status: string) => {
-    // Correctly call the API function bulkUpdateImageStatus
-    return bulkUpdateImageStatus(imageIds, status as any)
   }
 
   // Helper functions
@@ -607,24 +599,6 @@ export default function EditRiderPage() {
                           required
                           disabled={!canChange}
                         />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">
-                          NIN (National Identification Number)
-                          <span className="text-xs text-muted-foreground ml-1">Required</span>
-                        </label>
-                        <Input
-                          value={formData.nin}
-                          onChange={(e) => setFormData({ ...formData, nin: e.target.value })}
-                          placeholder="e.g., AB1234567890C"
-                          className="font-mono"
-                          required
-                          disabled={!canChange}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          National Identification Number - this should be a valid government-issued ID
-                        </p>
                       </div>
 
                       <div className="flex items-center gap-3 p-3 bg-muted/30 rounded border">
