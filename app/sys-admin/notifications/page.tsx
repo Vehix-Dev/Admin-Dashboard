@@ -44,11 +44,8 @@ export default function NotificationsPage() {
     // Progress dialog state
     const [showProgress, setShowProgress] = useState(false)
     const [progress, setProgress] = useState(0)
-    const [currentUserIndex, setCurrentUserIndex] = useState(0)
     const [totalUsers, setTotalUsers] = useState(0)
-    const [successCount, setSuccessCount] = useState(0)
-    const [errorCount, setErrorCount] = useState(0)
-    const [currentUserName, setCurrentUserName] = useState("")
+    const [currentUserIndex, setCurrentUserIndex] = useState(0)
 
     const canManage = useCan(PERMISSIONS.NOTIFICATIONS_MANAGE)
 
@@ -117,8 +114,6 @@ export default function NotificationsPage() {
     async function sendNotificationToMultipleUsers() {
         const userArray = Array.from(selectedUserIds)
         setTotalUsers(userArray.length)
-        setSuccessCount(0)
-        setErrorCount(0)
         setProgress(0)
         setCurrentUserIndex(0)
         setShowProgress(true)
@@ -139,14 +134,10 @@ export default function NotificationsPage() {
         // Send notification to each selected user one by one
         for (let i = 0; i < userArray.length; i++) {
             const userId = userArray[i]
-            
-            // Update current user name for display
-            const userOption = currentSelectionOptions.find(opt => opt.value === userId)
-            setCurrentUserName(userOption?.label || `User ${userId}`)
             setCurrentUserIndex(i + 1)
             
             // Update progress percentage
-            const progressPercent = ((i) / userArray.length) * 100
+            const progressPercent = ((i + 1) / userArray.length) * 100
             setProgress(progressPercent)
 
             try {
@@ -156,7 +147,6 @@ export default function NotificationsPage() {
                 }
                 await createNotification(notificationPayload)
                 successes++
-                setSuccessCount(successes)
                 
                 // Add small delay to show progress updates smoothly
                 await new Promise(resolve => setTimeout(resolve, 100))
@@ -166,14 +156,10 @@ export default function NotificationsPage() {
                     userId, 
                     error: err instanceof Error ? err.message : "Unknown error" 
                 })
-                setErrorCount(errors.length)
             }
         }
 
-        // Complete progress to 100%
-        setProgress(100)
-
-        // Close dialog after a brief delay to show 100%
+        // Close dialog after a brief delay
         await new Promise(resolve => setTimeout(resolve, 500))
         setShowProgress(false)
 
@@ -243,8 +229,8 @@ export default function NotificationsPage() {
     }
 
     return (
-        <div className="space-y-6 p-6 pb-20">
-            {/* Progress Dialog */}
+        <>
+            {/* Progress Dialog with blur effect */}
             <Dialog open={showProgress} onOpenChange={(open) => {
                 // Prevent closing by clicking outside or escape during sending
                 if (!open && progress < 100 && totalUsers > 0 && currentUserIndex < totalUsers) {
@@ -252,275 +238,261 @@ export default function NotificationsPage() {
                 }
                 setShowProgress(open)
             }}>
-                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => {
-                    // Prevent closing by clicking outside during sending
-                    if (progress < 100 && totalUsers > 0 && currentUserIndex < totalUsers) {
-                        e.preventDefault()
-                    }
-                }}>
-                    <DialogHeader>
-                        <DialogTitle>Sending Notifications</DialogTitle>
-                        <DialogDescription>
+                <DialogContent 
+                    className="sm:max-w-md bg-background/95 backdrop-blur-sm border shadow-lg"
+                    onPointerDownOutside={(e) => {
+                        // Prevent closing by clicking outside during sending
+                        if (progress < 100 && totalUsers > 0 && currentUserIndex < totalUsers) {
+                            e.preventDefault()
+                        }
+                    }}
+                    onEscapeKeyDown={(e) => {
+                        // Prevent closing with escape key during sending
+                        if (progress < 100 && totalUsers > 0 && currentUserIndex < totalUsers) {
+                            e.preventDefault()
+                        }
+                    }}
+                >
+                    <DialogHeader className="text-center">
+                        <DialogTitle className="text-xl">Sending Notifications</DialogTitle>
+                        <DialogDescription className="text-base">
                             Please wait while we send notifications to selected users
                         </DialogDescription>
                     </DialogHeader>
                     
-                    <div className="space-y-6 py-4">
+                    <div className="space-y-6 py-8">
                         {/* Progress Bar */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Progress</span>
-                                <span className="font-medium">{Math.round(progress)}%</span>
-                            </div>
-                            <Progress value={progress} className="h-2" />
+                        <div className="space-y-3">
+                            <Progress value={progress} className="h-3 bg-muted" />
+                            <p className="text-center text-sm text-muted-foreground">
+                                {Math.round(progress)}% Complete
+                            </p>
                         </div>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-2 gap-4 text-center">
-                            <div className="space-y-1">
-                                <p className="text-2xl font-bold">{currentUserIndex}</p>
-                                <p className="text-xs text-muted-foreground">Processed</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-2xl font-bold">{totalUsers}</p>
-                                <p className="text-xs text-muted-foreground">Total</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-2xl font-bold text-green-600">{successCount}</p>
-                                <p className="text-xs text-muted-foreground">Successful</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-2xl font-bold text-red-600">{errorCount}</p>
-                                <p className="text-xs text-muted-foreground">Failed</p>
-                            </div>
+                        {/* Loading Spinner */}
+                        <div className="flex justify-center py-4">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
-
-                        {/* Current user being processed */}
-                        <div className="rounded-lg bg-muted/50 p-3">
-                            <p className="text-xs text-muted-foreground mb-1">Currently sending to:</p>
-                            <p className="text-sm font-medium truncate">{currentUserName || "Preparing..."}</p>
-                        </div>
-
-                        {/* Loading indicator */}
-                        {progress < 100 && (
-                            <div className="flex justify-center">
-                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                            </div>
-                        )}
                     </div>
                 </DialogContent>
             </Dialog>
 
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Send Notification</h1>
+            {/* Main content with blur effect when dialog is open */}
+            <div className={cn(
+                "space-y-6 p-6 pb-20 transition-all duration-300",
+                showProgress && "blur-sm pointer-events-none"
+            )}>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Send Notification</h1>
+                    </div>
+                    <Button variant="outline" asChild>
+                        <Link href="/sys-admin/notifications/history">
+                            <History className="mr-2 h-4 w-4" />
+                            View History
+                        </Link>
+                    </Button>
                 </div>
-                <Button variant="outline" asChild>
-                    <Link href="/sys-admin/notifications/history">
-                        <History className="mr-2 h-4 w-4" />
-                        View History
-                    </Link>
-                </Button>
-            </div>
 
-            <Card className="border-none shadow-none bg-transparent">
-                <CardContent className="p-0">
-                    <form onSubmit={handleCreate} className="space-y-10">
-                        <div className="space-y-6">
-                            <div>
-                                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Audience Info</h2>
-                                <Separator className="mb-6" />
-                            </div>
+                <Card className="border-none shadow-none bg-transparent">
+                    <CardContent className="p-0">
+                        <form onSubmit={handleCreate} className="space-y-10">
+                            <div className="space-y-6">
+                                <div>
+                                    <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Audience Info</h2>
+                                    <Separator className="mb-6" />
+                                </div>
 
-                            <RadioGroup
-                                value={audienceType}
-                                onValueChange={(val: any) => {
-                                    setAudienceType(val)
-                                    setSelectedUserIds(new Set())
-                                }}
-                                className="flex gap-8"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="roadie" id="roadie" />
-                                    <Label htmlFor="roadie" className="font-normal cursor-pointer">Roadie</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="rider" id="rider" />
-                                    <Label htmlFor="rider" className="font-normal cursor-pointer">Rider</Label>
-                                </div>
-                            </RadioGroup>
+                                <RadioGroup
+                                    value={audienceType}
+                                    onValueChange={(val: any) => {
+                                        setAudienceType(val)
+                                        setSelectedUserIds(new Set())
+                                    }}
+                                    className="flex gap-8"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="roadie" id="roadie" />
+                                        <Label htmlFor="roadie" className="font-normal cursor-pointer">Roadie</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="rider" id="rider" />
+                                        <Label htmlFor="rider" className="font-normal cursor-pointer">Rider</Label>
+                                    </div>
+                                </RadioGroup>
 
-                            <RadioGroup
-                                value={selectionMode}
-                                onValueChange={(val: any) => {
-                                    setSelectionMode(val)
-                                    setSelectedUserIds(new Set())
-                                }}
-                                className="flex gap-8"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="manual" id="manual" />
-                                    <Label htmlFor="manual" className="font-normal cursor-pointer">Manual Selection</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="audience" id="audience" />
-                                    <Label htmlFor="audience" className="font-normal cursor-pointer">All {audienceType === "roadie" ? "Roadies" : "Riders"}</Label>
-                                </div>
-                            </RadioGroup>
+                                <RadioGroup
+                                    value={selectionMode}
+                                    onValueChange={(val: any) => {
+                                        setSelectionMode(val)
+                                        setSelectedUserIds(new Set())
+                                    }}
+                                    className="flex gap-8"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="manual" id="manual" />
+                                        <Label htmlFor="manual" className="font-normal cursor-pointer">Manual Selection</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="audience" id="audience" />
+                                        <Label htmlFor="audience" className="font-normal cursor-pointer">All {audienceType === "roadie" ? "Roadies" : "Riders"}</Label>
+                                    </div>
+                                </RadioGroup>
 
-                            {selectionMode === "manual" && (
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <Label className="text-sm font-medium">
-                                            Select {audienceType === "roadie" ? "Roadies" : "Riders"} 
-                                            {selectedUserIds.size > 0 && ` (${selectedUserIds.size} selected)`}
-                                        </Label>
-                                        {currentSelectionOptions.length > 0 && (
-                                            <Button 
-                                                type="button"
-                                                variant="ghost" 
-                                                size="sm"
-                                                onClick={handleSelectAll}
-                                                className="text-xs"
-                                            >
-                                                {selectedUserIds.size === currentSelectionOptions.length ? "Deselect All" : "Select All"}
-                                            </Button>
+                                {selectionMode === "manual" && (
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <Label className="text-sm font-medium">
+                                                Select {audienceType === "roadie" ? "Roadies" : "Riders"} 
+                                                {selectedUserIds.size > 0 && ` (${selectedUserIds.size} selected)`}
+                                            </Label>
+                                            {currentSelectionOptions.length > 0 && (
+                                                <Button 
+                                                    type="button"
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    onClick={handleSelectAll}
+                                                    className="text-xs"
+                                                >
+                                                    {selectedUserIds.size === currentSelectionOptions.length ? "Deselect All" : "Select All"}
+                                                </Button>
+                                            )}
+                                        </div>
+                                        
+                                        <Popover open={open} onOpenChange={setOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={open}
+                                                    className="w-full justify-between font-normal"
+                                                    disabled={fetchingUsers}
+                                                >
+                                                    {fetchingUsers ? "Loading users..." : "Search and select users..."}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                                <Command>
+                                                    <CommandInput 
+                                                        placeholder={`Search ${audienceType === "roadie" ? "roadies" : "riders"}...`}
+                                                        value={searchTerm}
+                                                        onValueChange={setSearchTerm}
+                                                    />
+                                                    <CommandList>
+                                                        <CommandEmpty>No {audienceType === "roadie" ? "roadie" : "rider"} found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {filteredOptions.map((option) => (
+                                                                <CommandItem
+                                                                    key={option.value}
+                                                                    value={option.label}
+                                                                    onSelect={() => {
+                                                                        handleSelectUser(option.value)
+                                                                    }}
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            selectedUserIds.has(option.value) ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    {option.label}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+
+                                        {/* Selected users badges */}
+                                        {selectedUsers.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-3 p-3 border rounded-md bg-muted/30">
+                                                <span className="text-xs text-muted-foreground mr-1">Selected:</span>
+                                                {selectedUsers.map((user) => (
+                                                    <Badge key={user.value} variant="secondary" className="gap-1">
+                                                        {user.label}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveUser(user.value)}
+                                                            className="ml-1 hover:text-destructive"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </Badge>
+                                                ))}
+                                            </div>
                                         )}
                                     </div>
-                                    
-                                    <Popover open={open} onOpenChange={setOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                aria-expanded={open}
-                                                className="w-full justify-between font-normal"
-                                                disabled={fetchingUsers}
-                                            >
-                                                {fetchingUsers ? "Loading users..." : "Search and select users..."}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                            <Command>
-                                                <CommandInput 
-                                                    placeholder={`Search ${audienceType === "roadie" ? "roadies" : "riders"}...`}
-                                                    value={searchTerm}
-                                                    onValueChange={setSearchTerm}
-                                                />
-                                                <CommandList>
-                                                    <CommandEmpty>No {audienceType === "roadie" ? "roadie" : "rider"} found.</CommandEmpty>
-                                                    <CommandGroup>
-                                                        {filteredOptions.map((option) => (
-                                                            <CommandItem
-                                                                key={option.value}
-                                                                value={option.label}
-                                                                onSelect={() => {
-                                                                    handleSelectUser(option.value)
-                                                                }}
-                                                            >
-                                                                <Check
-                                                                    className={cn(
-                                                                        "mr-2 h-4 w-4",
-                                                                        selectedUserIds.has(option.value) ? "opacity-100" : "opacity-0"
-                                                                    )}
-                                                                />
-                                                                {option.label}
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-
-                                    {/* Selected users badges */}
-                                    {selectedUsers.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-3 p-3 border rounded-md bg-muted/30">
-                                            <span className="text-xs text-muted-foreground mr-1">Selected:</span>
-                                            {selectedUsers.map((user) => (
-                                                <Badge key={user.value} variant="secondary" className="gap-1">
-                                                    {user.label}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveUser(user.value)}
-                                                        className="ml-1 hover:text-destructive"
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </button>
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="space-y-6 pt-2">
-                            <div>
-                                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Notification Info</h2>
-                                <Separator className="mb-6" />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="title" className="text-sm font-medium">Title</Label>
-                                <Input
-                                    id="title"
-                                    required
-                                    value={title}
-                                    onChange={e => setTitle(e.target.value)}
-                                    placeholder="Enter Title"
-                                    className="w-full"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="url" className="text-sm font-medium">URL</Label>
-                                <Input
-                                    id="url"
-                                    value={url}
-                                    onChange={e => setUrl(e.target.value)}
-                                    placeholder="http://www.example.com"
-                                    className="w-full"
-                                />
-                                <p className="text-[10px] text-muted-foreground">
-                                    Optional deep link opened when the recipient taps the notification. 
-                                    Use HTTP/HTTPS for web pages or an app route supported by the mobile app.
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="message" className="text-sm font-medium">Message</Label>
-                                <Textarea
-                                    id="message"
-                                    required
-                                    value={message}
-                                    onChange={e => setMessage(e.target.value)}
-                                    placeholder="Enter Message"
-                                    className="min-h-[160px] w-full resize-none"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end">
-                            <Button 
-                                type="submit" 
-                                className="w-[200px]" 
-                                disabled={creating}
-                            >
-                                {creating ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Send className="mr-2 h-4 w-4" />
                                 )}
-                                {selectionMode === "manual" && selectedUserIds.size > 1 
-                                    ? `Send to ${selectedUserIds.size} Users` 
-                                    : "Send Notification"}
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
+                            </div>
+
+                            <div className="space-y-6 pt-2">
+                                <div>
+                                    <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">Notification Info</h2>
+                                    <Separator className="mb-6" />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="title" className="text-sm font-medium">Title</Label>
+                                    <Input
+                                        id="title"
+                                        required
+                                        value={title}
+                                        onChange={e => setTitle(e.target.value)}
+                                        placeholder="Enter Title"
+                                        className="w-full"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="url" className="text-sm font-medium">URL</Label>
+                                    <Input
+                                        id="url"
+                                        value={url}
+                                        onChange={e => setUrl(e.target.value)}
+                                        placeholder="http://www.example.com"
+                                        className="w-full"
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Optional deep link opened when the recipient taps the notification. 
+                                        Use HTTP/HTTPS for web pages or an app route supported by the mobile app.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="message" className="text-sm font-medium">Message</Label>
+                                    <Textarea
+                                        id="message"
+                                        required
+                                        value={message}
+                                        onChange={e => setMessage(e.target.value)}
+                                        placeholder="Enter Message"
+                                        className="min-h-[160px] w-full resize-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end">
+                                <Button 
+                                    type="submit" 
+                                    className="w-[200px]" 
+                                    disabled={creating || showProgress}
+                                >
+                                    {creating ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Send className="mr-2 h-4 w-4" />
+                                    )}
+                                    {selectionMode === "manual" && selectedUserIds.size > 1 
+                                        ? `Send to ${selectedUserIds.size} Users` 
+                                        : "Send Notification"}
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
+        </>
     )
 }
