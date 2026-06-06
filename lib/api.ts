@@ -142,6 +142,41 @@ export async function apiMultipartRequest<T>(endpoint: string, formData: FormDat
   }
 }
 
+// Axios-like API client for compatibility with api-extended.ts
+export const api = {
+  async get<T>(endpoint: string): Promise<{ data: T }> {
+    const data = await apiRequest<T>(endpoint)
+    return { data }
+  },
+  async post<T>(endpoint: string, body?: any): Promise<{ data: T }> {
+    const data = await apiRequest<T>(endpoint, {
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    return { data }
+  },
+  async patch<T>(endpoint: string, body?: any): Promise<{ data: T }> {
+    const data = await apiRequest<T>(endpoint, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    return { data }
+  },
+  async put<T>(endpoint: string, body?: any): Promise<{ data: T }> {
+    const data = await apiRequest<T>(endpoint, {
+      method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    return { data }
+  },
+  async delete<T>(endpoint: string): Promise<{ data: T }> {
+    const data = await apiRequest<T>(endpoint, {
+      method: 'DELETE',
+    })
+    return { data }
+  },
+}
+
 export interface AdminLoginResponse {
   access: string
   refresh: string
