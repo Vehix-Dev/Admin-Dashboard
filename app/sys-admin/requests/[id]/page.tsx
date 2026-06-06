@@ -609,16 +609,16 @@ export default function RequestDetailPage() {
             <CardContent className="space-y-3">
               <div>
                 <p className="text-sm text-muted-foreground">Cancelled By</p>
-                <p className="text-sm font-medium capitalize">{request.cancelled_by || "Unknown"}</p>
+                <p className="text-sm font-medium capitalize">{request.cancellation_detail?.cancelled_by_username || request.cancellation_detail?.cancelled_by_name || "Unknown"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Reason</p>
-                <p className="text-sm font-medium">{request.display_reason || request.cancellation_reason || "No cancellation reason provided"}</p>
+                <p className="text-sm font-medium">{request.cancellation_detail?.reason || request.display_reason || request.cancellation_reason || "No cancellation reason provided"}</p>
               </div>
-              {request.custom_reason_text && (
+              {request.cancellation_detail?.custom_reason_text && (
                 <div>
                   <p className="text-sm text-muted-foreground">Additional Notes</p>
-                  <p className="text-sm font-medium">{request.custom_reason_text}</p>
+                  <p className="text-sm font-medium">{request.cancellation_detail.custom_reason_text}</p>
                 </div>
               )}
             </CardContent>
