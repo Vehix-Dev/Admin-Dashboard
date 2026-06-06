@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createAdminUser, getAdminUsers } from "@/lib/api"
+import { adminRegister, getAdminUsers } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Save, Eye, EyeOff, Loader2 } from "lucide-react"
@@ -110,15 +110,13 @@ export default function AddAdminPage() {
 
         try {
             // 1. Create User (Django API)
-            const response = await createAdminUser({
+            const response = await adminRegister({
                 first_name: formData.first_name.trim(),
                 last_name: formData.last_name.trim(),
                 email: formData.email.trim(),
                 phone: formData.phone.trim(),
                 username: formData.username.trim(),
-                password: formData.password,
-                is_active: formData.is_active,
-                is_approved: true
+                password: formData.password
             })
 
             // 2. Assign Groups (JSON DB)
