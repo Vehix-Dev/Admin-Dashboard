@@ -393,6 +393,14 @@ export default function CancelledRequestsPage() {
     }
 
     const getCancelledByDisplay = (request: any): string => {
+        // Use the cancellation_detail from the API response
+        if (request.cancellation_detail?.cancelled_by_username) {
+            return request.cancellation_detail.cancelled_by_username
+        }
+        if (request.cancellation_detail?.cancelled_by_name) {
+            return request.cancellation_detail.cancelled_by_name
+        }
+        // Fallback to old field for backward compatibility
         if (request.cancelled_by) {
             return request.cancelled_by.charAt(0).toUpperCase() + request.cancelled_by.slice(1)
         }
