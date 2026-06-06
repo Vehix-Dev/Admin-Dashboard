@@ -519,15 +519,6 @@ export default function RequestsPage() {
       },
     },
     {
-      header: "Cancellation Reason",
-      accessor: "cancellation_reason" as const,
-      cell: (value: string | null) => (
-        <span className={value ? "text-foreground" : "text-muted-foreground italic"}>
-          {value || "N/A"}
-        </span>
-      ),
-    },
-    {
       header: "Location",
       accessor: (row: RequestRow) => `${row.rider_lat},${row.rider_lng}`,
       cell: (value: string, row: RequestRow) => (

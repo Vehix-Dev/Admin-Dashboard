@@ -613,8 +613,14 @@ export default function RequestDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Reason</p>
-                <p className="text-sm font-medium">{request.cancellation_reason || "No cancellation reason provided"}</p>
+                <p className="text-sm font-medium">{request.display_reason || request.cancellation_reason || "No cancellation reason provided"}</p>
               </div>
+              {request.custom_reason_text && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Additional Notes</p>
+                  <p className="text-sm font-medium">{request.custom_reason_text}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
