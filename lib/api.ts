@@ -86,11 +86,15 @@ export async function apiRequest<T>(endpoint: string, options?: RequestInit): Pr
         if (typeof window !== "undefined") {
           // Show immediate alert before logging out
           alert("Security Alert: This session is no longer valid because another device has logged in. For your protection, you have been logged out. Please login again and change your password.")
-          // We'll use logoutAdmin from auth.ts if possible, but api.ts is a low-level lib
-          // For now, clear tokens and redirect manually to avoid circular dependencies
+          // Clear all storage immediately
           localStorage.removeItem("admin_access_token")
           localStorage.removeItem("admin_refresh_token")
           localStorage.removeItem("admin_user_data")
+          localStorage.removeItem("sidebar_open")
+          localStorage.removeItem("admin_login_timestamp")
+          localStorage.removeItem("single_login_session")
+          sessionStorage.removeItem("2fa_warning_shown")
+          // Redirect to login
           window.location.href = "/login?message=session_invalid"
         }
       }

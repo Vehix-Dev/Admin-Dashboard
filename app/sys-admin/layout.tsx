@@ -9,7 +9,7 @@ import { getAuthToken } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
 import { PageLoader } from "@/components/ui/page-loader"
 import { PERMISSIONS } from "@/lib/permissions"
-import { TwoFactorWarning } from "@/components/auth/two-factor-warning"
+import { TwoFAWarning } from "@/components/auth/2fa-warning"
 import { CommandCenter } from "@/components/global/command-center"
 import { AdminMessenger } from "@/components/global/admin-messenger"
 
@@ -63,7 +63,7 @@ export default function AdminLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <TwoFactorWarning />
+      <TwoFAWarning />
       <CommandCenter />
       <AdminMessenger />
       <AdminSidebar />
