@@ -95,7 +95,7 @@ export default function WalletsPage() {
                     user_username: user?.username || 'Unknown User',
                     user_type: rider ? "Rider" : roadie ? "Roadie" : "Unknown",
                     balance: wallet.balance,
-                    transactions: wallet.transactions || []
+                    transactions: (wallet.transactions || []).filter((t: any) => t.status === 'completed')
                 }
             })
 

@@ -84,6 +84,8 @@ export async function apiRequest<T>(endpoint: string, options?: RequestInit): Pr
       if (errorText.includes("This session is no longer valid. Another device has logged in.")) {
         console.warn("Session invalidated: Another device logged in.")
         if (typeof window !== "undefined") {
+          // Show immediate alert before logging out
+          alert("Security Alert: This session is no longer valid because another device has logged in. For your protection, you have been logged out. Please login again and change your password.")
           // We'll use logoutAdmin from auth.ts if possible, but api.ts is a low-level lib
           // For now, clear tokens and redirect manually to avoid circular dependencies
           localStorage.removeItem("admin_access_token")

@@ -91,6 +91,9 @@ export default function WalletDetailsPage() {
                     return
                 }
 
+                // Filter transactions to only show completed ones
+                walletData.transactions = (walletData.transactions || []).filter((t: any) => t.status === 'completed')
+
                 setWallet(walletData)
                 setPlatformConfig(configData)
 

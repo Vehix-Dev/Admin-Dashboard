@@ -257,6 +257,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => clearInterval(interval)
     }, [user, loginTimestamp])
 
+    // Strict 2FA enforcement - redirect to my-account if 2FA is not enabled
+    useEffect(() => {
+        if (!user || isLoading) return
+
+        // Skip 2FA check for the my-account page itself to avoid redirect loop
+        const currentPath = window.location.pathname
+        if (currentPath === '/sys-admin/my-account') return
+
+        // Check if 2FA is enabled
+        if (user.two_factor_enabled === false || user.two_factor_enabled === undefined) {
+            // Check if warning has been shown in this session
+            const warningShown = sessionStorage.getItem('2fa_warning_shown')
+            if (!warningShown) {
+                // Show warning and redirect
+                sessionStorage.setItem('2fa_warning_shown', 'true')
+                alert('Security Alert: Two-Factor Authentication (2FA) is required for all admin accounts. You will be redirected to enable 2FA now.')
+                window.location.href = '/sys-admin/my-account'
+            }
+        }
+    }, [user, isLoading])
+
 
     const setSidebarOpen = (open: boolean) => {
         setSidebarOpenState(open)

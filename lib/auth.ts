@@ -377,6 +377,10 @@ export async function authApiRequest<T>(
 
         // Handle specific session invalidation error
         if (errorMessage.includes("This session is no longer valid. Another device has logged in.")) {
+          // Show immediate alert before logging out
+          if (typeof window !== "undefined") {
+            alert("Security Alert: This session is no longer valid because another device has logged in. For your protection, you have been logged out. Please login again and change your password.")
+          }
           logoutAdmin("session_invalid")
           throw new Error("This session is no longer valid. Another device has logged in. Please login again and change your password.")
         }
@@ -388,6 +392,10 @@ export async function authApiRequest<T>(
             errorMessage = errorText
 
             if (errorText.includes("This session is no longer valid. Another device has logged in.")) {
+              // Show immediate alert before logging out
+              if (typeof window !== "undefined") {
+                alert("Security Alert: This session is no longer valid because another device has logged in. For your protection, you have been logged out. Please login again and change your password.")
+              }
               logoutAdmin("session_invalid")
               throw new Error("This session is no longer valid. Another device has logged in. Please login again and change your password.")
             }
