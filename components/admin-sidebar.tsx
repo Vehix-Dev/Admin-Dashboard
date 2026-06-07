@@ -153,7 +153,6 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
           { name: "Financial Report", href: "/sys-admin/reports/financial", icon: DollarSign, permission: PERMISSIONS.REPORTS_VIEW },
           { name: "Jobs/Assists Performance report", href: "/sys-admin/reports/jobs-performance", icon: Activity, permission: PERMISSIONS.REPORTS_VIEW },
           { name: "User Analytics", href: "/sys-admin/reports/users", icon: Users, permission: PERMISSIONS.REPORTS_VIEW },
-          { name: "Service Performance", href: "/sys-admin/reports/services", icon: Wrench, permission: PERMISSIONS.REPORTS_VIEW },
         ]
       },
       {
@@ -175,10 +174,7 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         permission: PERMISSIONS.SETTINGS_VIEW,
         items: [
           { name: "Platform Settings", href: "/sys-admin/settings", icon: Settings, permission: PERMISSIONS.SETTINGS_VIEW },
-          { name: "Security Settings", href: "/sys-admin/settings/security", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
-          { name: "Firewall & Security", href: "/sys-admin/security/firewall", icon: Shield, permission: PERMISSIONS.SETTINGS_VIEW },
           { name: "API Health", href: "/sys-admin/system/health", icon: Activity, permission: PERMISSIONS.SETTINGS_VIEW },
-          { name: "Landing Page", href: "/sys-admin/settings/landing", icon: Globe, permission: PERMISSIONS.SETTINGS_VIEW },
         ]
       },
     ],
