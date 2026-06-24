@@ -2056,6 +2056,7 @@ export interface WithdrawalRequest {
     email: string
     phone: string
     role: string
+    profile_photo: string | null
   }
   amount: string
   transaction_type: 'WITHDRAWAL' | 'DEPOSIT'

@@ -130,7 +130,7 @@ export default function WithdrawalsPage() {
       cell: (value, row) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={row.user_details?.username ? `https://api.dicebear.com/7.x/initials/svg?seed=${row.user_details.username}` : undefined} />
+            <AvatarImage src={row.user_details?.profile_photo || undefined} />
             <AvatarFallback>
               {row.user_details?.username?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
@@ -154,8 +154,7 @@ export default function WithdrawalsPage() {
       accessor: "amount",
       cell: (value, row) => (
         <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-          <span className="font-semibold">{parseFloat(row.amount).toLocaleString()}</span>
+          <span className="font-semibold">UGX {parseFloat(row.amount).toLocaleString()}</span>
         </div>
       )
     },
@@ -341,7 +340,7 @@ export default function WithdrawalsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {withdrawals
+              UGX {withdrawals
                 .filter(w => w.status === "PENDING")
                 .reduce((sum, w) => sum + parseFloat(w.amount), 0)
                 .toLocaleString()}
