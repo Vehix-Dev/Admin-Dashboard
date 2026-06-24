@@ -67,6 +67,10 @@ export const PERMISSIONS = {
     WALLET_VIEW: 'wallet.view',
     WALLET_MANAGE: 'wallet.manage',
 
+    // Withdrawals
+    WITHDRAWALS_VIEW: 'withdrawals.view',
+    WITHDRAWALS_MANAGE: 'withdrawals.manage',
+
     // Transactions
     TRANSACTIONS_VIEW: 'transactions.view',
     TRANSACTIONS_MANAGE: 'transactions.manage',
@@ -153,6 +157,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         PERMISSIONS.RODIE_SERVICES_DELETE,
         PERMISSIONS.WALLET_VIEW,
         PERMISSIONS.WALLET_MANAGE,
+        PERMISSIONS.WITHDRAWALS_VIEW,
+        PERMISSIONS.WITHDRAWALS_MANAGE,
         PERMISSIONS.TRANSACTIONS_VIEW,
         PERMISSIONS.TRANSACTIONS_MANAGE,
         PERMISSIONS.SUPPORT_VIEW,

@@ -30,7 +30,8 @@ import {
   Mail,
   FileText,
   Clock,
-  Activity
+  Activity,
+  ArrowUpCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -98,6 +99,12 @@ const navigationItems: Array<{ section: string; items: NavItem[] }> = [
         href: "/sys-admin/wallet",
         icon: Wallet,
         permission: PERMISSIONS.WALLET_VIEW,
+      },
+      {
+        name: "Withdrawals",
+        href: "/sys-admin/withdrawals",
+        icon: ArrowUpCircle,
+        permission: PERMISSIONS.WITHDRAWALS_VIEW,
       },
       {
         name: "Referrals",

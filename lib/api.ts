@@ -2044,3 +2044,52 @@ export function getUserReferralCode(user: Rider | Roadie): string {
 export function isValidNIN(nin: string): boolean {
   return /^[A-Za-z0-9]{14}$/.test(nin)
 }
+
+// Withdrawal API
+export interface WithdrawalRequest {
+  id: number
+  user: number
+  user_details: {
+    id: number
+    external_id: string
+    username: string
+    email: string
+    phone: string
+    role: string
+  }
+  amount: string
+  transaction_type: 'WITHDRAWAL' | 'DEPOSIT'
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+  reference: string
+  processor_id: string | null
+  description: string | null
+  created_at: string
+  updated_at: string
+  user_wallet_balance?: string
+}
+
+export async function getWithdrawals(status?: string): Promise<WithdrawalRequest[]> {
+  const url = status ? `/api/auth/admin/withdrawals/?status=${status}` : '/api/auth/admin/withdrawals/'
+  return apiRequest<WithdrawalRequest[]>(url)
+}
+
+export async function getWithdrawalById(id: number): Promise<WithdrawalRequest> {
+  return apiRequest<WithdrawalRequest>(`/api/auth/admin/withdrawals/${id}/`)
+}
+
+export async function approveWithdrawal(id: number): Promise<WithdrawalRequest> {
+  return apiRequest<WithdrawalRequest>(`/api/auth/admin/withdrawals/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'COMPLETED' })
+  })
+}
+
+export async function rejectWithdrawal(id: number, rejectionReason?: string): Promise<WithdrawalRequest> {
+  return apiRequest<WithdrawalRequest>(`/api/auth/admin/withdrawals/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ 
+      status: 'FAILED',
+      rejection_reason: rejectionReason || '' 
+    })
+  })
+}
