@@ -183,7 +183,9 @@ export async function refreshAccessToken(): Promise<string> {
         errorText = await response.text()
       } catch (e) {}
 
-      if (errorText.includes("This session is no longer valid. Another device has logged in.")) {
+      if (errorText.includes("This session is no longer valid. Another device has logged in.") ||
+          errorText.includes("Your session has expired because you logged in from another device.") ||
+          errorText.toLowerCase().includes("another device")) {
         if (typeof window !== "undefined") {
           alert("Security Alert: This session is no longer valid because another device has logged in. For your protection, you have been logged out. Please login again and change your password.")
           localStorage.removeItem("admin_access_token")
@@ -396,7 +398,9 @@ export async function authApiRequest<T>(
         }
 
         // Handle specific session invalidation error
-        if (errorMessage.includes("This session is no longer valid. Another device has logged in.")) {
+        if (errorMessage.includes("This session is no longer valid. Another device has logged in.") ||
+            errorMessage.includes("Your session has expired because you logged in from another device.") ||
+            errorMessage.toLowerCase().includes("another device")) {
           // Show immediate alert before logging out
           if (typeof window !== "undefined") {
             alert("Security Alert: This session is no longer valid because another device has logged in. For your protection, you have been logged out. Please login again and change your password.")
@@ -420,7 +424,9 @@ export async function authApiRequest<T>(
           if (errorText) {
             errorMessage = errorText
 
-            if (errorText.includes("This session is no longer valid. Another device has logged in.")) {
+            if (errorText.includes("This session is no longer valid. Another device has logged in.") ||
+                errorText.includes("Your session has expired because you logged in from another device.") ||
+                errorText.toLowerCase().includes("another device")) {
               // Show immediate alert before logging out
               if (typeof window !== "undefined") {
                 alert("Security Alert: This session is no longer valid because another device has logged in. For your protection, you have been logged out. Please login again and change your password.")

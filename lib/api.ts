@@ -81,7 +81,9 @@ export async function apiRequest<T>(endpoint: string, options?: RequestInit): Pr
       const errorText = await response.text()
 
       // Handle the specific "Another device logged in" error
-      if (errorText.includes("This session is no longer valid. Another device has logged in.")) {
+      if (errorText.includes("This session is no longer valid. Another device has logged in.") ||
+          errorText.includes("Your session has expired because you logged in from another device.") ||
+          errorText.toLowerCase().includes("another device")) {
         console.warn("Session invalidated: Another device logged in.")
         if (typeof window !== "undefined") {
           // Show immediate alert before logging out
