@@ -95,7 +95,7 @@ export default function WalletsPage() {
                     user_username: user?.username || 'Unknown User',
                     user_type: rider ? "Rider" : roadie ? "Roadie" : "Unknown",
                     balance: wallet.balance,
-                    transactions: (wallet.transactions || []).filter((t: any) => t.status === 'completed')
+                    transactions: wallet.transactions || []
                 }
             })
 
@@ -230,12 +230,12 @@ export default function WalletsPage() {
         },
         {
             header: "Total Deposits",
-            accessor: (row: WalletWithUser) => row.transactions.filter(t => getSignedTransactionAmount(t) > 0).reduce((sum, t) => sum + getSignedTransactionAmount(t), 0),
+            accessor: (row: WalletWithUser) => row.transactions.filter(t => getSignedTransactionAmount(t) > 0 && t.status === 'completed').reduce((sum, t) => sum + getSignedTransactionAmount(t), 0),
             cell: (value: number) => <span className="font-mono text-emerald-600">{formatCurrency(value)}</span>,
         },
         {
             header: "Total Withdrawals",
-            accessor: (row: WalletWithUser) => row.transactions.filter(t => getSignedTransactionAmount(t) < 0).reduce((sum, t) => sum + Math.abs(getSignedTransactionAmount(t)), 0),
+            accessor: (row: WalletWithUser) => row.transactions.filter(t => getSignedTransactionAmount(t) < 0 && t.status === 'completed').reduce((sum, t) => sum + Math.abs(getSignedTransactionAmount(t)), 0),
             cell: (value: number) => <span className="font-mono text-destructive">{formatCurrency(value)}</span>,
         },
         {

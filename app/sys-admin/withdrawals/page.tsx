@@ -127,24 +127,20 @@ export default function WithdrawalsPage() {
     {
       header: "User",
       accessor: "user_details",
-      cell: (value, row) => {
-        const profilePhoto = row.user_details?.profile_photo
-        console.log('Profile photo for', row.user_details?.username, ':', profilePhoto)
-        return (
-          <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={profilePhoto || undefined} />
-              <AvatarFallback>
-                {row.user_details?.username?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="font-medium">{row.user_details?.username || "Unknown"}</div>
-              <div className="text-xs text-muted-foreground">{row.user_details?.external_id || "N/A"}</div>
-            </div>
+      cell: (value, row) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={row.user_details?.profile_photo || undefined} />
+            <AvatarFallback>
+              {row.user_details?.username?.charAt(0).toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{row.user_details?.username || "Unknown"}</div>
+            <div className="text-xs text-muted-foreground">{row.user_details?.external_id || "N/A"}</div>
           </div>
-        )
-      }
+        </div>
+      )
     },
     {
       header: "Role",
