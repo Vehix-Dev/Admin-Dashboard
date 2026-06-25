@@ -10,6 +10,7 @@ export function TwoFAWarning() {
     const pathname = usePathname()
     const [isVisible, setIsVisible] = useState(false)
     const [isDismissed, setIsDismissed] = useState(false)
+    const [dismissals, setDismissals] = useState(0)
 
     useEffect(() => {
         // Check if 2FA is enabled
@@ -23,6 +24,11 @@ export function TwoFAWarning() {
             setIsVisible(false)
             return
         }
+
+        // Get dismissal count for this user
+        const dismissalsKey = `2fa_dismissals_${user.username}`
+        const currentDismissals = parseInt(localStorage.getItem(dismissalsKey) || '0', 10)
+        setDismissals(currentDismissals)
 
         // Show warning if 2FA is not enabled
         if (user.two_factor_enabled === false || user.two_factor_enabled === undefined) {
@@ -38,6 +44,16 @@ export function TwoFAWarning() {
     }
 
     const handleDismiss = () => {
+        const userData = localStorage.getItem('admin_user_data')
+        if (!userData) return
+
+        const user = JSON.parse(userData)
+        const dismissalsKey = `2fa_dismissals_${user.username}`
+        const currentDismissals = parseInt(localStorage.getItem(dismissalsKey) || '0', 10)
+        const newDismissals = currentDismissals + 1
+        localStorage.setItem(dismissalsKey, newDismissals.toString())
+        setDismissals(newDismissals)
+
         setIsDismissed(true)
         // Auto-show again after 5 seconds
         setTimeout(() => {
@@ -57,8 +73,10 @@ export function TwoFAWarning() {
                             Security Alert: 2FA Required
                         </p>
                         <p className="text-sm text-red-100">
-                            Your account will be deactivated if you don't enable Two-Factor Authentication. 
-                            You must enable 2FA to continue using the system.
+                            {dismissals >= 2
+                                ? `This is your ${dismissals + 1}st warning. After 3 dismissals, you will be required to enable 2FA to continue using the system.`
+                                : "Your account will be deactivated if you don't enable Two-Factor Authentication. You must enable 2FA to continue using the system."
+                            }
                         </p>
                     </div>
                 </div>

@@ -98,6 +98,21 @@ export default function LoginPage() {
 
       const tokens = { access: loginResponse.access, refresh: loginResponse.refresh };
 
+      // Track 2FA warning dismissals in localStorage
+      const dismissalsKey = `2fa_dismissals_${user.username}`;
+      const dismissals = parseInt(localStorage.getItem(dismissalsKey) || '0', 10);
+
+      // Check if user is forced to enable 2FA (after 3 dismissals)
+      if (!is2faEnabled && dismissals >= 3) {
+        // Store tokens temporarily and redirect to 2FA setup
+        localStorage.setItem('pending_2fa_tokens', JSON.stringify(tokens))
+        localStorage.setItem('pending_2fa_user', JSON.stringify(updatedUser))
+        removeAuthTokens()
+        router.push('/sys-admin/my-account?force_2fa=true')
+        setIsLoading(false)
+        return
+      }
+
       if (is2faEnabled) {
         // 2FA is enabled.
         // IMPORTANT: Remove tokens from storage to prevent auto-login on refresh before 2FA check
