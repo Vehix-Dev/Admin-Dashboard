@@ -398,6 +398,15 @@ export default function LoginPage() {
                       <img src={setupData.qrCode} alt="2FA QR Code" className="w-44 h-44 animate-fadeIn" />
                     </div>
 
+                    <div className="text-center space-y-1.5 mt-2">
+                      <p className="text-[11px] text-muted-foreground">
+                        Can't scan the QR code? Enter this secret key manually:
+                      </p>
+                      <div className="bg-muted px-3 py-1.5 rounded font-mono text-xs select-all tracking-wider inline-block border border-border">
+                        {setupData.secret}
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="setup-code" className="text-sm font-medium text-foreground flex items-center justify-center gap-2">
                         <ShieldCheck className="h-4 w-4 text-muted-foreground" />

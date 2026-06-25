@@ -306,6 +306,15 @@ export default function MyAccountPage() {
                                     <img src={setupData.qrCode} alt="2FA QR Code" className="w-48 h-48" />
                                 </div>
 
+                                <div className="text-center space-y-1.5 mt-2">
+                                    <p className="text-xs text-muted-foreground">
+                                        Can't scan the QR code? Enter this secret key manually:
+                                    </p>
+                                    <div className="bg-background px-3 py-1.5 rounded font-mono text-sm select-all tracking-wider inline-block border border-border">
+                                        {setupData.secret}
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
                                     <Label>Verify Code</Label>
                                     <div className="flex gap-2">
