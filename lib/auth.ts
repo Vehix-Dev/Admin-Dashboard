@@ -178,6 +178,26 @@ export async function refreshAccessToken(): Promise<string> {
 
     if (!response.ok) {
       removeAuthTokens()
+      let errorText = ""
+      try {
+        errorText = await response.text()
+      } catch (e) {}
+
+      if (errorText.includes("This session is no longer valid. Another device has logged in.")) {
+        if (typeof window !== "undefined") {
+          alert("Security Alert: This session is no longer valid because another device has logged in. For your protection, you have been logged out. Please login again and change your password.")
+          localStorage.removeItem("admin_access_token")
+          localStorage.removeItem("admin_refresh_token")
+          localStorage.removeItem("admin_user_data")
+          localStorage.removeItem("sidebar_open")
+          localStorage.removeItem("admin_login_timestamp")
+          localStorage.removeItem("single_login_session")
+          sessionStorage.removeItem("2fa_warning_shown")
+          window.location.href = "/login?message=session_invalid"
+        }
+        throw new Error("This session is no longer valid. Another device has logged in. Please login again and change your password.")
+      }
+
       throw new Error("Failed to refresh token")
     }
 

@@ -11,9 +11,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { loginAdmin, getAdminProfile, removeAuthTokens, setAuthToken, setRefreshToken } from "@/lib/auth"
 import { checkBackendConnection } from "@/lib/api"
-import { Loader2, AlertCircle, Lock, User as UserIcon, Server, ShieldCheck } from "lucide-react"
+import { Loader2, AlertCircle, Lock, User as UserIcon, Server, ShieldCheck, Smartphone } from "lucide-react"
 import { useAuth, type User } from "@/contexts/auth-context"
-import { get2FAStatus, verify2FA } from "@/lib/2fa-client"
+import { get2FAStatus, verify2FA, generate2FA, enable2FA, type GenerateResponse } from "@/lib/2fa-client"
 import { singleLoginManager } from "@/lib/single-login"
 
 export default function LoginPage() {
@@ -31,6 +31,12 @@ export default function LoginPage() {
   const [pendingUser, setPendingUser] = useState<any>(null)
   const [pendingTokens, setPendingTokens] = useState<{ access: string, refresh: string } | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
+
+  // 2FA Setup States
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false)
+  const [setupData, setSetupData] = useState<GenerateResponse | null>(null)
+  const [setupVerificationCode, setSetupVerificationCode] = useState("")
+  const [isSettingUp, setIsSettingUp] = useState(false)
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -104,12 +110,11 @@ export default function LoginPage() {
 
       // Check if user is forced to enable 2FA (after 3 dismissals)
       if (!is2faEnabled && dismissals >= 3) {
-        // Store tokens temporarily and redirect to 2FA setup
-        localStorage.setItem('pending_2fa_tokens', JSON.stringify(tokens))
-        localStorage.setItem('pending_2fa_user', JSON.stringify(updatedUser))
-        removeAuthTokens()
-        router.push('/sys-admin/my-account?force_2fa=true')
+        setPendingUser(updatedUser)
+        setPendingTokens(tokens)
+        setShowTwoFactorSetup(true)
         setIsLoading(false)
+        handleStartTwoFactorSetup(updatedUser.username || username)
         return
       }
 
@@ -196,6 +201,73 @@ export default function LoginPage() {
     }
   }
 
+  const handleStartTwoFactorSetup = async (usernameToSetup: string) => {
+    try {
+      setIsSettingUp(true)
+      const data = await generate2FA(usernameToSetup)
+      setSetupData(data)
+    } catch (error) {
+      console.error("Failed to generate 2FA secret:", error)
+      toast({
+        title: "Error",
+        description: "Failed to generate 2FA secret. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSettingUp(false)
+    }
+  }
+
+  const handleEnableTwoFactor = async (e?: React.FormEvent, code?: string) => {
+    if (e) e.preventDefault()
+    const finalCode = code || setupVerificationCode
+    if (!pendingUser || !pendingTokens || finalCode.length !== 6 || isSettingUp) return
+
+    setIsSettingUp(true)
+    try {
+      const usernameToSetup = pendingUser.username || username
+      const result = await enable2FA(usernameToSetup, finalCode)
+      if (result.success) {
+        // Clear dismissals count since 2FA is now enabled
+        const dismissalsKey = `2fa_dismissals_${usernameToSetup}`
+        localStorage.removeItem(dismissalsKey)
+
+        // Set access and refresh tokens
+        setAuthToken(pendingTokens.access)
+        setRefreshToken(pendingTokens.refresh)
+
+        // Reset setup states
+        setShowTwoFactorSetup(false)
+        setSetupData(null)
+        setSetupVerificationCode("")
+
+        toast({
+          title: "2FA Enabled",
+          description: "Two-factor authentication enabled successfully. Access granted.",
+        })
+
+        // Complete the login sequence
+        completeLogin(pendingUser, pendingTokens)
+      } else {
+        toast({
+          title: "Invalid Code",
+          description: "The verification code is incorrect. Please check your app and try again.",
+          variant: "destructive",
+        })
+        setSetupVerificationCode("")
+      }
+    } catch (error) {
+      console.error("Failed to enable 2FA:", error)
+      toast({
+        title: "Error",
+        description: "An error occurred while enabling 2FA. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSettingUp(false)
+    }
+  }
+
   const completeLogin = async (user: any, tokens: { access: string }) => {
     const adaptedUser: User = {
       ...user,
@@ -259,7 +331,7 @@ export default function LoginPage() {
               Vehix Admin
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              {showTwoFactor ? "Two-Factor Authentication" : "Secure Access to Administration Panel"}
+              {showTwoFactorSetup ? "Register Authenticator Device" : showTwoFactor ? "Two-Factor Authentication" : "Secure Access to Administration Panel"}
             </CardDescription>
           </div>
         </CardHeader>
@@ -292,7 +364,108 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          {!showTwoFactor ? (
+          {showTwoFactorSetup ? (
+            <form onSubmit={handleEnableTwoFactor} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2 text-center">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-left flex items-start gap-2 mb-4 animate-pulse">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-red-900 text-xs">2FA Registration Required</p>
+                      <p className="text-[11px] text-red-700 mt-0.5">
+                        You must enable Two-Factor Authentication to continue into the system.
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="font-medium flex items-center justify-center text-sm text-foreground">
+                    <Smartphone className="mr-2 h-4 w-4 text-primary animate-pulse" />
+                    Scan QR Code
+                  </p>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    Use Google Authenticator, Microsoft Authenticator, or any compatible app to scan the code below.
+                  </p>
+                </div>
+
+                {isSettingUp && !setupData ? (
+                  <div className="flex flex-col items-center justify-center py-8 gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Generating secure token...</p>
+                  </div>
+                ) : setupData ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-center bg-white p-3 rounded-lg border border-border w-fit mx-auto shadow-sm">
+                      <img src={setupData.qrCode} alt="2FA QR Code" className="w-44 h-44 animate-fadeIn" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="setup-code" className="text-sm font-medium text-foreground flex items-center justify-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                        Verify Setup Code
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground text-center">
+                        Enter the 6-digit verification code from your authenticator app to complete the registration.
+                      </p>
+                      <Input
+                        id="setup-code"
+                        type="text"
+                        placeholder="000 000"
+                        value={setupVerificationCode}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                          setSetupVerificationCode(val);
+                          if (val.length === 6) {
+                            handleEnableTwoFactor(undefined, val);
+                          }
+                        }}
+                        required
+                        autoFocus
+                        maxLength={6}
+                        disabled={isSettingUp}
+                        className="text-center text-3xl tracking-[0.5em] h-16 font-mono transition-fast animate-in fade-in"
+                      />
+                      {isSettingUp && (
+                        <div className="flex justify-center mt-2">
+                          <div className="flex items-center gap-2 text-primary text-sm animate-pulse">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Registering device...
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Button
+                  type="submit"
+                  className="w-full h-11 text-base font-medium transition-smooth elevation-2 hover:elevation-4"
+                  disabled={isSettingUp || setupVerificationCode.length !== 6}
+                >
+                  {isSettingUp ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="mr-2 h-5 w-5" />
+                  )}
+                  Enable & Login
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowTwoFactorSetup(false);
+                    setSetupData(null);
+                    setSetupVerificationCode("");
+                    setPendingUser(null);
+                    setPendingTokens(null);
+                  }}
+                >
+                  Back to Login
+                </Button>
+              </div>
+            </form>
+          ) : !showTwoFactor ? (
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">

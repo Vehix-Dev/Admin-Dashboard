@@ -257,7 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => clearInterval(interval)
     }, [user, loginTimestamp])
 
-    // Strict 2FA enforcement - redirect to my-account if 2FA is not enabled
+    // Strict 2FA enforcement - redirect to my-account if 2FA is not enabled and dismissals >= 3
     useEffect(() => {
         if (!user || isLoading) return
 
@@ -267,9 +267,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Check if 2FA is enabled
         if (user.two_factor_enabled === false || user.two_factor_enabled === undefined) {
-            // Always redirect to my-account if 2FA is not enabled
-            // The popup will handle the warning, this ensures they can't navigate away
-            window.location.href = '/sys-admin/my-account'
+            // Only redirect if they have run out of warnings/grace logins (3 dismissals)
+            const dismissalsKey = `2fa_dismissals_${user.username}`
+            const dismissals = parseInt(localStorage.getItem(dismissalsKey) || '0', 10)
+            if (dismissals >= 3) {
+                window.location.href = '/sys-admin/my-account'
+            }
         }
     }, [user, isLoading])
 

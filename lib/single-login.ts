@@ -59,7 +59,7 @@ export class SingleLoginManager {
     sessionStorage.removeItem('2fa_warning_shown')
 
     // Redirect to login
-    window.location.href = '/login'
+    window.location.href = '/login?message=session_invalid'
   }
 
   checkExistingSession(userId: string): boolean {

@@ -38,6 +38,8 @@ export default function MyAccountPage() {
             const pendingUser = localStorage.getItem('pending_2fa_user')
             if (pendingTokens && pendingUser) {
                 console.log("Found pending tokens and user from forced 2FA redirect")
+                // Auto-start 2FA setup
+                handleStartSetup()
             }
         }
 
