@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 first_name: freshUser.first_name || parsedStoredUser?.first_name || freshUser.name?.split(' ')[0] || "",
                                 last_name: freshUser.last_name || parsedStoredUser?.last_name || freshUser.name?.split(' ').slice(1).join(' ') || "",
                                 role: freshUser.role || parsedStoredUser?.role || "admin",
+                                two_factor_enabled: parsedStoredUser?.two_factor_enabled || freshUser.two_factor_enabled,
                                 is_approved: true,
                             } as any
 

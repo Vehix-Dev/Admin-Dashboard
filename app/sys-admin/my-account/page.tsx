@@ -129,6 +129,14 @@ export default function MyAccountPage() {
                 setSetupData(null)
                 setVerificationCode("")
 
+                // Update user in localStorage
+                const userData = localStorage.getItem('admin_user_data')
+                if (userData) {
+                    const parsedUser = JSON.parse(userData)
+                    parsedUser.two_factor_enabled = true
+                    localStorage.setItem('admin_user_data', JSON.stringify(parsedUser))
+                }
+
                 // If forced 2FA setup, restore tokens and clear dismissals
                 if (force2FA) {
                     const pendingTokens = localStorage.getItem('pending_2fa_tokens')
@@ -143,7 +151,15 @@ export default function MyAccountPage() {
                         const dismissalsKey = `2fa_dismissals_${user.username}`
                         localStorage.removeItem(dismissalsKey)
                         setForce2FA(false)
-                        router.push('/sys-admin')
+                        
+                        toast({
+                            title: "Success",
+                            description: "Two-Factor Authentication has been enabled. Redirecting...",
+                        })
+                        setTimeout(() => {
+                            window.location.href = '/sys-admin'
+                        }, 1000)
+                        return
                     }
                 }
 
@@ -151,6 +167,9 @@ export default function MyAccountPage() {
                     title: "Success",
                     description: "Two-Factor Authentication has been enabled",
                 })
+                setTimeout(() => {
+                    window.location.reload()
+                }, 1000)
             } else {
                 toast({
                     title: "Invalid Code",

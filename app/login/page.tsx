@@ -247,7 +247,7 @@ export default function LoginPage() {
         })
 
         // Complete the login sequence
-        completeLogin(pendingUser, pendingTokens)
+        completeLogin({ ...pendingUser, two_factor_enabled: true }, pendingTokens)
       } else {
         toast({
           title: "Invalid Code",
