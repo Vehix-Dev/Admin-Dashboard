@@ -62,6 +62,9 @@ const MAP_STYLES = {
 
 type MapStyle = (typeof MAP_STYLES)[keyof typeof MAP_STYLES]
 
+const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || ""
+const CARTO_TILE_QUERY = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : ""
+
 type SelectedEntity =
   | { type: "rider"; data: ActiveRiderLocation }
   | { type: "roadie"; data: RodieLocation }
@@ -418,7 +421,7 @@ export default function LiveServiceMap() {
 
         <MapContainer center={center} zoom={13} className="h-full w-full" zoomControl={false}>
           {mapStyle === MAP_STYLES.streets && (
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+            <TileLayer url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`} />
           )}
           {(mapStyle === MAP_STYLES.satellite || mapStyle === MAP_STYLES.hybrid) && (
             <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
@@ -430,7 +433,7 @@ export default function LiveServiceMap() {
             />
           )}
           {mapStyle === MAP_STYLES.dark && (
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+            <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`} />
           )}
 
           <ZoomControl position="bottomright" />

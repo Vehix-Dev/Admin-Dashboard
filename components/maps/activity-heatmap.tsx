@@ -5,6 +5,9 @@ import { MapContainer, TileLayer, CircleMarker, useMap, ZoomControl } from "reac
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
+const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || ""
+const CARTO_TILE_QUERY = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : ""
+
 interface HeatmapPoint {
   lat: number
   lng: number
@@ -75,8 +78,8 @@ export function ActivityHeatmap({
 
   const tileUrl =
     mapStyle === "dark"
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+      ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`
+      : `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`
 
   return (
     <div className="space-y-3">

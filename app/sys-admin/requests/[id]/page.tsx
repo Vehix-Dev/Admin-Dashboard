@@ -42,6 +42,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+
+const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || ""
+const CARTO_TILE_QUERY = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : ""
 import {
   MapContainer,
   TileLayer,
@@ -889,7 +892,7 @@ export default function RequestDetailPage() {
                 zoomControl={false}
               >
                 <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`}
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors'
                 />
 

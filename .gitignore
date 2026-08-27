@@ -3,6 +3,10 @@
 # dependencies
 /node_modules
 
+# local environment secrets
+.env
+.env.local
+
 # next.js
 
 # debug
