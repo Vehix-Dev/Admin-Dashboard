@@ -6,7 +6,8 @@ import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
 const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || ""
-const CARTO_TILE_QUERY = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : ""
+const CARTO_TILE_QUERY = CARTO_API_KEY ? `?key=${CARTO_API_KEY}` : ""
+const CARTO_ATTRIBUTION = '&copy; CARTO &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
 interface HeatmapPoint {
   lat: number
@@ -99,7 +100,7 @@ export function ActivityHeatmap({
           </div>
         ) : (
           <MapContainer center={center} zoom={zoom} className="h-full w-full" zoomControl={false}>
-            <TileLayer url={tileUrl} />
+            <TileLayer url={tileUrl} attribution={CARTO_ATTRIBUTION} />
             <ZoomControl position="bottomright" />
             <FitBounds points={displayPoints} />
             {displayPoints.map((p, i) => (

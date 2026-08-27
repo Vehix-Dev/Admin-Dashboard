@@ -44,7 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils"
 
 const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || ""
-const CARTO_TILE_QUERY = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : ""
+const CARTO_TILE_QUERY = CARTO_API_KEY ? `?key=${CARTO_API_KEY}` : ""
 import {
   MapContainer,
   TileLayer,

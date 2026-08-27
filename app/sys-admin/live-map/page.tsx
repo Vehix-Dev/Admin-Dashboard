@@ -63,7 +63,8 @@ const MAP_STYLES = {
 type MapStyle = (typeof MAP_STYLES)[keyof typeof MAP_STYLES]
 
 const CARTO_API_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || ""
-const CARTO_TILE_QUERY = CARTO_API_KEY ? `?api_key=${CARTO_API_KEY}` : ""
+const CARTO_TILE_QUERY = CARTO_API_KEY ? `?key=${CARTO_API_KEY}` : ""
+const CARTO_ATTRIBUTION = '&copy; CARTO &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
 type SelectedEntity =
   | { type: "rider"; data: ActiveRiderLocation }
@@ -421,7 +422,7 @@ export default function LiveServiceMap() {
 
         <MapContainer center={center} zoom={13} className="h-full w-full" zoomControl={false}>
           {mapStyle === MAP_STYLES.streets && (
-            <TileLayer url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`} />
+            <TileLayer url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`} attribution={CARTO_ATTRIBUTION} />
           )}
           {(mapStyle === MAP_STYLES.satellite || mapStyle === MAP_STYLES.hybrid) && (
             <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
@@ -433,7 +434,7 @@ export default function LiveServiceMap() {
             />
           )}
           {mapStyle === MAP_STYLES.dark && (
-            <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`} />
+            <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png${CARTO_TILE_QUERY}`} attribution={CARTO_ATTRIBUTION} />
           )}
 
           <ZoomControl position="bottomright" />
